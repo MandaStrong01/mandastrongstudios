@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 
 import Page1 from './pages/Page1';
 import Page2 from './pages/Page2';
@@ -25,8 +26,9 @@ import Page21 from './pages/Page21';
 
 function App() {
   return (
-    <Router>
-      <Routes>
+    <AuthProvider>
+      <Router>
+        <Routes>
         <Route path="/" element={<Page1 />} />
         <Route path="/page2" element={<Page2 />} />
         <Route path="/page3" element={<Page3 />} />
@@ -49,7 +51,8 @@ function App() {
         <Route path="/page20" element={<Page20 />} />
         <Route path="/page21" element={<Page21 />} />
       </Routes>
-    </Router>
+      </Router>
+    </AuthProvider>
   );
 }
 

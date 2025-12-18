@@ -1,20 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Film, ChevronRight, Home } from 'lucide-react';
+import { ChevronRight, Home } from 'lucide-react';
+import Navigation from '../components/Navigation';
+import MediaUpload from '../components/MediaUpload';
 
 const Page1 = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <nav className="bg-black/30 backdrop-blur-md border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-2">
-              <Film className="w-8 h-8 text-blue-400" />
-              <span className="text-white font-bold text-xl">MandaStrong Studio</span>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navigation />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
@@ -72,6 +65,10 @@ const Page1 = () => {
               </Link>
             ))}
           </div>
+        </div>
+
+        <div className="mt-8">
+          <MediaUpload />
         </div>
       </div>
     </div>
