@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
-import { Upload, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, CheckCircle, AlertCircle, Loader2, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
-const MediaUpload = () => {
+interface MediaUploadProps {
+  onAuthRequired?: () => void;
+}
+
+const MediaUpload: React.FC<MediaUploadProps> = ({ onAuthRequired }) => {
+  const { user } = useAuth();
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -17,7 +23,7 @@ const MediaUpload = () => {
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (!file || !user) return;
 
     setUploading(true);
     setUploadStatus('idle');
@@ -44,6 +50,7 @@ const MediaUpload = () => {
         .from('media_assets')
         .insert([
           {
+            user_id: user.id,
             file_name: file.name,
             file_path: filePath,
             file_size: file.size,
@@ -70,6 +77,30 @@ const MediaUpload = () => {
       setUploading(false);
     }
   };
+
+  if (!user) {
+    return (
+      <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10">
+        <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
+          <Upload className="w-6 h-6 mr-2" />
+          Media Upload
+        </h3>
+        <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-6 text-center">
+          <Lock className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
+          <p className="text-yellow-300 font-medium mb-2">Authentication Required</p>
+          <p className="text-gray-300 text-sm mb-4">
+            Please sign in to upload media files
+          </p>
+          <button
+            onClick={onAuthRequired}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-all"
+          >
+            Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10">

@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
 import Navigation from '../components/Navigation';
 import MediaUpload from '../components/MediaUpload';
+import AuthModal from '../components/AuthModal';
 
 const Page1 = () => {
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <Navigation />
@@ -68,9 +71,11 @@ const Page1 = () => {
         </div>
 
         <div className="mt-8">
-          <MediaUpload />
+          <MediaUpload onAuthRequired={() => setShowAuthModal(true)} />
         </div>
       </div>
+
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
     </div>
   );
 };
