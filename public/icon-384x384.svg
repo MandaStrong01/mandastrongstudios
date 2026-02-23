@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="384" height="384" xmlns="http://www.w3.org/2000/svg">
+  <!-- Purple background -->
+  <rect width="384" height="384" fill="#7c3aed"/>
+
+  <!-- Black inner square -->
+  <rect x="57.599999999999994" y="57.599999999999994" width="268.8" height="268.8" fill="#000000"/>
+
+  <!-- MS Text -->
+  <text x="192" y="192" font-family="Arial, sans-serif" font-size="153.60000000000002" font-weight="bold" fill="#7c3aed" text-anchor="middle" dominant-baseline="middle">MS</text>
+
+  <!-- Sparkle -->
+  <circle cx="288" cy="96" r="19.200000000000003" fill="#ffffff"/>
+</svg>

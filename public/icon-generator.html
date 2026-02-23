@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generate MandaStrong Studio Icons</title>
+</head>
+<body>
+  <h1>Icon Generator</h1>
+  <p>Copy this canvas to create icons. Right-click and save each size.</p>
+  <div id="icons"></div>
+
+  <script>
+    const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+    const container = document.getElementById('icons');
+
+    sizes.forEach(size => {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+
+      // Purple background
+      ctx.fillStyle = '#7c3aed';
+      ctx.fillRect(0, 0, size, size);
+
+      // Black inner square
+      const padding = size * 0.15;
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(padding, padding, size - padding * 2, size - padding * 2);
+
+      // Draw MS text
+      ctx.fillStyle = '#7c3aed';
+      ctx.font = `bold ${size * 0.4}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('MS', size / 2, size / 2);
+
+      // Add sparkle effect
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(size * 0.75, size * 0.25, size * 0.05, 0, Math.PI * 2);
+      ctx.fill();
+
+      const wrapper = document.createElement('div');
+      wrapper.style.marginBottom = '20px';
+
+      const label = document.createElement('p');
+      label.textContent = `${size}x${size} - Right-click and "Save Image As" → icon-${size}x${size}.png`;
+
+      wrapper.appendChild(label);
+      wrapper.appendChild(canvas);
+      container.appendChild(wrapper);
+    });
+  </script>
+</body>
+</html>
