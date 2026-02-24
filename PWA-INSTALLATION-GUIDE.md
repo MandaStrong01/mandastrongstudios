@@ -37,9 +37,10 @@
 - ✅ Custom MandaStrong Studio icon
 
 ## Admin Login
-- Email: "admin" or any email containing "admin"
-- Password: any password
+- Email: **woolleya129@gmail.com**
+- Password: your password
 - Auto-assigned: **Studio Plan** (full access)
+- Can upload and manage featured movies
 
 ## Project Info
 - Project: MandaStrong1
