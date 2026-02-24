@@ -33,34 +33,82 @@ export default function App() {
   const [enhancementSettings, setEnhancementSettings] = useState({ intensity: 75, clarity: 75, color: 75, brightness: 75 });
   const [exportSettings, setExportSettings] = useState({ quality: '8K', format: 'MP4' });
   const [communityPosts, setCommunityPosts] = useState([
-    {id:1,title:'Epic Action Movie',user:'Sarah J.',emoji:'🎬',likes:2847,loves:1923,comments:[]},
-    {id:2,title:'Family Vacation',user:'Mike Chen',emoji:'✈️',likes:1256,loves:892,comments:[]},
-    {id:3,title:'First Documentary',user:'Emily R.',emoji:'📹',likes:3421,loves:2156,comments:[]},
-    {id:4,title:'Music Video',user:'Alex T.',emoji:'🎵',likes:5234,loves:4012,comments:[]}
+    {id:1,title:'Epic Action Movie',user:'Sarah J.',emoji:'🎬',likes:2847,loves:1923,views:12543,comments:[]},
+    {id:2,title:'Family Vacation Memories',user:'Mike Chen',emoji:'✈️',likes:1256,loves:892,views:5421,comments:[]},
+    {id:3,title:'First Documentary',user:'Emily R.',emoji:'📹',likes:3421,loves:2156,views:8932,comments:[]},
+    {id:4,title:'Music Video Edit',user:'Alex T.',emoji:'🎵',likes:5234,loves:4012,views:18765,comments:[]},
+    {id:5,title:'Wedding Highlights',user:'Jessica M.',emoji:'💍',likes:4123,loves:3456,views:9876,comments:[]},
+    {id:6,title:'Gaming Montage',user:'Tyler K.',emoji:'🎮',likes:6543,loves:5231,views:23456,comments:[]},
+    {id:7,title:'Product Showcase',user:'David L.',emoji:'📦',likes:987,loves:654,views:3210,comments:[]},
+    {id:8,title:'Travel Adventure',user:'Maya P.',emoji:'🌍',likes:3210,loves:2345,views:11234,comments:[]},
+    {id:9,title:'Cooking Tutorial',user:'Chef Marco',emoji:'👨‍🍳',likes:2134,loves:1876,views:7654,comments:[]},
+    {id:10,title:'Fitness Journey',user:'Amanda R.',emoji:'💪',likes:4567,loves:3421,views:15432,comments:[]},
+    {id:11,title:'Pet Compilation',user:'Luna B.',emoji:'🐕',likes:8765,loves:7654,views:32109,comments:[]},
+    {id:12,title:'Art Time Lapse',user:'Vincent A.',emoji:'🎨',likes:1987,loves:1543,views:6543,comments:[]}
   ]);
   const [newComment, setNewComment] = useState({});
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [isUploading, setIsUploading] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
+  const [processing, setProcessing] = useState(false);
   
   const fileInputRef = useRef(null);
   const videoRef = useRef(null);
 
-  // REAL FILE UPLOAD
+  // REAL FILE UPLOAD WITH PROGRESS
   const handleFileUpload = useCallback((e) => {
     const files = Array.from(e.target.files);
-    files.forEach(file => {
+    setIsUploading(true);
+
+    files.forEach((file, index) => {
+      const fileId = Date.now() + index;
+      setUploadProgress(prev => ({ ...prev, [fileId]: 0 }));
+
       const reader = new FileReader();
+
+      // Simulate upload progress
+      let progress = 0;
+      const progressInterval = setInterval(() => {
+        progress += Math.random() * 30;
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(progressInterval);
+        }
+        setUploadProgress(prev => ({ ...prev, [fileId]: Math.min(progress, 100) }));
+      }, 200);
+
       reader.onload = (event) => {
-        const newAsset = {
-          id: Date.now() + Math.random(),
-          name: file.name,
-          type: file.type.startsWith('video') ? 'video' : file.type.startsWith('audio') ? 'audio' : 'image',
-          size: (file.size / 1024 / 1024).toFixed(2) + 'MB',
-          url: event.target.result,
-          timestamp: new Date().toISOString()
-        };
-        setMediaLibrary(prev => [...prev, newAsset]);
+        setTimeout(() => {
+          const newAsset = {
+            id: fileId,
+            name: file.name,
+            type: file.type.startsWith('video') ? 'video' : file.type.startsWith('audio') ? 'audio' : 'image',
+            size: (file.size / 1024 / 1024).toFixed(2) + 'MB',
+            url: event.target.result,
+            timestamp: new Date().toISOString()
+          };
+          setMediaLibrary(prev => [...prev, newAsset]);
+          setUploadProgress(prev => {
+            const newProgress = { ...prev };
+            delete newProgress[fileId];
+            return newProgress;
+          });
+
+          // Check if all uploads complete
+          setTimeout(() => {
+            setUploadProgress(prev => {
+              if (Object.keys(prev).length === 0) {
+                setIsUploading(false);
+              }
+              return prev;
+            });
+          }, 500);
+        }, 1000);
       };
+
       reader.readAsDataURL(file);
     });
+
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
 
@@ -216,14 +264,53 @@ export default function App() {
       `}</style>
 
       {/* Hidden File Input */}
-      <input 
+      <input
         ref={fileInputRef}
-        type="file" 
-        multiple 
+        type="file"
+        multiple
         accept="video/*,audio/*,image/*"
         onChange={handleFileUpload}
         className="hidden"
       />
+
+      {/* Upload Progress Overlay */}
+      {isUploading && Object.keys(uploadProgress).length > 0 && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-8">
+          <div className="bg-zinc-950 border-4 border-[#7c3aed] rounded-3xl p-8 max-w-2xl w-full">
+            <h2 className="text-3xl font-black text-white mb-6 flex items-center gap-3">
+              <Upload size={32} className="text-[#7c3aed]"/>
+              UPLOADING FILES...
+            </h2>
+            <div className="space-y-4">
+              {Object.entries(uploadProgress).map(([fileId, progress]) => (
+                <div key={fileId} className="bg-black border border-[#7c3aed] rounded-xl p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-white font-bold text-sm">File {fileId.toString().slice(-4)}</span>
+                    <span className="text-[#7c3aed] font-black">{Math.round(progress)}%</span>
+                  </div>
+                  <div className="w-full bg-zinc-800 h-3 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-[#7c3aed] to-[#a78bfa] transition-all duration-300"
+                      style={{width: `${progress}%`}}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Processing Spinner Overlay */}
+      {processing && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-32 h-32 border-8 border-[#7c3aed] border-t-transparent rounded-full animate-spin mb-6"/>
+            <h2 className="text-4xl font-black text-white">PROCESSING...</h2>
+            <p className="text-zinc-400 mt-4">Please wait</p>
+          </div>
+        </div>
+      )}
 
       {/* Menu */}
       {page > 0 && (
@@ -310,13 +397,16 @@ export default function App() {
             {/* Browse as Guest Button at Top */}
             <div className="text-center mb-8">
               <button
-                onClick={() => setPage(20)}
+                onClick={() => {
+                  setIsGuest(true);
+                  setPage(20);
+                }}
                 className="bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] px-12 py-4 rounded-full font-black uppercase text-white text-lg hover:scale-105 transition shadow-2xl border-2 border-[#a78bfa] flex items-center gap-3 mx-auto"
               >
                 <Eye size={24}/>
                 BROWSE COMMUNITY AS GUEST
               </button>
-              <p className="text-zinc-400 text-sm mt-3">Explore movies without signing up</p>
+              <p className="text-zinc-400 text-sm mt-3">Explore movies without signing up (view-only mode)</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
@@ -1099,22 +1189,53 @@ export default function App() {
 
             <div className="bg-zinc-950 border-2 border-[#7c3aed] rounded-3xl p-10 mb-8">
               <h3 className="text-2xl font-bold mb-6 text-white">TERMS OF SERVICE</h3>
-              <div className="space-y-4 text-zinc-300 leading-relaxed">
-                <p><strong>1. Acceptance:</strong> By using MandaStrong Studio, you agree to these terms.</p>
-                <p><strong>2. License:</strong> Limited, non-exclusive license for video creation.</p>
-                <p><strong>3. User Responsibilities:</strong> Account security and content responsibility.</p>
-                <p><strong>4. Content Ownership:</strong> You retain rights to your created content.</p>
-                <p><strong>5. Prohibited Uses:</strong> No illegal content or rights violations.</p>
+              <div className="space-y-4 text-zinc-300 leading-relaxed max-h-96 overflow-y-auto scrollbar pr-4">
+                <p><strong className="text-[#7c3aed]">1. Acceptance of Terms:</strong> By accessing and using MandaStrong Studio, you accept and agree to be bound by these Terms of Service. If you do not agree, please do not use this application.</p>
+
+                <p><strong className="text-[#7c3aed]">2. License Grant:</strong> MandaStrong Studio grants you a limited, non-exclusive, non-transferable, revocable license to use this application for personal or commercial video creation purposes, subject to these terms.</p>
+
+                <p><strong className="text-[#7c3aed]">3. User Account and Security:</strong> You are responsible for maintaining the confidentiality of your account credentials. You must notify us immediately of any unauthorized use of your account.</p>
+
+                <p><strong className="text-[#7c3aed]">4. Content Ownership and Rights:</strong> You retain all ownership rights to content you create using MandaStrong Studio. We do not claim ownership of your videos, projects, or creative works. You grant us a limited license to host and display your content for the purpose of operating the service.</p>
+
+                <p><strong className="text-[#7c3aed]">5. Prohibited Uses:</strong> You agree not to: (a) upload illegal, harmful, or infringing content; (b) violate any intellectual property rights; (c) attempt to hack or compromise the service; (d) use the service for spam or malicious activities; (e) impersonate others or misrepresent your affiliation.</p>
+
+                <p><strong className="text-[#7c3aed]">6. Payment and Subscriptions:</strong> Subscription fees are processed through Stripe. All payments are non-refundable unless otherwise stated. You may cancel your subscription at any time, but no refunds will be issued for partial billing periods.</p>
+
+                <p><strong className="text-[#7c3aed]">7. Service Modifications:</strong> We reserve the right to modify, suspend, or discontinue any part of the service at any time with or without notice.</p>
+
+                <p><strong className="text-[#7c3aed]">8. Termination:</strong> We may terminate or suspend your access immediately, without prior notice, for any breach of these Terms.</p>
+
+                <p><strong className="text-[#7c3aed]">9. Privacy:</strong> Your use of MandaStrong Studio is also governed by our Privacy Policy, which describes how we collect and use your information.</p>
+
+                <p><strong className="text-[#7c3aed]">10. Community Guidelines:</strong> When participating in the Community Hub, you agree to be respectful, constructive, and lawful. Harassment, hate speech, and inappropriate content will result in immediate removal and account termination.</p>
               </div>
             </div>
 
             <div className="bg-zinc-950 border-2 border-[#7c3aed] rounded-3xl p-10 mb-12">
-              <h3 className="text-2xl font-bold mb-6 text-white">DISCLAIMER</h3>
-              <div className="space-y-4 text-zinc-300 leading-relaxed">
-                <p><strong>No Warranty:</strong> Service provided "as is" without guarantees.</p>
-                <p><strong>Limitation of Liability:</strong> Not liable for user-generated content.</p>
-                <p><strong>User Responsibility:</strong> Ensure content complies with laws.</p>
-                <p><strong>Third-Party Services:</strong> Not responsible for external integrations.</p>
+              <h3 className="text-2xl font-bold mb-6 text-white">DISCLAIMER & LIABILITY</h3>
+              <div className="space-y-4 text-zinc-300 leading-relaxed max-h-96 overflow-y-auto scrollbar pr-4">
+                <p><strong className="text-[#7c3aed]">No Warranty:</strong> MandaStrong Studio is provided "AS IS" and "AS AVAILABLE" without warranties of any kind, either express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement.</p>
+
+                <p><strong className="text-[#7c3aed]">Service Availability:</strong> We do not guarantee that the service will be uninterrupted, timely, secure, or error-free. Technical issues, maintenance, and updates may temporarily affect availability.</p>
+
+                <p><strong className="text-[#7c3aed]">Content Accuracy:</strong> AI-generated content is provided for creative purposes. We make no guarantees about the accuracy, quality, or suitability of AI-generated materials.</p>
+
+                <p><strong className="text-[#7c3aed]">User Content Liability:</strong> You are solely responsible for all content you create, upload, or share. We are not liable for any user-generated content and disclaim all responsibility for monitoring or reviewing such content.</p>
+
+                <p><strong className="text-[#7c3aed]">Limitation of Liability:</strong> To the maximum extent permitted by law, MandaStrong Studio, its owners, operators, and affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including but not limited to loss of profits, data, use, or goodwill.</p>
+
+                <p><strong className="text-[#7c3aed]">Third-Party Services:</strong> Our service may integrate with third-party platforms (Stripe, social media, etc.). We are not responsible for the availability, accuracy, or content of these external services.</p>
+
+                <p><strong className="text-[#7c3aed]">Copyright and DMCA:</strong> We respect intellectual property rights. If you believe your copyright has been violated, please contact us with a DMCA notice.</p>
+
+                <p><strong className="text-[#7c3aed]">Indemnification:</strong> You agree to indemnify and hold harmless MandaStrong Studio from any claims, damages, or expenses arising from your use of the service or violation of these terms.</p>
+
+                <p><strong className="text-[#7c3aed]">Charitable Mission:</strong> 100% of proceeds from our Etsy store support Veterans Mental Health Services. Donations are final and non-refundable.</p>
+
+                <p><strong className="text-[#7c3aed]">Governing Law:</strong> These terms shall be governed by and construed in accordance with applicable laws. Any disputes shall be resolved through binding arbitration.</p>
+
+                <p className="text-sm italic text-zinc-400 mt-6">Last Updated: February 24, 2026</p>
               </div>
             </div>
 
@@ -1205,73 +1326,107 @@ export default function App() {
         {/* PAGE 20 - COMMUNITY HUB (WORKING LIKES/COMMENTS) */}
         {page === 20 && (
           <div className="min-h-screen p-8 pt-20 pb-40">
+            {isGuest && (
+              <div className="bg-yellow-600 border-4 border-yellow-400 rounded-2xl p-6 mb-8 max-w-4xl mx-auto">
+                <div className="flex items-center gap-4">
+                  <Eye size={48} className="text-black"/>
+                  <div>
+                    <h3 className="text-2xl font-black text-black mb-2">BROWSING AS GUEST</h3>
+                    <p className="text-black font-bold">You're in view-only mode. Sign up to like, comment, and upload your own movies!</p>
+                    <button
+                      onClick={() => {
+                        setIsGuest(false);
+                        setPage(3);
+                      }}
+                      className="mt-3 bg-black text-yellow-400 px-6 py-2 rounded-lg font-black uppercase text-sm hover:bg-zinc-900 transition"
+                    >
+                      Sign Up Now
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between items-center mb-12">
               <h1 className="text-5xl font-black uppercase text-white">COMMUNITY HUB</h1>
-              <button 
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-[#7c3aed] px-8 py-4 rounded-xl font-bold flex items-center gap-3 hover:bg-[#6d28d9] transition"
+              <button
+                onClick={() => isGuest ? alert('Please sign up to upload movies!') : fileInputRef.current?.click()}
+                className="bg-[#7c3aed] px-8 py-4 rounded-xl font-bold flex items-center gap-3 hover:bg-[#6d28d9] transition disabled:opacity-50"
+                disabled={isGuest}
               >
                 <Upload size={24}/>
                 UPLOAD YOUR MOVIE
               </button>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8 max-w-7xl mx-auto">
+            <div className="grid md:grid-cols-3 gap-6 max-w-7xl mx-auto">
               {communityPosts.map((post) => (
-                <div key={post.id} className="bg-zinc-950 border-2 border-[#7c3aed] rounded-3xl overflow-hidden hover:scale-[1.02] transition">
-                  <div className="aspect-video bg-gradient-to-br from-[#7c3aed]/30 to-[#6d28d9]/30 flex items-center justify-center text-9xl border-b-2 border-[#7c3aed]">
+                <div key={post.id} className="bg-zinc-950 border-2 border-[#7c3aed] rounded-2xl overflow-hidden hover:scale-[1.02] transition group">
+                  <div className="aspect-video bg-gradient-to-br from-[#7c3aed]/30 to-[#6d28d9]/30 flex items-center justify-center text-7xl border-b-2 border-[#7c3aed] relative cursor-pointer group-hover:from-[#7c3aed]/50 group-hover:to-[#6d28d9]/50 transition">
                     {post.emoji}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                      <Play size={64} className="text-white"/>
+                    </div>
                   </div>
-                  <div className="p-8">
-                    <h3 className="text-2xl font-black mb-4 text-white">{post.title}</h3>
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="w-10 h-10 rounded-full bg-[#7c3aed] flex items-center justify-center text-sm font-black">{post.user[0]}</div>
-                      <div>
-                        <div className="font-bold text-white">{post.user}</div>
-                        <div className="text-xs text-zinc-500">2 hours ago</div>
+                  <div className="p-6">
+                    <h3 className="text-lg font-black mb-3 text-white line-clamp-1">{post.title}</h3>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="w-8 h-8 rounded-full bg-[#7c3aed] flex items-center justify-center text-xs font-black">{post.user[0]}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-white text-sm truncate">{post.user}</div>
+                        <div className="text-xs text-zinc-500">{post.views?.toLocaleString()} views</div>
                       </div>
                     </div>
-                    <div className="flex gap-8 mb-6">
-                      <button 
-                        onClick={() => handleLike(post.id)}
-                        className="flex items-center gap-2 text-white font-bold hover:text-blue-400 transition"
+                    <div className="flex gap-4 mb-4 text-sm">
+                      <button
+                        onClick={() => isGuest ? alert('Please sign up to like posts!') : handleLike(post.id)}
+                        disabled={isGuest}
+                        className="flex items-center gap-1.5 text-white font-bold hover:text-blue-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <ThumbsUp className="text-blue-400" size={20}/> {post.likes}
+                        <ThumbsUp className="text-blue-400" size={18}/> {post.likes?.toLocaleString()}
                       </button>
-                      <button 
-                        onClick={() => handleLove(post.id)}
-                        className="flex items-center gap-2 text-white font-bold hover:text-red-400 transition"
+                      <button
+                        onClick={() => isGuest ? alert('Please sign up to love posts!') : handleLove(post.id)}
+                        disabled={isGuest}
+                        className="flex items-center gap-1.5 text-white font-bold hover:text-red-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Heart className="text-red-400" size={20}/> {post.loves}
+                        <Heart className="text-red-400" size={18}/> {post.loves?.toLocaleString()}
                       </button>
+                      <div className="flex items-center gap-1.5 text-zinc-400 font-bold">
+                        <MessageCircle size={18}/> {post.comments?.length || 0}
+                      </div>
                     </div>
                     
                     {post.comments && post.comments.length > 0 && (
-                      <div className="mb-4 space-y-2">
+                      <div className="mb-3 space-y-2 max-h-32 overflow-y-auto scrollbar">
                         {post.comments.map(comment => (
-                          <div key={comment.id} className="bg-black/50 p-3 rounded-lg">
+                          <div key={comment.id} className="bg-black/50 p-2 rounded">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="font-bold text-sm text-[#7c3aed]">{comment.user}</span>
+                              <span className="font-bold text-xs text-[#7c3aed]">{comment.user}</span>
                               <span className="text-xs text-zinc-500">just now</span>
                             </div>
-                            <p className="text-sm text-white">{comment.text}</p>
+                            <p className="text-xs text-white">{comment.text}</p>
                           </div>
                         ))}
                       </div>
                     )}
-                    
-                    <textarea 
-                      value={newComment[post.id] || ''}
-                      onChange={(e) => setNewComment(prev => ({ ...prev, [post.id]: e.target.value }))}
-                      className="w-full p-4 bg-black border-2 border-[#7c3aed] rounded-xl text-white text-sm mb-4 outline-none resize-none" 
-                      placeholder="Add a comment..."
-                    />
-                    <button 
-                      onClick={() => handleComment(post.id)}
-                      className="bg-[#7c3aed] px-8 py-3 rounded-lg font-black uppercase hover:bg-[#6d28d9] transition"
-                    >
-                      POST COMMENT
-                    </button>
+
+                    <div className="border-t border-zinc-800 pt-3">
+                      <textarea
+                        value={newComment[post.id] || ''}
+                        onChange={(e) => setNewComment(prev => ({ ...prev, [post.id]: e.target.value }))}
+                        disabled={isGuest}
+                        className="w-full p-2 bg-black border border-[#7c3aed] rounded text-white text-xs mb-2 outline-none resize-none disabled:opacity-50 h-16"
+                        placeholder={isGuest ? "Sign up to comment..." : "Add a comment..."}
+                      />
+                      <button
+                        onClick={() => isGuest ? alert('Please sign up to comment!') : handleComment(post.id)}
+                        disabled={isGuest}
+                        className="w-full bg-[#7c3aed] px-4 py-2 rounded font-bold uppercase text-xs hover:bg-[#6d28d9] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        POST COMMENT
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -1283,68 +1438,95 @@ export default function App() {
         {page === 21 && (
           <div className="min-h-screen p-8 pt-20 pb-40">
             <div className="max-w-6xl mx-auto">
-              
-              <div className="mb-16">
+
+              <div className="mb-12 relative">
                 <video
                   autoPlay
                   loop
                   muted
                   playsInline
-                  className="w-full rounded-3xl border-4 border-[#7c3aed] shadow-2xl"
+                  className="w-full rounded-3xl border-4 border-[#7c3aed] shadow-2xl bg-black"
                   onError={(e) => {
                     const video = e.currentTarget;
-                    if (video.src.includes('ThatsAllFolks')) {
-                      video.src = '/background.mp4';
-                    }
+                    video.style.display = 'none';
+                    const fallback = video.nextElementSibling;
+                    if (fallback) fallback.style.display = 'flex';
                   }}
                 >
-                  <source src="/ThatsAllFolks.mp4" type="video/mp4"/>
                   <source src="/background.mp4" type="video/mp4"/>
                 </video>
-              </div>
-
-              <h1 className="text-9xl font-black text-[#7c3aed] uppercase text-center mb-16 leading-none">THAT'S ALL FOLKS!</h1>
-
-              <div className="bg-gradient-to-br from-[#7c3aed]/20 to-[#6d28d9]/10 border-4 border-[#7c3aed] rounded-3xl p-12 mb-12">
-                <h2 className="text-4xl font-black mb-8 text-white text-center">A SPECIAL THANK YOU</h2>
-                <div className="text-lg text-white leading-relaxed space-y-6">
-                  <p className="italic font-bold text-[#7c3aed] text-2xl">Dear Creator,</p>
-                  <p>Thank you for choosing MandaStrong Studio. This journey is more than video creation; it's about the <strong>social impact</strong> your stories will have.</p>
-                  <p>Our mission: aid schools in <strong>bullying prevention</strong> and <strong>social skills development</strong>. Your films have the power to educate, inspire, and bring awareness to critical issues.</p>
-                  <p>Thank you for being part of this mission to cultivate humanity in our communities.</p>
+                <div className="hidden w-full aspect-video rounded-3xl border-4 border-[#7c3aed] bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-9xl mb-6">🎬</div>
+                    <h2 className="text-5xl font-black text-white">THAT'S ALL FOLKS!</h2>
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-zinc-950 border-4 border-[#7c3aed] rounded-3xl p-12 text-center mb-12">
-                <BookOpen size={80} className="mx-auto text-[#7c3aed] mb-8"/>
-                <h3 className="text-4xl font-black text-white uppercase mb-6">HOW TO USE GUIDE</h3>
-                <p className="text-zinc-400 font-bold text-xl uppercase mb-8">Complete Instructional Manual</p>
-                <a href="/MandaStrong_User_Guide.pdf" download className="inline-block px-16 py-6 bg-[#7c3aed] text-white rounded-full font-black text-2xl shadow-2xl hover:bg-[#6d28d9] transition">
-                  📥 DOWNLOAD GUIDE
-                </a>
+              <h1 className="text-7xl md:text-9xl font-black text-[#7c3aed] uppercase text-center mb-12 leading-none animate-pulse">THAT'S ALL FOLKS!</h1>
+
+              <div className="bg-gradient-to-br from-[#7c3aed]/20 to-[#6d28d9]/10 border-4 border-[#7c3aed] rounded-3xl p-8 md:p-12 mb-12 shadow-2xl">
+                <div className="text-center mb-8">
+                  <Heart size={64} className="mx-auto text-[#7c3aed] mb-4"/>
+                  <h2 className="text-3xl md:text-4xl font-black text-white">A SPECIAL THANK YOU</h2>
+                </div>
+                <div className="text-base md:text-lg text-white leading-relaxed space-y-6 max-w-4xl mx-auto">
+                  <p className="italic font-bold text-[#7c3aed] text-xl md:text-2xl text-center">Dear Creator,</p>
+                  <p className="text-center">Thank you for choosing <strong className="text-[#7c3aed]">MandaStrong Studio</strong>. This journey is more than just video creation—it's about the <strong className="text-[#7c3aed]">social impact</strong> your stories will have on the world.</p>
+                  <p className="text-center">Our mission is to aid schools in <strong className="text-[#7c3aed]">bullying prevention</strong> and <strong className="text-[#7c3aed]">social skills development</strong>. Your films have the power to educate, inspire, and bring awareness to critical issues affecting our communities.</p>
+                  <p className="text-center">Every movie you create can make a difference. Every story you tell can change a life. Every moment you share can build understanding and empathy.</p>
+                  <p className="text-center font-bold text-[#7c3aed] text-xl">Thank you for being part of this mission to cultivate humanity in our communities.</p>
+                </div>
               </div>
 
-              <div className="bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] rounded-3xl p-12 text-center mb-16">
-                <h3 className="text-4xl font-black mb-6">SUPPORT VETERANS MENTAL HEALTH</h3>
-                <p className="text-2xl mb-8 font-bold">100% of Etsy Proceeds Benefit Veterans Mental Health Services</p>
-                <a href="https://MandaStrong1.Etsy.com" target="_blank" rel="noopener noreferrer" className="inline-block px-16 py-6 bg-white text-[#7c3aed] rounded-full font-black text-2xl shadow-2xl hover:scale-105 transition">
-                  🛍 VISIT ETSY STORE
-                </a>
+              <div className="grid md:grid-cols-2 gap-6 mb-12">
+                <div className="bg-zinc-950 border-4 border-[#7c3aed] rounded-3xl p-8 text-center">
+                  <BookOpen size={64} className="mx-auto text-[#7c3aed] mb-6"/>
+                  <h3 className="text-2xl md:text-3xl font-black text-white uppercase mb-4">HOW TO USE GUIDE</h3>
+                  <p className="text-zinc-400 font-bold text-sm md:text-base uppercase mb-6">Complete Instructional Manual</p>
+                  <button
+                    onClick={() => setPage(17)}
+                    className="inline-block px-8 md:px-12 py-4 bg-[#7c3aed] text-white rounded-full font-black text-lg shadow-2xl hover:bg-[#6d28d9] transition"
+                  >
+                    📚 VIEW TUTORIALS
+                  </button>
+                </div>
+
+                <div className="bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] rounded-3xl p-8 text-center border-4 border-[#a78bfa]">
+                  <Shield size={64} className="mx-auto text-white mb-6"/>
+                  <h3 className="text-2xl md:text-3xl font-black mb-4">VETERANS SUPPORT</h3>
+                  <p className="text-lg md:text-xl mb-6 font-bold">100% of Etsy Proceeds Benefit Veterans Mental Health Services</p>
+                  <a href="https://MandaStrong1.Etsy.com" target="_blank" rel="noopener noreferrer" className="inline-block px-8 md:px-12 py-4 bg-white text-[#7c3aed] rounded-full font-black text-lg shadow-2xl hover:scale-105 transition">
+                    🛍 VISIT ETSY STORE
+                  </a>
+                </div>
               </div>
 
-              <div className="flex gap-8 justify-center mb-12">
-                <button onClick={() => setPage(1)} className="px-20 py-8 bg-white text-black rounded-full font-black uppercase text-3xl hover:scale-105 transition shadow-2xl">
+              <div className="flex flex-col md:flex-row gap-6 justify-center mb-12">
+                <button onClick={() => setPage(1)} className="px-12 md:px-20 py-6 md:py-8 bg-white text-black rounded-full font-black uppercase text-xl md:text-3xl hover:scale-105 transition shadow-2xl flex items-center justify-center gap-3">
                   🏠 HOME
                 </button>
-                <button onClick={() => window.close()} className="px-20 py-8 bg-red-600 text-white rounded-full font-black uppercase text-3xl hover:scale-105 transition shadow-2xl">
-                  ✕ CLOSE APP
+                <button onClick={() => setPage(20)} className="px-12 md:px-20 py-6 md:py-8 bg-[#7c3aed] text-white rounded-full font-black uppercase text-xl md:text-3xl hover:scale-105 transition shadow-2xl flex items-center justify-center gap-3">
+                  👥 COMMUNITY
                 </button>
+              </div>
+
+              <div className="bg-black border-2 border-[#7c3aed] rounded-2xl p-6 text-center mb-8">
+                <p className="text-zinc-400 text-sm mb-4">Created with ❤️ for Veterans, Families, and Creative Minds</p>
+                <div className="flex flex-wrap justify-center gap-4 text-xs text-zinc-500">
+                  <button onClick={() => setPage(18)} className="hover:text-[#7c3aed] transition">Terms of Service</button>
+                  <span>•</span>
+                  <button onClick={() => setPage(19)} className="hover:text-[#7c3aed] transition">Support</button>
+                  <span>•</span>
+                  <a href="https://MandaStrong1.Etsy.com" target="_blank" rel="noopener noreferrer" className="hover:text-[#7c3aed] transition">
+                    MandaStrong1.Etsy.com
+                  </a>
+                </div>
               </div>
 
               <div className="text-center">
-                <a href="https://thatsallfolks.com" target="_blank" rel="noopener noreferrer" className="text-[#7c3aed] text-2xl font-black hover:text-[#a78bfa] transition">
-                  ThatsAllFolks.com
-                </a>
+                <p className="text-[#7c3aed] text-xl md:text-2xl font-black mb-2">MandaStrong Studio © 2025-2026</p>
+                <p className="text-zinc-500 text-sm">Building Communities Through Creative Storytelling</p>
               </div>
             </div>
           </div>
