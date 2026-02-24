@@ -1,0 +1,16 @@
+{
+  "name": "mandastrong-studio",
+  "version": "1.0.0",
+  "deployment": {
+    "url": "https://mandastrong01-mandas-ahja1.bolt.host",
+    "domain": "mandastrong01-mandas-ahja1.bolt.host"
+  },
+  "build": {
+    "command": "npm run build",
+    "output": "dist"
+  },
+  "app": {
+    "name": "MandaStrong Studio",
+    "description": "All In One Make Your Own Longer Movies App"
+  }
+}
