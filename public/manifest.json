@@ -1,7 +1,7 @@
 {
   "name": "MandaStrong Studio",
   "short_name": "MandaStrong",
-  "description": "All In One Make Your Own Longer Movies App - Professional video creation for Veterans, children, and creative minds",
+  "description": "All In One Make Your Own Longer Movies App - Professional video creation platform",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
