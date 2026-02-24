@@ -250,6 +250,15 @@ export default function App() {
         </div>
       )}
 
+      {/* Live on Bolt Badge - Top Right */}
+      {page >= 3 && (
+        <div className="fixed top-6 right-6 z-50 bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] px-6 py-3 rounded-full shadow-2xl border-2 border-[#a78bfa] flex items-center gap-3 animate-pulse">
+          <div className="w-3 h-3 bg-green-400 rounded-full animate-ping absolute"></div>
+          <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+          <span className="text-white font-black text-sm uppercase">Live on Bolt</span>
+        </div>
+      )}
+
       {/* Grok G Button */}
       {page >= 1 && page !== 19 && (
         <button onClick={() => setPage(19)} className="fixed bottom-6 right-6 z-50 bg-[#7c3aed] w-16 h-16 rounded-full flex items-center justify-center text-4xl font-black shadow-2xl hover:scale-110 transition border-2 border-[#a78bfa]">G</button>
@@ -298,6 +307,18 @@ export default function App() {
         {/* PAGE 3 - LOGIN & PRICING */}
         {page === 3 && (
           <div className="p-6 pt-16 pb-40 max-w-7xl mx-auto overflow-y-auto scrollbar">
+            {/* Browse as Guest Button at Top */}
+            <div className="text-center mb-8">
+              <button
+                onClick={() => setPage(20)}
+                className="bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] px-12 py-4 rounded-full font-black uppercase text-white text-lg hover:scale-105 transition shadow-2xl border-2 border-[#a78bfa] flex items-center gap-3 mx-auto"
+              >
+                <Eye size={24}/>
+                BROWSE COMMUNITY AS GUEST
+              </button>
+              <p className="text-zinc-400 text-sm mt-3">Explore movies without signing up</p>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
               <div className="bg-zinc-950 border-2 border-[#7c3aed] p-10 rounded-3xl">
                 <h3 className="text-3xl font-black uppercase mb-6 text-center text-white">Login</h3>
