@@ -1,6 +1,7 @@
 import { Home, ArrowLeft, BookOpen, Play } from 'lucide-react';
 import Footer from '../components/Footer';
 import QuickAccess from '../components/QuickAccess';
+import VideoPlayer from '../components/VideoPlayer';
 
 interface PageProps {
   onNavigate: (page: number) => void;
@@ -12,6 +13,7 @@ const EXTERNAL_URLS = {
 };
 
 const VIDEO_PATH = import.meta.env.VITE_OUTRO_VIDEO_PATH || '/background.mp4';
+const THATSALLFOLKS_VIDEO = '/thatsallfolks.mp4';
 
 export default function Page21({ onNavigate }: PageProps) {
   return (
@@ -22,16 +24,15 @@ export default function Page21({ onNavigate }: PageProps) {
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
         <div className="max-w-6xl w-full text-center">
           <div className="bg-black/30 backdrop-blur-sm rounded-2xl border border-purple-500/30 p-8 mb-8">
-            <div className="aspect-video bg-black rounded-lg overflow-hidden border border-purple-500/30 mb-6">
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-              >
-                <source src={VIDEO_PATH} type="video/mp4" />
-              </video>
+            <div className="mb-8">
+              <VideoPlayer
+                src={THATSALLFOLKS_VIDEO}
+                className="aspect-video w-full border-4 border-purple-500/50 shadow-2xl shadow-purple-500/30"
+                autoPlay={true}
+                loop={true}
+                muted={false}
+                controls={true}
+              />
             </div>
 
             <h1 className="text-6xl md:text-7xl font-black mb-8 tracking-tight text-purple-400">
