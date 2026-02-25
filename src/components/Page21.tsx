@@ -11,7 +11,7 @@ const EXTERNAL_URLS = {
   store: import.meta.env.VITE_ETSY_STORE_URL || 'https://MandaStrong1.Etsy.com',
 };
 
-const VIDEO_PATH = import.meta.env.VITE_OUTRO_VIDEO_PATH || '/static/video/thatsallfolks.mp4';
+const VIDEO_PATH = import.meta.env.VITE_OUTRO_VIDEO_PATH || '/background.mp4';
 
 export default function Page21({ onNavigate }: PageProps) {
   return (

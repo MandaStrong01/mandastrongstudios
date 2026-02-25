@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Menu, Sparkles, MessageCircle, ChevronLeft, ChevronRight, CheckCircle, Play, Upload, Film, Mic, Zap, Shield, Music, Sliders, Database, FileVideo, TrendingUp, BookOpen, Clock, ThumbsUp, Heart, HelpCircle, Plus, Settings, Eye, Layers, X, Download, Save, Wand2, Trash2, Share2, Search, AlertCircle, Loader, Clipboard } from 'lucide-react';
 import PasteImporter from './components/PasteImporter';
+import Page21 from './components/Page21';
 
 // ===================== AI TOOLS DATA =====================
 const AI_TOOLS = {
@@ -1306,52 +1307,7 @@ export default function App() {
         )}
 
         {/* PAGE 21 - THANK YOU */}
-        {page === 21 && (
-          <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
-            <div className="max-w-6xl mx-auto">
-              <div className="mb-16">
-                <video autoPlay loop muted playsInline className="w-full rounded-3xl border-4 border-[#7c3aed] shadow-2xl">
-                  <source src="/ThatsAllFolks.mp4" type="video/mp4"/>
-                </video>
-              </div>
-              <h1 className="text-8xl font-black text-[#7c3aed] uppercase text-center mb-16 leading-none">THAT'S ALL FOLKS!</h1>
-              <div className="bg-gradient-to-br from-[#7c3aed]/20 to-[#6d28d9]/10 border-4 border-[#7c3aed] rounded-3xl p-12 mb-12">
-                <h2 className="text-4xl font-black mb-8 text-white text-center">A SPECIAL THANK YOU</h2>
-                <div className="text-lg text-white leading-relaxed space-y-5">
-                  <p className="italic font-black text-[#7c3aed] text-2xl">Dear Creator,</p>
-                  <p>Thank you for choosing MandaStrong Studio. This journey is more than video creation — it's about the <strong>social impact</strong> your stories will have.</p>
-                  <p>Our mission: aid schools in <strong>bullying prevention</strong> and <strong>social skills development</strong>. Your films have the power to educate, inspire, and bring awareness to critical issues.</p>
-                  <p>Thank you for being part of this mission to cultivate humanity in our communities.</p>
-                </div>
-              </div>
-              <div className="bg-zinc-950 border-4 border-[#7c3aed] rounded-3xl p-12 text-center mb-12">
-                <BookOpen size={72} className="mx-auto text-[#7c3aed] mb-8"/>
-                <h3 className="text-4xl font-black text-white uppercase mb-4">HOW TO USE GUIDE</h3>
-                <p className="text-zinc-400 font-bold text-lg uppercase mb-8">Complete Instructional Manual</p>
-                <button onClick={() => addToast('📥 Guide download starting...', 'info')}
-                  className="px-16 py-5 bg-[#7c3aed] text-white rounded-full font-black text-xl shadow-2xl hover:bg-[#6d28d9] transition">
-                  📥 DOWNLOAD GUIDE
-                </button>
-              </div>
-              <div className="bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] rounded-3xl p-12 text-center mb-16">
-                <h3 className="text-4xl font-black mb-4">SUPPORT VETERANS MENTAL HEALTH</h3>
-                <p className="text-xl mb-8 font-bold">100% of Etsy Proceeds Benefit Veterans Mental Health Services</p>
-                <a href="https://MandaStrong1.Etsy.com" target="_blank" rel="noopener noreferrer"
-                  className="inline-block px-16 py-5 bg-white text-[#7c3aed] rounded-full font-black text-xl shadow-2xl hover:scale-105 transition">
-                  🛍 VISIT ETSY STORE
-                </a>
-              </div>
-              <div className="flex gap-8 justify-center flex-wrap">
-                <button onClick={() => goTo(1)} className="px-16 py-6 bg-white text-black rounded-full font-black uppercase text-2xl hover:scale-105 transition shadow-2xl">
-                  🏠 HOME
-                </button>
-                <button onClick={() => window.close()} className="px-16 py-6 bg-red-600 text-white rounded-full font-black uppercase text-2xl hover:scale-105 transition shadow-2xl">
-                  ✕ CLOSE APP
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {page === 21 && <Page21 onNavigate={goTo} />}
 
       </main>
     </div>
