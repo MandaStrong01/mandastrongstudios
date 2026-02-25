@@ -1,2 +1,0 @@
-background__2_.mp4
-img_1366__1_.png
