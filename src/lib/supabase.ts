@@ -13,11 +13,50 @@ export interface UserProfile {
   id: string;
   email: string;
   full_name: string | null;
-  plan: 'basic' | 'pro' | 'studio' | 'admin';
-  stripe_customer_id: string | null;
-  stripe_subscription_id: string | null;
-  subscription_status: 'active' | 'canceled' | 'past_due' | 'trialing' | 'incomplete';
-  trial_ends_at: string | null;
+  subscription_plan: 'free' | 'basic' | 'pro' | 'studio';
+  subscription_status: 'active' | 'inactive';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Movie {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  video_url: string | null;
+  thumbnail_url: string | null;
+  duration: number;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Comment {
+  id: string;
+  movie_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+}
+
+export interface Reaction {
+  id: string;
+  movie_id: string;
+  user_id: string;
+  reaction_type: 'heart' | 'like';
+  created_at: string;
+}
+
+export interface AdminFeaturedMovie {
+  id: string;
+  movie_id: string | null;
+  admin_id: string;
+  featured_video_url: string | null;
+  title: string;
+  description: string | null;
+  display_order: number;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }

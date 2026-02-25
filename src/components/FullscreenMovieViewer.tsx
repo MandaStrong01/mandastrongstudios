@@ -126,11 +126,11 @@ export default function FullscreenMovieViewer({ onClose, isAdmin = false, userEm
 
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('plan')
+          .select('subscription_plan')
           .eq('id', userId)
           .maybeSingle();
 
-        if (profileData?.plan !== 'admin') {
+        if (profileData?.subscription_plan !== 'studio') {
           alert('Only administrators can upload featured movies');
           setUploading(false);
           return;
