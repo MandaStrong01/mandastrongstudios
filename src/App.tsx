@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Menu, Sparkles, MessageCircle, ChevronLeft, ChevronRight, CheckCircle, Play, Upload, Film, Mic, Zap, Shield, Music, Sliders, Database, FileVideo, TrendingUp, BookOpen, Clock, ThumbsUp, Heart, HelpCircle, Plus, Settings, Eye, Layers, X, Download, Save, Wand2, Trash2, Share2, Search, AlertCircle, Loader, Clipboard } from 'lucide-react';
 import PasteImporter from './components/PasteImporter';
 import Page21 from './components/Page21';
+import VideoRecorder from './components/VideoRecorder';
 
 // ===================== AI TOOLS DATA =====================
 const AI_TOOLS = {
@@ -121,6 +122,7 @@ export default function App() {
   const [savingPreset, setSavingPreset] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null);
   const [showPasteImporter, setShowPasteImporter] = useState(false);
+  const [showVideoRecorder, setShowVideoRecorder] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState('idle');
   const [lastSaved, setLastSaved] = useState(null);
 
@@ -214,6 +216,34 @@ export default function App() {
     }
     setShowPasteImporter(false);
     goTo(12);
+  }, [addToast]);
+
+  const handleRecordingComplete = useCallback((blob, filename) => {
+    const url = URL.createObjectURL(blob);
+    const newAsset = {
+      id: Date.now() + Math.random(),
+      name: filename,
+      type: 'video',
+      size: `${(blob.size / (1024 * 1024)).toFixed(2)} MB`,
+      url: url,
+      timestamp: new Date().toISOString()
+    };
+    setMediaLibrary(prev => [...prev, newAsset]);
+    addToast(`✅ Recording saved: ${filename}`, 'success');
+  }, [addToast]);
+
+  const handleUploadToLibrary = useCallback((file) => {
+    const url = URL.createObjectURL(file);
+    const newAsset = {
+      id: Date.now() + Math.random(),
+      name: file.name,
+      type: 'video',
+      size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
+      url: url,
+      timestamp: new Date().toISOString()
+    };
+    setMediaLibrary(prev => [...prev, newAsset]);
+    addToast(`✅ Uploaded to Media Library: ${file.name}`, 'success');
   }, [addToast]);
 
   // ---- AUTO-SAVE ----
@@ -474,6 +504,26 @@ export default function App() {
           onImport={handlePasteImport}
           onClose={() => setShowPasteImporter(false)}
         />
+      )}
+
+      {/* VIDEO RECORDER */}
+      {showVideoRecorder && (
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-6 overflow-y-auto">
+          <div className="max-w-5xl w-full my-8">
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={() => setShowVideoRecorder(false)}
+                className="bg-zinc-800 hover:bg-zinc-700 text-white p-3 rounded-xl transition"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            <VideoRecorder
+              onRecordingComplete={handleRecordingComplete}
+              onUploadToLibrary={handleUploadToLibrary}
+            />
+          </div>
+        </div>
       )}
 
       {/* UPLOAD PROGRESS */}
@@ -790,11 +840,11 @@ export default function App() {
 
         {/* PAGE 10 - UPLOAD MEDIA */}
         {page === 10 && (
-          <div className="h-screen flex items-center justify-center p-8 fade-up">
-            <div className="text-center max-w-3xl w-full">
+          <div className="h-screen flex items-center justify-center p-8 fade-up overflow-y-auto">
+            <div className="text-center max-w-5xl w-full">
               <h1 className="text-6xl font-black uppercase text-[#7c3aed] mb-4">UPLOAD MEDIA</h1>
               <p className="text-zinc-400 mb-8 font-bold">{mediaLibrary.length} assets in your library</p>
-              <div className="grid grid-cols-2 gap-4 mb-8">
+              <div className="grid grid-cols-3 gap-4 mb-8">
                 <div onClick={() => fileInputRef.current?.click()}
                   className="aspect-video bg-zinc-950 rounded-3xl border-4 border-dashed border-[#7c3aed] flex flex-col items-center justify-center cursor-pointer hover:bg-[#7c3aed]/10 transition group">
                   <Upload size={60} className="text-[#7c3aed] mb-3 group-hover:scale-110 transition"/>
@@ -806,6 +856,12 @@ export default function App() {
                   <Clipboard size={60} className="text-[#7c3aed] mb-3 group-hover:scale-110 transition"/>
                   <p className="text-xl font-bold text-white">Paste Content</p>
                   <p className="text-zinc-400 mt-1 text-xs">URLs • Scripts • Text</p>
+                </div>
+                <div onClick={() => setShowVideoRecorder(true)}
+                  className="aspect-video bg-zinc-950 rounded-3xl border-4 border-dashed border-red-500 flex flex-col items-center justify-center cursor-pointer hover:bg-red-500/10 transition group">
+                  <Film size={60} className="text-red-500 mb-3 group-hover:scale-110 transition"/>
+                  <p className="text-xl font-bold text-white">Record Video</p>
+                  <p className="text-zinc-400 mt-1 text-xs">Camera • Screen • Audio</p>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
