@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Menu, Sparkles, MessageCircle, ChevronLeft, ChevronRight, CheckCircle, Play, Upload, Film, Mic, Zap, Shield, Music, Sliders, Database, FileVideo, TrendingUp, BookOpen, Clock, ThumbsUp, Heart, HelpCircle, Plus, Settings, Eye, Layers, X, Download, Save, Wand2, Trash2, Share2, Search, AlertCircle, Loader, Clipboard } from 'lucide-react';
 import PasteImporter from './components/PasteImporter';
 
@@ -120,8 +120,11 @@ export default function App() {
   const [savingPreset, setSavingPreset] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null);
   const [showPasteImporter, setShowPasteImporter] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState('idle');
+  const [lastSaved, setLastSaved] = useState(null);
 
   const fileInputRef = useRef(null);
+  const autoSaveTimerRef = useRef(null);
 
   // ---- TOAST HELPERS ----
   const addToast = useCallback((msg, type = 'info') => {
@@ -211,6 +214,69 @@ export default function App() {
     setShowPasteImporter(false);
     goTo(12);
   }, [addToast]);
+
+  // ---- AUTO-SAVE ----
+  const saveProject = useCallback(() => {
+    const projectData = {
+      mediaLibrary,
+      timeline,
+      audioLevels,
+      enhancementSettings,
+      exportSettings,
+      duration,
+      timestamp: new Date().toISOString()
+    };
+
+    try {
+      localStorage.setItem('mandastrong_autosave', JSON.stringify(projectData));
+      setAutoSaveStatus('saved');
+      setLastSaved(new Date());
+      setTimeout(() => setAutoSaveStatus('idle'), 2000);
+      return true;
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+      setAutoSaveStatus('error');
+      setTimeout(() => setAutoSaveStatus('idle'), 3000);
+      return false;
+    }
+  }, [mediaLibrary, timeline, audioLevels, enhancementSettings, exportSettings, duration]);
+
+  useEffect(() => {
+    const savedData = localStorage.getItem('mandastrong_autosave');
+    if (savedData) {
+      try {
+        const data = JSON.parse(savedData);
+        setMediaLibrary(data.mediaLibrary || []);
+        setTimeline(data.timeline || { video: [], audio: [], text: [] });
+        setAudioLevels(data.audioLevels || { music: 75, voice: 50, sfx: 65, master: 80 });
+        setEnhancementSettings(data.enhancementSettings || { intensity: 75, clarity: 75, color: 75, brightness: 75 });
+        setExportSettings(data.exportSettings || { quality: '8K', format: 'MP4' });
+        setDuration(data.duration || 90);
+        setLastSaved(new Date(data.timestamp));
+      } catch (error) {
+        console.error('Failed to load saved project:', error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (page >= 4 && (mediaLibrary.length > 0 || timeline.video.length > 0 || timeline.audio.length > 0 || timeline.text.length > 0)) {
+      if (autoSaveTimerRef.current) {
+        clearInterval(autoSaveTimerRef.current);
+      }
+
+      autoSaveTimerRef.current = setInterval(() => {
+        setAutoSaveStatus('saving');
+        saveProject();
+      }, 10000);
+
+      return () => {
+        if (autoSaveTimerRef.current) {
+          clearInterval(autoSaveTimerRef.current);
+        }
+      };
+    }
+  }, [page, mediaLibrary, timeline, saveProject]);
 
   // ---- AI GENERATE ----
   const handleAIGenerate = useCallback(() => {
@@ -434,6 +500,45 @@ export default function App() {
           label="Enhancing"
           subLabel={`Applying "${selectedEnhancement}"...`}
         />
+      )}
+
+      {/* AUTO-SAVE INDICATOR */}
+      {page >= 4 && (
+        <div className="fixed top-6 right-6 z-50">
+          <div className={`bg-zinc-950 border-2 px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 transition-all ${
+            autoSaveStatus === 'saving' ? 'border-yellow-500' :
+            autoSaveStatus === 'saved' ? 'border-green-500' :
+            autoSaveStatus === 'error' ? 'border-red-500' :
+            'border-[#7c3aed]/50'
+          }`}>
+            {autoSaveStatus === 'saving' && (
+              <>
+                <Loader size={16} className="text-yellow-500 animate-spin"/>
+                <span className="text-xs font-bold text-yellow-500">SAVING...</span>
+              </>
+            )}
+            {autoSaveStatus === 'saved' && (
+              <>
+                <CheckCircle size={16} className="text-green-500"/>
+                <span className="text-xs font-bold text-green-500">SAVED</span>
+              </>
+            )}
+            {autoSaveStatus === 'error' && (
+              <>
+                <AlertCircle size={16} className="text-red-500"/>
+                <span className="text-xs font-bold text-red-500">SAVE ERROR</span>
+              </>
+            )}
+            {autoSaveStatus === 'idle' && lastSaved && (
+              <>
+                <Clock size={16} className="text-zinc-500"/>
+                <span className="text-xs font-bold text-zinc-400">
+                  {Math.floor((new Date() - lastSaved) / 1000)}s ago
+                </span>
+              </>
+            )}
+          </div>
+        </div>
       )}
 
       {/* HAMBURGER MENU */}
