@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
-import { Menu, Sparkles, MessageCircle, ChevronLeft, ChevronRight, CheckCircle, Play, Upload, Film, Mic, Zap, Shield, Music, Sliders, Database, FileVideo, TrendingUp, BookOpen, Clock, ThumbsUp, Heart, HelpCircle, Plus, Settings, Eye, Layers, X, Download, Save, Wand2, Trash2, Share2, Search, AlertCircle, Loader } from 'lucide-react';
+import { Menu, Sparkles, MessageCircle, ChevronLeft, ChevronRight, CheckCircle, Play, Upload, Film, Mic, Zap, Shield, Music, Sliders, Database, FileVideo, TrendingUp, BookOpen, Clock, ThumbsUp, Heart, HelpCircle, Plus, Settings, Eye, Layers, X, Download, Save, Wand2, Trash2, Share2, Search, AlertCircle, Loader, Clipboard } from 'lucide-react';
+import PasteImporter from './components/PasteImporter';
 
 // ===================== AI TOOLS DATA =====================
 const AI_TOOLS = {
@@ -118,6 +119,7 @@ export default function App() {
   const [applyingEnhancement, setApplyingEnhancement] = useState(false);
   const [savingPreset, setSavingPreset] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null);
+  const [showPasteImporter, setShowPasteImporter] = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -175,6 +177,39 @@ export default function App() {
       reader.readAsDataURL(file);
     });
     if (fileInputRef.current) fileInputRef.current.value = '';
+  }, [addToast]);
+
+  // ---- PASTE IMPORT ----
+  const handlePasteImport = useCallback((content) => {
+    addToast(`Importing ${content.type} content: "${content.name}"`, 'info');
+    if (content.type === 'url') {
+      const urls = content.data.match(/(https?:\/\/[^\s]+)/g) || [];
+      urls.forEach((url, idx) => {
+        const newAsset = {
+          id: Date.now() + Math.random() + idx,
+          name: `Imported Video ${idx + 1}`,
+          type: 'video',
+          size: 'URL',
+          url: url,
+          timestamp: new Date().toISOString()
+        };
+        setMediaLibrary(prev => [...prev, newAsset]);
+      });
+      addToast(`✅ Imported ${urls.length} video URL(s) to Media Library!`, 'success');
+    } else if (content.type === 'script' || content.type === 'text') {
+      const newAsset = {
+        id: Date.now() + Math.random(),
+        name: content.name,
+        type: 'text',
+        size: `${content.data.length} chars`,
+        url: content.data,
+        timestamp: new Date().toISOString()
+      };
+      setMediaLibrary(prev => [...prev, newAsset]);
+      addToast(`✅ "${content.name}" imported to Media Library!`, 'success');
+    }
+    setShowPasteImporter(false);
+    goTo(12);
   }, [addToast]);
 
   // ---- AI GENERATE ----
@@ -366,6 +401,14 @@ export default function App() {
         onCancel={() => setModal(null)}
       />
 
+      {/* PASTE IMPORTER */}
+      {showPasteImporter && (
+        <PasteImporter
+          onImport={handlePasteImport}
+          onClose={() => setShowPasteImporter(false)}
+        />
+      )}
+
       {/* UPLOAD PROGRESS */}
       {uploadProgress !== null && (
         <ProgressOverlay
@@ -512,15 +555,17 @@ export default function App() {
             <p className="text-2xl md:text-4xl font-bold text-[#7c3aed] italic uppercase max-w-5xl leading-tight">
               WELCOME! MAKE AWESOME FAMILY MOVIES<br/>OR TURN YOUR DREAMS INTO REALITY. ENJOY!
             </p>
-            <button onClick={() => goTo(3)} className="mt-14 bg-white text-[#7c3aed] px-16 py-5 rounded-full font-black uppercase text-xl hover:scale-105 transition shadow-2xl">
-              GET STARTED →
-            </button>
           </div>
         )}
 
         {/* PAGE 3 - LOGIN & PRICING */}
         {page === 3 && (
           <div className="p-6 pt-16 pb-40 max-w-7xl mx-auto overflow-y-auto scrollbar fade-up">
+            <div className="text-center mb-12">
+              <button onClick={() => goTo(4)} className="bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] text-white px-12 py-4 rounded-full font-black uppercase text-lg hover:scale-105 transition shadow-2xl border-2 border-[#a78bfa]">
+                Browse First - Explore Tools
+              </button>
+            </div>
             <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
               <div className="bg-zinc-950 border-2 border-[#7c3aed] p-10 rounded-3xl">
                 <h3 className="text-3xl font-black uppercase mb-6 text-center text-white">Login</h3>
@@ -643,11 +688,19 @@ export default function App() {
             <div className="text-center max-w-3xl w-full">
               <h1 className="text-6xl font-black uppercase text-[#7c3aed] mb-4">UPLOAD MEDIA</h1>
               <p className="text-zinc-400 mb-8 font-bold">{mediaLibrary.length} assets in your library</p>
-              <div onClick={() => fileInputRef.current?.click()}
-                className="aspect-video bg-zinc-950 rounded-3xl border-4 border-dashed border-[#7c3aed] mb-8 flex flex-col items-center justify-center cursor-pointer hover:bg-[#7c3aed]/10 transition group">
-                <Upload size={80} className="text-[#7c3aed] mb-4 group-hover:scale-110 transition"/>
-                <p className="text-2xl font-bold text-white">Click to Browse Files</p>
-                <p className="text-zinc-400 mt-2 text-sm">Video • Audio • Images</p>
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                <div onClick={() => fileInputRef.current?.click()}
+                  className="aspect-video bg-zinc-950 rounded-3xl border-4 border-dashed border-[#7c3aed] flex flex-col items-center justify-center cursor-pointer hover:bg-[#7c3aed]/10 transition group">
+                  <Upload size={60} className="text-[#7c3aed] mb-3 group-hover:scale-110 transition"/>
+                  <p className="text-xl font-bold text-white">Browse Files</p>
+                  <p className="text-zinc-400 mt-1 text-xs">Video • Audio • Images</p>
+                </div>
+                <div onClick={() => setShowPasteImporter(true)}
+                  className="aspect-video bg-zinc-950 rounded-3xl border-4 border-dashed border-[#7c3aed] flex flex-col items-center justify-center cursor-pointer hover:bg-[#7c3aed]/10 transition group">
+                  <Clipboard size={60} className="text-[#7c3aed] mb-3 group-hover:scale-110 transition"/>
+                  <p className="text-xl font-bold text-white">Paste Content</p>
+                  <p className="text-zinc-400 mt-1 text-xs">URLs • Scripts • Text</p>
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 {[{ icon: FileVideo, label: 'Videos', formats: 'MP4, MOV, AVI' }, { icon: Music, label: 'Audio', formats: 'MP3, WAV, AAC' }, { icon: Eye, label: 'Images', formats: 'JPG, PNG, GIF' }].map(({ icon: Icon, label, formats }) => (
