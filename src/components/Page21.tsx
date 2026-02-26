@@ -83,16 +83,7 @@ export default function Page21({ onNavigate }: PageProps) {
                   address these critical issues. Our goal is to create safe, supportive environments where every student can thrive.
                   We hope to share a global humanity message that resonates with communities worldwide.
                 </p>
-                <div className="bg-purple-900/40 rounded-xl p-6 border border-purple-400/30 mt-6">
-                  <p className="text-xl font-semibold text-purple-200 mb-3 text-center">Supporting Our Heroes</p>
-                  <p className="text-lg text-center">
-                    <span className="font-bold text-white">All Etsy Store Proceeds Benefit Veterans Mental Health Services</span>
-                    {' '}~ All proceeds from our Etsy Store fundraiser
-                    are donated directly to <span className="font-bold text-purple-200">Veterans Mental Health Services</span>,
-                    supporting those who have sacrificed so much for our freedom.
-                  </p>
-                </div>
-                <p className="text-lg text-center mt-6">
+                <p className="text-xl text-center mt-8 font-semibold">
                   Visit our fundraiser and learn more at{' '}
                   <a
                     href={EXTERNAL_URLS.store}
