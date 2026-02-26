@@ -67,24 +67,40 @@ function ConfirmModal({ modal, onConfirm, onCancel }) {
 
 // ===================== PROGRESS OVERLAY =====================
 function ProgressOverlay({ progress, label, subLabel }) {
+  const isComplete = progress >= 100;
+
   return (
-    <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center">
+    <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center">
       <div className="text-center max-w-xl w-full px-8">
         <div className="w-40 h-40 rounded-full bg-[#7c3aed]/20 flex items-center justify-center mx-auto mb-10 relative">
-          <div className="absolute inset-0 rounded-full border-8 border-[#7c3aed] border-t-transparent animate-spin"/>
-          <Sparkles size={60} className="text-[#7c3aed]"/>
+          {!isComplete && (
+            <div className="absolute inset-0 rounded-full border-8 border-[#7c3aed] border-t-transparent animate-spin"/>
+          )}
+          {isComplete ? (
+            <CheckCircle size={60} className="text-green-500 animate-pulse"/>
+          ) : (
+            <Sparkles size={60} className="text-[#7c3aed] animate-pulse"/>
+          )}
         </div>
         <h2 className="text-5xl font-black text-white uppercase mb-2">{label}</h2>
-        <p className="text-zinc-400 mb-8 font-bold">{subLabel}</p>
-        <div className="w-full bg-zinc-800 h-5 rounded-full overflow-hidden mb-4">
+        <p className="text-zinc-400 mb-8 font-bold text-lg">{subLabel}</p>
+        <div className="w-full bg-zinc-800 h-6 rounded-full overflow-hidden mb-4 border-2 border-zinc-700">
           <div
-            className="h-full bg-gradient-to-r from-[#7c3aed] to-[#a78bfa] rounded-full transition-all duration-300"
+            className={`h-full rounded-full transition-all duration-300 ${
+              isComplete
+                ? 'bg-gradient-to-r from-green-500 to-emerald-500'
+                : 'bg-gradient-to-r from-[#7c3aed] to-[#a78bfa]'
+            }`}
             style={{ width: `${progress}%` }}
           />
         </div>
-        <div className="flex justify-between text-sm text-zinc-500 font-bold">
-          <span>Processing...</span>
-          <span className="text-[#7c3aed] text-2xl font-black">{progress}%</span>
+        <div className="flex justify-between items-center text-sm text-zinc-400 font-bold">
+          <span className="text-base">
+            {isComplete ? '✅ Complete!' : '⚙️ Processing...'}
+          </span>
+          <span className={`text-3xl font-black ${isComplete ? 'text-green-500' : 'text-[#7c3aed]'}`}>
+            {progress}%
+          </span>
         </div>
       </div>
     </div>
@@ -386,6 +402,12 @@ export default function App() {
 
   // ---- RENDER ----
   const handleRender = useCallback(() => {
+    // Check if there's anything to render
+    if (timeline.video.length === 0 && timeline.audio.length === 0 && timeline.text.length === 0) {
+      addToast('❌ Nothing to render! Add clips to your timeline first.', 'error');
+      return;
+    }
+
     setModal({
       title: 'Start Final Render?',
       body: `This will render your ${duration}-minute ${exportSettings.quality} ${exportSettings.format} movie. This may take a moment.`,
@@ -394,39 +416,56 @@ export default function App() {
         setModal(null);
         setRendering(true);
         setRenderProgress(0);
-        addToast('🎬 Render started! Sit tight...', 'info');
-        const interval = setInterval(() => {
-          setRenderProgress(prev => {
-            if (prev >= 100) {
-              clearInterval(interval);
-              setTimeout(() => {
-                const renderedVideo = {
-                  id: Date.now(),
-                  name: `final-render-${Date.now()}.${exportSettings.format.toLowerCase()}`,
-                  type: 'video',
-                  size: (Math.random() * 1000 + 500).toFixed(2) + 'MB',
-                  url: `data:video/${exportSettings.format.toLowerCase()};base64,RENDERED`,
-                  rendered: true,
-                  quality: exportSettings.quality,
-                  format: exportSettings.format,
-                  duration: duration,
-                  timestamp: new Date().toISOString()
-                };
-                setMediaLibrary(prev => [...prev, renderedVideo]);
-                setCurrentVideo(renderedVideo);
-                setRendering(false);
-                setRenderProgress(0);
-                addToast('✅ Render complete! Your movie is ready.', 'success');
-                setPage(16);
-              }, 600);
-              return 100;
-            }
-            return prev + 4;
-          });
-        }, 120);
+        addToast('🎬 Render started! Processing your timeline...', 'info');
+
+        try {
+          const interval = setInterval(() => {
+            setRenderProgress(prev => {
+              if (prev >= 100) {
+                clearInterval(interval);
+                setTimeout(() => {
+                  try {
+                    const renderedVideo = {
+                      id: Date.now(),
+                      name: `final-render-${Date.now()}.${exportSettings.format.toLowerCase()}`,
+                      type: 'video',
+                      size: (Math.random() * 1000 + 500).toFixed(2) + 'MB',
+                      url: `data:video/${exportSettings.format.toLowerCase()};base64,RENDERED`,
+                      rendered: true,
+                      quality: exportSettings.quality,
+                      format: exportSettings.format,
+                      duration: duration,
+                      timestamp: new Date().toISOString()
+                    };
+                    setMediaLibrary(prev => [...prev, renderedVideo]);
+                    setCurrentVideo(renderedVideo);
+                    setRendering(false);
+                    setRenderProgress(0);
+                    addToast('✅ SUCCESS! Your movie is ready to watch!', 'success');
+                    setTimeout(() => {
+                      setPage(16);
+                    }, 1000);
+                  } catch (error) {
+                    console.error('Render completion error:', error);
+                    setRendering(false);
+                    setRenderProgress(0);
+                    addToast('❌ FAILED: Could not finalize render. Please try again.', 'error');
+                  }
+                }, 600);
+                return 100;
+              }
+              return prev + 4;
+            });
+          }, 120);
+        } catch (error) {
+          console.error('Render start error:', error);
+          setRendering(false);
+          setRenderProgress(0);
+          addToast('❌ FAILED: Could not start render. Please try again.', 'error');
+        }
       }
     });
-  }, [duration, exportSettings, addToast]);
+  }, [duration, exportSettings, addToast, timeline]);
 
   // ---- DOWNLOAD ----
   const handleDownload = useCallback((asset) => {
@@ -1079,10 +1118,7 @@ export default function App() {
                 </div>
 
                 <button
-                  onClick={() => {
-                    addToast('🎬 Rendering started!', 'success');
-                    setTimeout(() => goTo(16), 2000);
-                  }}
+                  onClick={handleRender}
                   className="w-full bg-gradient-to-r from-green-600 to-[#7c3aed] py-6 rounded-2xl font-black uppercase text-2xl hover:from-green-700 hover:to-[#6d28d9] transition flex items-center justify-center gap-3">
                   <Zap size={28}/> START RENDER
                 </button>
