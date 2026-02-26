@@ -4,6 +4,7 @@ import PasteImporter from './components/PasteImporter';
 import Page21 from './components/Page21';
 import FullScreenViewer from './components/FullScreenViewer';
 import DaVinciTimeline from './components/DaVinciTimeline';
+import TimelineEditor from './components/TimelineEditor';
 
 // ===================== AI TOOLS DATA =====================
 const AI_TOOLS = {
@@ -934,10 +935,10 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 12 - DAVINCI TIMELINE */}
+        {/* PAGE 12 - TIMELINE EDITOR WITH MEDIA LIBRARY */}
         {page === 12 && (
           <div className="h-screen pt-20 pb-16 fade-up">
-            <DaVinciTimeline />
+            <TimelineEditor mediaLibrary={mediaLibrary} />
           </div>
         )}
 
