@@ -49,6 +49,7 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
   const [previewVideo, setPreviewVideo] = useState<string | null>(null);
   const [isRendering, setIsRendering] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string>('');
+  const [showAddTrackModal, setShowAddTrackModal] = useState(false);
 
   const totalDuration = 120;
   const pixelsPerSecond = 10 * zoom;
@@ -182,6 +183,23 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
       setTimeout(() => setStatusMessage(''), 3000);
       if (onRender) onRender();
     }, 3000);
+  };
+
+  const addTrack = (type: 'video' | 'audio' | 'text', name: string) => {
+    const trackCount = tracks.filter(t => t.type === type).length + 1;
+    const defaultName = name || `${type.charAt(0).toUpperCase() + type.slice(1)} Track ${trackCount}`;
+
+    const newTrack: TimelineTrack = {
+      id: `${type}-${Date.now()}`,
+      type,
+      name: defaultName,
+      items: []
+    };
+
+    setTracks([...tracks, newTrack]);
+    setStatusMessage(`Added ${defaultName}`);
+    setTimeout(() => setStatusMessage(''), 3000);
+    setShowAddTrackModal(false);
   };
 
   return (
@@ -352,9 +370,21 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
               {tracks.map((track) => (
                 <div key={track.id} className="mb-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-36 px-3 py-2 bg-gradient-to-r ${getTrackColor(track.type)} rounded-lg flex items-center gap-2`}>
-                      {getTrackIcon(track.type)}
-                      <span className="text-white text-sm font-semibold truncate">{track.name}</span>
+                    <div className={`w-36 px-3 py-2 bg-gradient-to-r ${getTrackColor(track.type)} rounded-lg flex items-center gap-2 justify-between`}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        {getTrackIcon(track.type)}
+                        <span className="text-white text-sm font-semibold truncate">{track.name}</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setTracks(tracks.filter(t => t.id !== track.id));
+                          setStatusMessage(`Removed ${track.name}`);
+                          setTimeout(() => setStatusMessage(''), 3000);
+                        }}
+                        className="text-white/70 hover:text-red-400 transition flex-shrink-0"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
 
                     <div
@@ -408,6 +438,14 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
                   </div>
                 </div>
               ))}
+
+              <button
+                onClick={() => setShowAddTrackModal(true)}
+                className="flex items-center gap-2 px-4 py-3 bg-slate-800/50 hover:bg-slate-700/50 border-2 border-dashed border-slate-600 hover:border-blue-500/50 rounded-lg transition text-slate-400 hover:text-white w-full justify-center group"
+              >
+                <Plus size={20} className="group-hover:scale-110 transition-transform" />
+                <span className="font-semibold">Add Track</span>
+              </button>
             </div>
           </div>
         </div>
@@ -427,6 +465,72 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
               title="Timeline Preview"
               onClose={() => setPreviewVideo(null)}
             />
+          </div>
+        </div>
+      )}
+
+      {showAddTrackModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-8">
+          <div className="bg-slate-900 rounded-2xl border border-white/10 p-6 w-full max-w-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-white">Add Track</h3>
+              <button
+                onClick={() => setShowAddTrackModal(false)}
+                className="text-slate-400 hover:text-white transition"
+              >
+                <Trash2 size={20} />
+              </button>
+            </div>
+
+            <p className="text-slate-400 text-sm mb-6">Select a track type to add to your timeline</p>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => addTrack('video', '')}
+                className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-blue-600/20 to-blue-500/20 border border-blue-500/30 hover:border-blue-400 rounded-xl transition group"
+              >
+                <div className="p-3 bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg group-hover:scale-110 transition-transform">
+                  <Film size={24} />
+                </div>
+                <div className="text-left">
+                  <p className="text-white font-semibold text-lg">Video Track</p>
+                  <p className="text-blue-200 text-sm">Add a new video track for clips</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => addTrack('audio', '')}
+                className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-green-600/20 to-green-500/20 border border-green-500/30 hover:border-green-400 rounded-xl transition group"
+              >
+                <div className="p-3 bg-gradient-to-r from-green-600 to-green-500 rounded-lg group-hover:scale-110 transition-transform">
+                  <Music size={24} />
+                </div>
+                <div className="text-left">
+                  <p className="text-white font-semibold text-lg">Audio Track</p>
+                  <p className="text-green-200 text-sm">Add a new audio track for sound</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => addTrack('text', '')}
+                className="w-full flex items-center gap-4 p-4 bg-gradient-to-r from-purple-600/20 to-purple-500/20 border border-purple-500/30 hover:border-purple-400 rounded-xl transition group"
+              >
+                <div className="p-3 bg-gradient-to-r from-purple-600 to-purple-500 rounded-lg group-hover:scale-110 transition-transform">
+                  <Type size={24} />
+                </div>
+                <div className="text-left">
+                  <p className="text-white font-semibold text-lg">Text Track</p>
+                  <p className="text-purple-200 text-sm">Add a new text track for titles</p>
+                </div>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowAddTrackModal(false)}
+              className="w-full mt-6 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition font-semibold"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
