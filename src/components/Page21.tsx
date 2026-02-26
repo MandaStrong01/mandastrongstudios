@@ -78,15 +78,16 @@ export default function Page21({ onNavigate }: PageProps) {
                   regarding bullying prevention, social skills development, and the cultivation of humanity in our communities.
                 </p>
                 <p className="text-lg">
-                  <span className="font-semibold text-purple-300">Fundraiser: Educational Program on Bullying Prevention & Social Skills</span>
+                  <span className="font-semibold text-purple-300">Fundraising Campaign: Educational Program on Bullying Prevention & Social Skills</span>
                   {' '}~ Through this comprehensive program, we provide educational resources and movie-based content to help schools
                   address these critical issues. Our goal is to create safe, supportive environments where every student can thrive.
+                  We hope to share a global humanity message that resonates with communities worldwide.
                 </p>
                 <div className="bg-purple-900/40 rounded-xl p-6 border border-purple-400/30 mt-6">
                   <p className="text-xl font-semibold text-purple-200 mb-3 text-center">Supporting Our Heroes</p>
                   <p className="text-lg text-center">
                     <span className="font-bold text-white">All Etsy Store Proceeds Benefit Veterans Mental Health Services</span>
-                    {' '}~ 100% of all proceeds from our Etsy Store fundraiser
+                    {' '}~ All proceeds from our Etsy Store fundraiser
                     are donated directly to <span className="font-bold text-purple-200">Veterans Mental Health Services</span>,
                     supporting those who have sacrificed so much for our freedom.
                   </p>
@@ -102,6 +103,11 @@ export default function Page21({ onNavigate }: PageProps) {
                     MandaStrong1.Etsy.com
                   </a>
                 </p>
+                <div className="mt-8 pt-6 border-t border-purple-500/30 text-right">
+                  <p className="text-purple-300 italic text-lg">
+                    ~ MandaStrong
+                  </p>
+                </div>
               </div>
             </div>
 

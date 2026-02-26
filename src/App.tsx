@@ -2,7 +2,8 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Menu, Sparkles, MessageCircle, ChevronLeft, ChevronRight, CheckCircle, Play, Upload, Film, Mic, Zap, Shield, Music, Sliders, Database, FileVideo, TrendingUp, BookOpen, Clock, ThumbsUp, Heart, HelpCircle, Plus, Settings, Eye, Layers, X, Download, Save, Wand2, Trash2, Share2, Search, AlertCircle, Loader, Clipboard } from 'lucide-react';
 import PasteImporter from './components/PasteImporter';
 import Page21 from './components/Page21';
-import VideoRecorder from './components/VideoRecorder';
+import FullScreenViewer from './components/FullScreenViewer';
+import DaVinciTimeline from './components/DaVinciTimeline';
 
 // ===================== AI TOOLS DATA =====================
 const AI_TOOLS = {
@@ -610,6 +611,7 @@ export default function App() {
                 {[
                   { label: '🏠 Home', p: 1 },
                   { label: '🔐 Login / Pricing', p: 3 },
+                  { label: '💳 My Subscription', p: 23 },
                   { label: '✍️ Writing Tools', p: 4 },
                   { label: '🎙 Voice Tools', p: 5 },
                   { label: '🖼 Image Tools', p: 6 },
@@ -618,16 +620,17 @@ export default function App() {
                   { label: '✨ Enhancement Tools', p: 9 },
                   { label: '📂 Upload Media', p: 10 },
                   { label: '🎛 Editor Suite', p: 11 },
-                  { label: '🗂 Media Library', p: 12 },
+                  { label: '🗂 Timeline Editor', p: 12 },
                   { label: '💎 Enhancements', p: 13 },
                   { label: '🔊 Audio Mixer', p: 14 },
-                  { label: '👁 Final Preview', p: 15 },
-                  { label: '⬇️ Export', p: 16 },
-                  { label: '🎓 Tutorials', p: 17 },
-                  { label: '📋 Terms', p: 18 },
-                  { label: '🤖 Agent Grok', p: 19 },
-                  { label: '👥 Community Hub', p: 20 },
-                  { label: '🙏 Thank You', p: 21 },
+                  { label: '🎬 Render Film', p: 15 },
+                  { label: '👁 Preview Film', p: 16 },
+                  { label: '⬇️ Export', p: 17 },
+                  { label: '🎓 Tutorials', p: 18 },
+                  { label: '📋 Terms', p: 19 },
+                  { label: '🤖 Agent Grok', p: 20 },
+                  { label: '👥 Community Hub', p: 21 },
+                  { label: '🙏 Thank You', p: 22 },
                 ].map(item => (
                   <button key={item.p} onClick={() => goTo(item.p)}
                     className={`w-full text-left px-4 py-3 rounded-xl font-bold text-sm transition ${page === item.p ? 'bg-[#7c3aed] text-white' : 'text-zinc-300 hover:bg-[#7c3aed]/20 hover:text-white'}`}>
@@ -662,8 +665,8 @@ export default function App() {
       )}
 
       {/* GROK BUTTON */}
-      {page >= 1 && page !== 19 && (
-        <button onClick={() => goTo(19)} className="fixed bottom-20 right-6 z-50 bg-[#7c3aed] w-16 h-16 rounded-full flex items-center justify-center text-3xl font-black shadow-2xl hover:scale-110 transition border-2 border-[#a78bfa]">
+      {page >= 1 && page !== 20 && (
+        <button onClick={() => goTo(20)} className="fixed bottom-20 right-6 z-50 bg-[#7c3aed] w-16 h-16 rounded-full flex items-center justify-center text-3xl font-black shadow-2xl hover:scale-110 transition border-2 border-[#a78bfa]">
           G
         </button>
       )}
@@ -676,7 +679,7 @@ export default function App() {
       )}
 
       {/* BACK / NEXT NAV */}
-      {page > 1 && page < 21 && (
+      {page > 1 && page < 22 && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-40 flex gap-4">
           <button onClick={() => goTo(page - 1)} className="bg-zinc-950 border-2 border-[#7c3aed] px-8 py-2.5 rounded-full font-black uppercase text-[#7c3aed] hover:bg-[#7c3aed] hover:text-white transition text-xs flex items-center gap-2">
             <ChevronLeft size={14}/> BACK
@@ -817,6 +820,20 @@ export default function App() {
                   </button>
                 </div>
                 <div className="bg-black border border-[#7c3aed]/30 rounded-xl p-5">
+                  <h3 className="font-bold mb-3 text-white flex items-center gap-2"><Clipboard size={18} className="text-[#7c3aed]"/>Paste Content</h3>
+                  <div className="space-y-3">
+                    <textarea
+                      placeholder="Paste text content here..."
+                      className="w-full bg-zinc-900 border border-[#7c3aed]/50 p-3 rounded-xl text-white h-20 outline-none resize-none text-sm"
+                    />
+                    <input
+                      type="url"
+                      placeholder="Or paste URL here (e.g., YouTube, images, videos)..."
+                      className="w-full bg-zinc-900 border border-[#7c3aed]/50 p-3 rounded-xl text-white outline-none text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="bg-black border border-[#7c3aed]/30 rounded-xl p-5">
                   <h3 className="font-bold mb-3 text-white flex items-center gap-2"><Sparkles size={18} className="text-[#7c3aed]"/>Generate With AI</h3>
                   <textarea
                     value={aiPrompt}
@@ -917,75 +934,10 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 12 - MEDIA LIBRARY & TIMELINE */}
+        {/* PAGE 12 - DAVINCI TIMELINE */}
         {page === 12 && (
-          <div className="min-h-screen flex pb-32 fade-up">
-            {/* Library */}
-            <div className="w-1/3 bg-zinc-950 border-r-4 border-[#7c3aed] p-6 overflow-y-auto scrollbar">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-black uppercase text-white flex items-center gap-2"><Database size={20} className="text-[#7c3aed]"/>LIBRARY</h3>
-                <button onClick={() => fileInputRef.current?.click()} className="bg-[#7c3aed] p-2 rounded-lg hover:bg-[#6d28d9] transition"><Plus size={18}/></button>
-              </div>
-              {mediaLibrary.length === 0 ? (
-                <div className="text-center py-12">
-                  <Upload size={48} className="text-zinc-700 mx-auto mb-4"/>
-                  <p className="text-zinc-500 text-sm font-bold">No assets yet</p>
-                  <button onClick={() => goTo(10)} className="text-[#7c3aed] text-xs mt-2 underline font-bold">Upload Media</button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {mediaLibrary.map(asset => (
-                    <div key={asset.id}
-                      draggable
-                      onDragStart={() => setDraggedItem(asset)}
-                      className="bg-black border border-[#7c3aed]/30 p-3 rounded-xl cursor-grab hover:border-[#7c3aed] transition group">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[#7c3aed]/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                          {asset.type === 'video' ? <Film size={18} className="text-[#7c3aed]"/> : asset.type === 'audio' ? <Music size={18} className="text-[#7c3aed]"/> : <Eye size={18} className="text-[#7c3aed]"/>}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-white truncate">{asset.name}</p>
-                          <p className="text-xs text-zinc-500">{asset.size} • {asset.type}</p>
-                        </div>
-                        <button onClick={() => deleteFromLibrary(asset.id)} className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-500 transition"><Trash2 size={14}/></button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            {/* Timeline */}
-            <div className="flex-1 p-6 overflow-y-auto scrollbar">
-              <h3 className="text-xl font-black uppercase text-white mb-6 flex items-center gap-2"><Layers size={20} className="text-[#7c3aed]"/>TIMELINE</h3>
-              {['video', 'audio', 'text'].map(track => (
-                <div key={track} className="mb-6">
-                  <div className="text-xs font-black uppercase text-[#7c3aed] mb-2 tracking-widest">{track} track</div>
-                  <div
-                    onDragOver={e => e.preventDefault()}
-                    onDrop={() => handleDrop(track)}
-                    className="min-h-20 bg-zinc-950 border-2 border-dashed border-[#7c3aed]/30 rounded-xl p-3 flex gap-2 flex-wrap hover:border-[#7c3aed]/60 transition">
-                    {timeline[track].length === 0 ? (
-                      <p className="text-zinc-600 text-xs font-bold self-center w-full text-center">Drag assets here</p>
-                    ) : (
-                      timeline[track].map((item, i) => (
-                        <div key={i} className="bg-[#7c3aed]/20 border border-[#7c3aed] rounded-lg px-3 py-2 text-xs font-bold text-white flex items-center gap-2">
-                          {item.name.substring(0, 20)}...
-                          <button onClick={() => removeFromTimeline(track, i)} className="text-zinc-400 hover:text-red-500"><X size={12}/></button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              ))}
-              <div className="flex gap-4 mt-8">
-                <button onClick={() => goTo(15)} className="bg-[#7c3aed] px-8 py-4 rounded-xl font-black uppercase hover:bg-[#6d28d9] transition flex items-center gap-2">
-                  <Play size={18}/> Preview
-                </button>
-                <button onClick={handleRender} className="bg-green-600 px-8 py-4 rounded-xl font-black uppercase hover:bg-green-700 transition flex items-center gap-2">
-                  <Zap size={18}/> Render
-                </button>
-              </div>
-            </div>
+          <div className="h-screen pt-20 pb-16 fade-up">
+            <DaVinciTimeline />
           </div>
         )}
 
@@ -1086,41 +1038,71 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 15 - FINAL PREVIEW */}
+        {/* PAGE 15 - RENDER PAGE */}
         {page === 15 && (
-          <div className="h-screen flex items-center justify-center p-8 fade-up">
-            <div className="text-center max-w-5xl w-full">
-              <h1 className="text-5xl font-black text-[#7c3aed] mb-8 uppercase">🎬 FINAL PREVIEW</h1>
-              <div className="aspect-video bg-zinc-950 rounded-3xl border-4 border-[#7c3aed] mb-8 flex items-center justify-center relative overflow-hidden">
-                {currentVideo ? (
-                  <div className="text-center">
-                    <Play size={100} className="text-[#7c3aed] mb-4"/>
-                    <p className="text-white font-black text-xl">{currentVideo.name}</p>
-                    <p className="text-zinc-400 mt-2">{duration} minutes • {exportSettings.quality}</p>
+          <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
+            <div className="max-w-4xl mx-auto">
+              <h1 className="text-5xl font-black text-[#7c3aed] mb-4 text-center uppercase">🎬 Render Your Film</h1>
+              <p className="text-center text-zinc-400 mb-10 font-bold">Final step before viewing</p>
+
+              <div className="bg-zinc-950 border-4 border-[#7c3aed] rounded-3xl p-12 mb-8">
+                <div className="text-center mb-8">
+                  <Zap size={80} className="text-[#7c3aed] mx-auto mb-4 animate-pulse"/>
+                  <p className="text-white text-xl font-bold mb-2">Ready to Render</p>
+                  <p className="text-zinc-400">Your timeline will be processed into a final video</p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6 mb-10">
+                  <div className="bg-black border-2 border-[#7c3aed]/40 p-5 rounded-2xl">
+                    <h3 className="font-black mb-3 text-white uppercase text-sm">Render Quality</h3>
+                    <select
+                      value={exportSettings.quality}
+                      onChange={e => setExportSettings({ ...exportSettings, quality: e.target.value })}
+                      className="w-full bg-zinc-900 border border-[#7c3aed] p-3 rounded-xl text-white font-bold outline-none">
+                      <option value="4K">4K Ultra HD</option>
+                      <option value="1080p">1080p Full HD</option>
+                      <option value="720p">720p HD</option>
+                    </select>
                   </div>
-                ) : (
-                  <div className="text-center">
-                    <Eye size={100} className="text-[#7c3aed]/40 mb-4"/>
-                    <p className="text-zinc-500 font-bold text-xl">No video yet — add clips to timeline first</p>
-                    <button onClick={() => goTo(12)} className="text-[#7c3aed] text-sm mt-4 underline font-bold">Go to Timeline</button>
+                  <div className="bg-black border-2 border-[#7c3aed]/40 p-5 rounded-2xl">
+                    <h3 className="font-black mb-3 text-white uppercase text-sm">Format</h3>
+                    <select
+                      value={exportSettings.format}
+                      onChange={e => setExportSettings({ ...exportSettings, format: e.target.value })}
+                      className="w-full bg-zinc-900 border border-[#7c3aed] p-3 rounded-xl text-white font-bold outline-none">
+                      <option value="MP4">MP4</option>
+                      <option value="MOV">MOV</option>
+                      <option value="AVI">AVI</option>
+                    </select>
                   </div>
-                )}
+                </div>
+
+                <button
+                  onClick={() => {
+                    addToast('🎬 Rendering started!', 'success');
+                    setTimeout(() => goTo(16), 2000);
+                  }}
+                  className="w-full bg-gradient-to-r from-green-600 to-[#7c3aed] py-6 rounded-2xl font-black uppercase text-2xl hover:from-green-700 hover:to-[#6d28d9] transition flex items-center justify-center gap-3">
+                  <Zap size={28}/> START RENDER
+                </button>
               </div>
-              <div className="flex gap-4 justify-center">
-                <button onClick={() => addToast('▶️ Preview playing...', 'info')}
-                  className="bg-zinc-800 px-10 py-4 rounded-xl font-black uppercase flex items-center gap-3 hover:bg-zinc-700 transition">
-                  <Play size={22}/> PLAY
-                </button>
-                <button onClick={handleRender} className="bg-green-600 px-10 py-4 rounded-xl font-black uppercase flex items-center gap-3 hover:bg-green-700 transition">
-                  <Zap size={22}/> START RENDER
-                </button>
+
+              <div className="text-center text-zinc-500 text-sm">
+                <p>Rendering time depends on project length and quality settings</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* PAGE 16 - EXPORT */}
+        {/* PAGE 16 - FULL SCREEN VIEWER */}
         {page === 16 && (
+          <div className="fade-up">
+            <FullScreenViewer videoUrl="/background.mp4" title="Your Masterpiece" />
+          </div>
+        )}
+
+        {/* PAGE 17 - EXPORT */}
+        {page === 17 && (
           <div className="h-screen flex items-center justify-center p-8 fade-up">
             <div className="max-w-4xl w-full bg-zinc-950 border-4 border-[#7c3aed] rounded-3xl p-12">
               <h1 className="text-5xl font-black text-[#7c3aed] mb-12 text-center uppercase">⬇️ Export Your Movie</h1>
@@ -1170,8 +1152,8 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 17 - TUTORIALS */}
-        {page === 17 && (
+        {/* PAGE 18 - TUTORIALS */}
+        {page === 18 && (
           <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
             <h1 className="text-4xl font-black uppercase mb-12 text-white text-center">🎓 TUTORIALS & LEARNING CENTER</h1>
             <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
@@ -1212,36 +1194,96 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 18 - TERMS */}
-        {page === 18 && (
-          <div className="min-h-screen p-8 pt-20 pb-40 max-w-4xl mx-auto fade-up">
-            <h1 className="text-5xl font-black uppercase text-[#7c3aed] mb-12 text-center flex items-center justify-center gap-4"><Shield size={48}/>Terms & Conditions</h1>
+        {/* PAGE 19 - TERMS */}
+        {page === 19 && (
+          <div className="min-h-screen p-8 pt-20 pb-40 max-w-5xl mx-auto fade-up">
+            <h1 className="text-5xl font-black uppercase text-[#7c3aed] mb-4 text-center flex items-center justify-center gap-4"><Shield size={48}/>Terms of Service</h1>
+            <p className="text-center text-zinc-400 mb-12 text-lg">Last Updated: February 2026</p>
             <div className="space-y-6">
               {[
-                { title: '1. Acceptance of Terms', body: 'By using MandaStrong Studio, you agree to these terms and conditions. These terms apply to all users of the platform.' },
-                { title: '2. License & Usage', body: 'Studio plan users receive full commercial rights to their created content. Basic and Pro plans include personal use licenses only.' },
-                { title: '3. Content Policy', body: 'Users must not create content that is illegal, harmful, or violates third-party rights. MandaStrong Studio reserves the right to remove any content that violates these guidelines.' },
-                { title: '4. Privacy & Data', body: 'We collect only necessary data to provide our service. Your videos and media files are encrypted and stored securely. We do not sell your personal data to third parties.' },
-                { title: '5. Social Mission', body: 'MandaStrong Studio is committed to supporting anti-bullying initiatives and veterans mental health. A portion of all Studio plan revenue supports these causes.' },
-                { title: '6. Support & Contact', body: 'For support, visit MandaStrong1.Etsy.com or use the Agent Grok chat assistant available 24/7 within the app.' }
+                {
+                  title: '1. Acceptance of Terms',
+                  body: 'By accessing and using MandaStrong Studio ("the Service"), you accept and agree to be bound by these Terms of Service. If you do not agree to these terms, you may not use the Service. These terms constitute a legally binding agreement between you and MandaStrong Studio.'
+                },
+                {
+                  title: '2. Service Description',
+                  body: 'MandaStrong Studio provides cloud-based video editing and AI content creation tools. The Service is provided "as is" and we reserve the right to modify, suspend, or discontinue any aspect of the Service at any time with reasonable notice to users.'
+                },
+                {
+                  title: '3. User Accounts & Subscriptions',
+                  body: 'You are responsible for maintaining the confidentiality of your account credentials. Subscription plans are billed monthly and automatically renew unless cancelled. Refunds are provided within 30 days of initial purchase only. Storage limits and features vary by plan tier.'
+                },
+                {
+                  title: '4. Intellectual Property & Content Rights',
+                  body: 'Studio plan subscribers receive full commercial rights to content created using the platform. Basic and Pro plan users receive personal use licenses only. You retain ownership of content you upload. You grant MandaStrong Studio a limited license to host, store, and process your content solely to provide the Service.'
+                },
+                {
+                  title: '5. Acceptable Use Policy',
+                  body: 'You agree not to create, upload, or distribute content that: (a) violates any law or regulation, (b) infringes intellectual property rights, (c) contains malicious code or harmful materials, (d) promotes hate speech, violence, or harassment, or (e) violates the rights of minors. We reserve the right to remove content and terminate accounts that violate this policy.'
+                },
+                {
+                  title: '6. Privacy & Data Protection',
+                  body: 'We collect and process personal data in accordance with our Privacy Policy and applicable data protection laws. Your content is encrypted at rest and in transit. We do not sell personal data to third parties. We may use aggregated, anonymized data for analytics and service improvement.'
+                },
+                {
+                  title: '7. Service Availability & Limitations',
+                  body: 'While we strive for 99.9% uptime, we do not guarantee uninterrupted access to the Service. Scheduled maintenance will be announced in advance when possible. We are not liable for losses resulting from service interruptions, data loss, or technical failures.'
+                },
+                {
+                  title: '8. Limitation of Liability',
+                  body: 'TO THE MAXIMUM EXTENT PERMITTED BY LAW, MANDASTRONG STUDIO SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS, DATA, OR GOODWILL, ARISING FROM YOUR USE OF THE SERVICE.'
+                },
+                {
+                  title: '9. Indemnification',
+                  body: 'You agree to indemnify and hold harmless MandaStrong Studio from any claims, damages, losses, or expenses arising from your use of the Service, your content, or your violation of these terms.'
+                },
+                {
+                  title: '10. Social Mission & Charitable Contributions',
+                  body: 'MandaStrong Studio is committed to supporting anti-bullying educational initiatives and veterans mental health services. We donate a portion of revenue to these causes. This charitable commitment does not create any enforceable rights for users or third parties.'
+                },
+                {
+                  title: '11. Termination',
+                  body: 'You may cancel your subscription at any time through your account settings. We may terminate or suspend your account for violation of these terms, non-payment, or at our discretion with notice. Upon termination, you will have 30 days to download your content before it is permanently deleted.'
+                },
+                {
+                  title: '12. Changes to Terms',
+                  body: 'We reserve the right to modify these terms at any time. Material changes will be communicated via email and require acceptance to continue using the Service. Continued use after notification constitutes acceptance of updated terms.'
+                },
+                {
+                  title: '13. Dispute Resolution & Governing Law',
+                  body: 'These terms are governed by the laws of the jurisdiction in which MandaStrong Studio operates. Any disputes will be resolved through binding arbitration in accordance with applicable arbitration rules, except where prohibited by law.'
+                },
+                {
+                  title: '14. Contact & Support',
+                  body: 'For questions about these terms, contact us at MandaStrong1.Etsy.com or use the Agent Grok support assistant available 24/7 within the application. Response time for support inquiries varies by subscription tier.'
+                }
               ].map(section => (
-                <div key={section.title} className="bg-zinc-950 border-2 border-[#7c3aed]/30 rounded-2xl p-8">
-                  <h3 className="text-xl font-black text-[#7c3aed] mb-3">{section.title}</h3>
-                  <p className="text-zinc-300 leading-relaxed">{section.body}</p>
+                <div key={section.title} className="bg-zinc-950 border-2 border-[#7c3aed]/30 rounded-2xl p-6">
+                  <h3 className="text-lg font-black text-[#7c3aed] mb-2">{section.title}</h3>
+                  <p className="text-zinc-300 leading-relaxed text-sm">{section.body}</p>
                 </div>
               ))}
             </div>
+            <div className="mt-12 bg-red-900/20 border-2 border-red-500/50 rounded-2xl p-6">
+              <h3 className="text-2xl font-black text-red-400 mb-3 text-center">DISCLAIMER</h3>
+              <p className="text-zinc-300 leading-relaxed text-sm mb-3">
+                THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.
+              </p>
+              <p className="text-zinc-300 leading-relaxed text-sm">
+                MANDASTRONG STUDIO MAKES NO GUARANTEE REGARDING THE ACCURACY, RELIABILITY, OR COMPLETENESS OF AI-GENERATED CONTENT. USERS ARE SOLELY RESPONSIBLE FOR REVIEWING AND VERIFYING ALL CONTENT BEFORE USE. USE OF THE SERVICE IS AT YOUR OWN RISK.
+              </p>
+            </div>
             <div className="mt-10 text-center">
               <button onClick={() => { addToast('✅ Terms accepted!', 'success'); goTo(4); }}
-                className="bg-[#7c3aed] px-16 py-5 rounded-full font-black uppercase text-xl hover:bg-[#6d28d9] transition">
-                I ACCEPT — LET'S GO
+                className="bg-[#7c3aed] px-20 py-5 rounded-full font-black uppercase text-2xl hover:bg-[#6d28d9] transition">
+                ACCEPT
               </button>
             </div>
           </div>
         )}
 
-        {/* PAGE 19 - AGENT GROK */}
-        {page === 19 && (
+        {/* PAGE 20 - AGENT GROK */}
+        {page === 20 && (
           <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
             <h1 className="text-5xl font-black uppercase mb-12 flex items-center gap-4 text-white">
               <MessageCircle size={48} className="text-[#7c3aed]"/>AGENT GROK - 24/7 HELP
@@ -1303,8 +1345,8 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 20 - COMMUNITY HUB */}
-        {page === 20 && (
+        {/* PAGE 21 - COMMUNITY HUB */}
+        {page === 21 && (
           <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
             <div className="flex justify-between items-center mb-12">
               <h1 className="text-5xl font-black uppercase text-white">👥 COMMUNITY HUB</h1>
@@ -1362,8 +1404,15 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 21 - THANK YOU */}
-        {page === 21 && <Page21 onNavigate={goTo} />}
+        {/* PAGE 22 - THANK YOU */}
+        {page === 22 && <Page21 onNavigate={goTo} />}
+
+        {/* PAGE 23 - MY SUBSCRIPTION */}
+        {page === 23 && (
+          <div className="fade-up">
+            <MySubscription />
+          </div>
+        )}
 
       </main>
     </div>
