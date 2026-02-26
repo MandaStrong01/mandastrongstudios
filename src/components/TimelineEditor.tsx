@@ -61,35 +61,43 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
 
   const handleDrop = useCallback((e: DragEvent, trackId: string, dropTime: number) => {
     e.preventDefault();
+    e.stopPropagation();
+
     const data = e.dataTransfer.getData('application/json');
 
     if (!data) {
-      setStatusMessage('Drop failed - no data received');
+      setStatusMessage('❌ Drop failed - no data received');
       setTimeout(() => setStatusMessage(''), 3000);
       return;
     }
 
-    const asset = JSON.parse(data) as MediaAsset;
+    try {
+      const asset = JSON.parse(data) as MediaAsset;
 
-    const newItem: TimelineItem = {
-      id: `item-${Date.now()}-${Math.random()}`,
-      assetId: asset.id,
-      asset: asset,
-      startTime: dropTime,
-      duration: asset.duration || 5,
-      trackIndex: 0
-    };
+      const newItem: TimelineItem = {
+        id: `item-${Date.now()}-${Math.random()}`,
+        assetId: asset.id,
+        asset: asset,
+        startTime: dropTime,
+        duration: asset.duration || 5,
+        trackIndex: 0
+      };
 
-    setTracks(prevTracks =>
-      prevTracks.map(track =>
-        track.id === trackId
-          ? { ...track, items: [...track.items, newItem].sort((a, b) => a.startTime - b.startTime) }
-          : track
-      )
-    );
+      setTracks(prevTracks =>
+        prevTracks.map(track =>
+          track.id === trackId
+            ? { ...track, items: [...track.items, newItem].sort((a, b) => a.startTime - b.startTime) }
+            : track
+        )
+      );
 
-    setStatusMessage(`Added "${asset.name}" to timeline at ${dropTime.toFixed(1)}s`);
-    setTimeout(() => setStatusMessage(''), 3000);
+      setStatusMessage(`✅ Added "${asset.name}" to timeline at ${dropTime.toFixed(1)}s`);
+      setTimeout(() => setStatusMessage(''), 3000);
+    } catch (error) {
+      console.error('Drop error:', error);
+      setStatusMessage('❌ Failed to add item to timeline');
+      setTimeout(() => setStatusMessage(''), 3000);
+    }
   }, []);
 
   const handleDragOver = (e: DragEvent) => {
@@ -317,19 +325,21 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
                 {mediaLibrary.map(asset => (
                   <div
                     key={asset.id}
-                    draggable
+                    draggable={true}
                     onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = 'copy';
                       handleDragStart(e, asset);
-                      setStatusMessage(`Dragging "${asset.name}"...`);
+                      setStatusMessage(`🎬 Dragging "${asset.name}"... Drop on a track below`);
                     }}
-                    onDragEnd={() => {
+                    onDragEnd={(e) => {
+                      e.currentTarget.classList.remove('opacity-50');
                       setTimeout(() => {
                         if (statusMessage.includes('Dragging')) {
                           setStatusMessage('');
                         }
                       }, 500);
                     }}
-                    className="bg-slate-800 hover:bg-slate-700 p-3 rounded-lg cursor-move transition group border-2 border-transparent hover:border-blue-500/50"
+                    className="bg-slate-800 hover:bg-slate-700 p-3 rounded-lg cursor-grab active:cursor-grabbing transition group border-2 border-transparent hover:border-blue-500/50 select-none"
                   >
                     <div className="flex items-start gap-2">
                       <div className={`p-2 rounded-lg bg-gradient-to-br ${
@@ -388,12 +398,19 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
                     </div>
 
                     <div
-                      className="flex-1 h-16 bg-slate-800/50 rounded-lg relative border border-slate-700/50 hover:border-blue-500/50 transition"
+                      className="flex-1 h-16 bg-slate-800/50 rounded-lg relative border-2 border-slate-700/50 hover:border-blue-500 hover:bg-slate-700/30 transition-all"
                       onDrop={(e) => {
                         const time = getTimeAtPosition(e, e.currentTarget);
                         handleDrop(e, track.id, time);
                       }}
                       onDragOver={handleDragOver}
+                      onDragEnter={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.add('ring-2', 'ring-blue-400');
+                      }}
+                      onDragLeave={(e) => {
+                        e.currentTarget.classList.remove('ring-2', 'ring-blue-400');
+                      }}
                       style={{ width: `${totalDuration * pixelsPerSecond}px` }}
                     >
                       {track.items.length === 0 && (
