@@ -1097,7 +1097,7 @@ export default function App() {
         {/* PAGE 16 - FULL SCREEN VIEWER */}
         {page === 16 && (
           <div className="fade-up">
-            <FullScreenViewer videoUrl="/background.mp4" title="Your Masterpiece" />
+            <FullScreenViewer videoUrl="https://assets.mixkit.co/videos/preview/mixkit-tree-with-yellow-flowers-1173-large.mp4" title="Your Masterpiece" />
           </div>
         )}
 
@@ -1105,6 +1105,10 @@ export default function App() {
         {page === 17 && (
           <div className="h-screen flex items-center justify-center p-8 fade-up">
             <div className="max-w-4xl w-full bg-zinc-950 border-4 border-[#7c3aed] rounded-3xl p-12">
+              <div className="text-center mb-8">
+                <h2 className="text-4xl font-black text-white mb-4">🎬 YOUR MASTERPIECE</h2>
+                <p className="text-zinc-400 text-lg">Your film is ready to share with the world</p>
+              </div>
               <h1 className="text-5xl font-black text-[#7c3aed] mb-12 text-center uppercase">⬇️ Export Your Movie</h1>
               {currentVideo && (
                 <div className="bg-black border-2 border-green-500 rounded-2xl p-5 mb-8 flex items-center gap-4">
@@ -1264,13 +1268,13 @@ export default function App() {
                 </div>
               ))}
             </div>
-            <div className="mt-12 bg-red-900/20 border-2 border-red-500/50 rounded-2xl p-6">
-              <h3 className="text-2xl font-black text-red-400 mb-3 text-center">DISCLAIMER</h3>
+            <div className="mt-12 bg-purple-900/20 border-2 border-purple-500/50 rounded-2xl p-6">
+              <h3 className="text-2xl font-black text-purple-400 mb-3 text-center">DISCLAIMER</h3>
               <p className="text-zinc-300 leading-relaxed text-sm mb-3">
-                THE SERVICE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.
+                The Service is provided "as is" and "as available" without warranties of any kind, either express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement.
               </p>
               <p className="text-zinc-300 leading-relaxed text-sm">
-                MANDASTRONG STUDIO MAKES NO GUARANTEE REGARDING THE ACCURACY, RELIABILITY, OR COMPLETENESS OF AI-GENERATED CONTENT. USERS ARE SOLELY RESPONSIBLE FOR REVIEWING AND VERIFYING ALL CONTENT BEFORE USE. USE OF THE SERVICE IS AT YOUR OWN RISK.
+                MandaStrong Studio makes no guarantee regarding the accuracy, reliability, or completeness of AI-generated content. Users are solely responsible for reviewing and verifying all content before use. Use of the Service is at your own risk.
               </p>
             </div>
             <div className="mt-10 text-center">

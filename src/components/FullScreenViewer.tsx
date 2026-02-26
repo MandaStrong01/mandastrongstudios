@@ -112,7 +112,7 @@ export default function FullScreenViewer({ videoUrl, title = "Your Film" }: Full
         <video
           ref={videoRef}
           className="max-w-full max-h-full"
-          src={videoUrl || '/background.mp4'}
+          src={videoUrl || 'https://assets.mixkit.co/videos/preview/mixkit-tree-with-yellow-flowers-1173-large.mp4'}
           onClick={togglePlay}
         />
 
