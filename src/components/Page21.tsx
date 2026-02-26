@@ -12,8 +12,7 @@ const EXTERNAL_URLS = {
   store: import.meta.env.VITE_ETSY_STORE_URL || 'https://MandaStrong1.Etsy.com',
 };
 
-const VIDEO_PATH = import.meta.env.VITE_OUTRO_VIDEO_PATH || '/background.mp4';
-const THATSALLFOLKS_VIDEO = '/thatsallfolks.mp4';
+const BACKGROUND_VIDEO = '/background.mp4';
 
 export default function Page21({ onNavigate }: PageProps) {
   return (
@@ -26,7 +25,7 @@ export default function Page21({ onNavigate }: PageProps) {
           <div className="bg-black/30 backdrop-blur-sm rounded-2xl border border-purple-500/30 p-8 mb-8">
             <div className="mb-8">
               <VideoPlayer
-                src={THATSALLFOLKS_VIDEO}
+                src={BACKGROUND_VIDEO}
                 className="aspect-video w-full border-4 border-purple-500/50 shadow-2xl shadow-purple-500/30"
                 autoPlay={true}
                 loop={true}

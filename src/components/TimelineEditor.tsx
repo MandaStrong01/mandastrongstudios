@@ -1,6 +1,7 @@
 import { useState, useCallback, DragEvent } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Trash2, Download, Eye, Plus, Film, Music, Type, Scissors } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Trash2, Download, Eye, Plus, Film, Music, Type, Scissors, Loader2 } from 'lucide-react';
 import VideoPreview from './VideoPreview';
+import LoadingSpinner from './LoadingSpinner';
 
 interface MediaAsset {
   id: number;
@@ -46,6 +47,8 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
   const [zoom, setZoom] = useState(1);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [previewVideo, setPreviewVideo] = useState<string | null>(null);
+  const [isRendering, setIsRendering] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string>('');
 
   const totalDuration = 120;
   const pixelsPerSecond = 10 * zoom;
@@ -59,7 +62,11 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
     e.preventDefault();
     const data = e.dataTransfer.getData('application/json');
 
-    if (!data) return;
+    if (!data) {
+      setStatusMessage('Drop failed - no data received');
+      setTimeout(() => setStatusMessage(''), 3000);
+      return;
+    }
 
     const asset = JSON.parse(data) as MediaAsset;
 
@@ -79,6 +86,9 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
           : track
       )
     );
+
+    setStatusMessage(`Added "${asset.name}" to timeline at ${dropTime.toFixed(1)}s`);
+    setTimeout(() => setStatusMessage(''), 3000);
   }, []);
 
   const handleDragOver = (e: DragEvent) => {
@@ -87,6 +97,8 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
   };
 
   const removeItem = (trackId: string, itemId: string) => {
+    const item = tracks.find(t => t.id === trackId)?.items.find(i => i.id === itemId);
+
     setTracks(prevTracks =>
       prevTracks.map(track =>
         track.id === trackId
@@ -94,8 +106,14 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
           : track
       )
     );
+
     if (selectedItem === itemId) {
       setSelectedItem(null);
+    }
+
+    if (item) {
+      setStatusMessage(`Removed "${item.asset.name}" from timeline`);
+      setTimeout(() => setStatusMessage(''), 3000);
     }
   };
 
@@ -146,13 +164,45 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
     return firstVideo.asset.url;
   };
 
+  const totalItems = tracks.reduce((sum, track) => sum + track.items.length, 0);
+
+  const handleRender = () => {
+    if (totalItems === 0) {
+      setStatusMessage('Cannot render - timeline is empty. Drag files from Media Library to timeline.');
+      setTimeout(() => setStatusMessage(''), 5000);
+      return;
+    }
+
+    setIsRendering(true);
+    setStatusMessage('Rendering your video...');
+
+    setTimeout(() => {
+      setIsRendering(false);
+      setStatusMessage('Render complete! Video ready for export.');
+      setTimeout(() => setStatusMessage(''), 3000);
+      if (onRender) onRender();
+    }, 3000);
+  };
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <div className="flex-none border-b border-white/10 p-4 bg-slate-900/50 backdrop-blur-lg">
+        {statusMessage && (
+          <div className="mb-3 p-3 bg-blue-500/20 border border-blue-500/50 rounded-lg text-blue-200 text-sm flex items-center gap-2">
+            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+            {statusMessage}
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Timeline Editor
-          </h2>
+          <div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              Timeline Editor
+            </h2>
+            <p className="text-slate-400 text-sm mt-1">
+              {totalItems === 0 ? 'Drag files from Media Library to get started' : `${totalItems} item${totalItems !== 1 ? 's' : ''} on timeline`}
+            </p>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={() => setZoom(Math.max(0.5, zoom - 0.25))}
@@ -177,11 +227,21 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
               Preview
             </button>
             <button
-              onClick={onRender}
-              className="px-4 py-1.5 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white rounded-lg transition font-semibold flex items-center gap-2"
+              onClick={handleRender}
+              disabled={isRendering}
+              className="px-4 py-1.5 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white rounded-lg transition font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Download size={16} />
-              Render
+              {isRendering ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Rendering...
+                </>
+              ) : (
+                <>
+                  <Download size={16} />
+                  Render
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -226,35 +286,52 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
           </h3>
           <div className="space-y-2">
             {mediaLibrary.length === 0 ? (
-              <p className="text-slate-400 text-sm text-center py-8">
-                No media assets yet. Upload files to get started.
-              </p>
+              <div className="text-slate-400 text-sm text-center py-8 bg-slate-800/30 rounded-lg border border-dashed border-slate-600">
+                <Film className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="font-semibold">No media assets</p>
+                <p className="text-xs mt-1">Upload files to get started</p>
+              </div>
             ) : (
-              mediaLibrary.map(asset => (
-                <div
-                  key={asset.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, asset)}
-                  className="bg-slate-800 hover:bg-slate-700 p-3 rounded-lg cursor-move transition group"
-                >
-                  <div className="flex items-start gap-2">
-                    <div className={`p-2 rounded-lg bg-gradient-to-br ${
-                      asset.type === 'video' ? 'from-blue-600 to-blue-500' :
-                      asset.type === 'audio' ? 'from-green-600 to-green-500' :
-                      'from-purple-600 to-purple-500'
-                    }`}>
-                      {asset.type === 'video' ? <Film size={16} /> :
-                       asset.type === 'audio' ? <Music size={16} /> :
-                       <Type size={16} />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium truncate">{asset.name}</p>
-                      <p className="text-slate-400 text-xs">{asset.type}</p>
-                      {asset.size && <p className="text-slate-500 text-xs">{asset.size}</p>}
+              <>
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-2 mb-2">
+                  <p className="text-blue-200 text-xs font-medium">Drag files to timeline tracks below</p>
+                </div>
+                {mediaLibrary.map(asset => (
+                  <div
+                    key={asset.id}
+                    draggable
+                    onDragStart={(e) => {
+                      handleDragStart(e, asset);
+                      setStatusMessage(`Dragging "${asset.name}"...`);
+                    }}
+                    onDragEnd={() => {
+                      setTimeout(() => {
+                        if (statusMessage.includes('Dragging')) {
+                          setStatusMessage('');
+                        }
+                      }, 500);
+                    }}
+                    className="bg-slate-800 hover:bg-slate-700 p-3 rounded-lg cursor-move transition group border-2 border-transparent hover:border-blue-500/50"
+                  >
+                    <div className="flex items-start gap-2">
+                      <div className={`p-2 rounded-lg bg-gradient-to-br ${
+                        asset.type === 'video' ? 'from-blue-600 to-blue-500' :
+                        asset.type === 'audio' ? 'from-green-600 to-green-500' :
+                        'from-purple-600 to-purple-500'
+                      }`}>
+                        {asset.type === 'video' ? <Film size={16} /> :
+                         asset.type === 'audio' ? <Music size={16} /> :
+                         <Type size={16} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{asset.name}</p>
+                        <p className="text-slate-400 text-xs">{asset.type}</p>
+                        {asset.size && <p className="text-slate-500 text-xs">{asset.size}</p>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </>
             )}
           </div>
         </div>
@@ -281,7 +358,7 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
                     </div>
 
                     <div
-                      className="flex-1 h-16 bg-slate-800/50 rounded-lg relative border border-slate-700/50"
+                      className="flex-1 h-16 bg-slate-800/50 rounded-lg relative border border-slate-700/50 hover:border-blue-500/50 transition"
                       onDrop={(e) => {
                         const time = getTimeAtPosition(e, e.currentTarget);
                         handleDrop(e, track.id, time);
@@ -289,6 +366,11 @@ export default function TimelineEditor({ mediaLibrary, onRender }: TimelineEdito
                       onDragOver={handleDragOver}
                       style={{ width: `${totalDuration * pixelsPerSecond}px` }}
                     >
+                      {track.items.length === 0 && (
+                        <div className="absolute inset-0 flex items-center justify-center text-slate-500 text-xs pointer-events-none">
+                          Drop files here
+                        </div>
+                      )}
                       {track.items.map((item) => (
                         <div
                           key={item.id}

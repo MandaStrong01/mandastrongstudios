@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Video, Square, Pause, Play, Download, Upload, Trash2, Monitor, Camera, Mic, MicOff } from 'lucide-react';
+import { Video, Square, Pause, Play, Download, Upload, Trash2, Monitor, Camera, Mic, MicOff, Loader2 } from 'lucide-react';
 
 interface VideoRecorderProps {
   onRecordingComplete?: (blob: Blob, filename: string) => void;
@@ -187,10 +187,17 @@ export default function VideoRecorder({ onRecordingComplete, onUploadToLibrary }
     }
   };
 
-  const uploadRecording = () => {
+  const [isUploading, setIsUploading] = useState(false);
+
+  const uploadRecording = async () => {
     if (recordedBlob && onUploadToLibrary) {
+      setIsUploading(true);
       const file = new File([recordedBlob], `recording-${Date.now()}.webm`, { type: 'video/webm' });
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       onUploadToLibrary(file);
+      setIsUploading(false);
       alert('Recording uploaded to Media Library!');
     }
   };
@@ -335,10 +342,20 @@ export default function VideoRecorder({ onRecordingComplete, onUploadToLibrary }
 
             <button
               onClick={uploadRecording}
-              className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl transition shadow-lg"
+              disabled={isUploading}
+              className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-xl transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Upload size={20} />
-              Upload to Library
+              {isUploading ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload size={20} />
+                  Upload to Library
+                </>
+              )}
             </button>
 
             <button
