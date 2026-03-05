@@ -184,7 +184,7 @@ const PLANS = [
   {
     name: 'Studio',
     price: 50,
-    features: ['8K Export', '600+ AI Tools', '1TB Storage', '24/7 Support', 'Full Rights', 'API Access', 'Collaboration'],
+    features: ['7-Day Free Trial', '8K Export', '600+ AI Tools', '1TB Storage', '24/7 Support', 'Full Rights', 'API Access', 'Collaboration'],
     stripe: 'https://buy.stripe.com/test_studio',
     color: '#1F2937'
   }

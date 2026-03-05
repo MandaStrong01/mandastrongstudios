@@ -20,13 +20,13 @@ export default function Page21({ onNavigate }: PageProps) {
       <button className="fixed top-6 right-6 z-50 w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 hover:from-purple-400 hover:to-blue-500 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/50 transition-all hover:scale-110">
         <Play className="w-6 h-6 text-white" />
       </button>
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 md:py-12">
         <div className="max-w-6xl w-full text-center">
-          <div className="bg-black/30 backdrop-blur-sm rounded-2xl border border-purple-500/30 p-8 mb-8">
-            <div className="mb-8">
+          <div className="bg-black/30 backdrop-blur-sm rounded-2xl border border-purple-500/30 p-4 md:p-8 mb-8">
+            <div className="mb-6 md:mb-8">
               <VideoPlayer
                 src={BACKGROUND_VIDEO}
-                className="aspect-video w-full border-4 border-purple-500/50 shadow-2xl shadow-purple-500/30"
+                className="aspect-video w-full border-2 md:border-4 border-purple-500/50 shadow-2xl shadow-purple-500/30 rounded-lg"
                 autoPlay={true}
                 loop={true}
                 muted={false}
@@ -34,25 +34,25 @@ export default function Page21({ onNavigate }: PageProps) {
               />
             </div>
 
-            <h1 className="text-6xl md:text-7xl font-black mb-8 tracking-tight text-purple-400">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-black mb-6 md:mb-8 tracking-tight text-purple-400">
               THAT'S ALL FOLKS!
             </h1>
 
-            <div className="max-w-4xl mx-auto mb-8 text-center bg-gradient-to-br from-purple-900/40 to-black/40 rounded-2xl p-12 border-2 border-purple-400/50 shadow-2xl">
-              <h2 className="text-3xl text-purple-300 font-bold mb-6">A Special Thank You</h2>
-              <p className="text-xl text-white font-semibold mb-6 leading-relaxed">
+            <div className="max-w-4xl mx-auto mb-6 md:mb-8 text-center bg-gradient-to-br from-purple-900/40 to-black/40 rounded-2xl p-6 md:p-12 border-2 border-purple-400/50 shadow-2xl">
+              <h2 className="text-2xl md:text-3xl text-purple-300 font-bold mb-4 md:mb-6">A Special Thank You</h2>
+              <p className="text-lg md:text-xl text-white font-semibold mb-4 md:mb-6 leading-relaxed">
                 To all current and future creators, dreamers, and storytellers...
               </p>
-              <p className="text-lg text-white/90 leading-relaxed mb-4">
+              <p className="text-base md:text-lg text-white/90 leading-relaxed mb-3 md:mb-4">
                 Your creativity and passion inspire positive change in the world. Through your films and stories,
                 you have the power to educate, inspire, and bring awareness to critical issues like bullying prevention,
                 social skills development, and humanity's collective growth.
               </p>
-              <p className="text-lg text-white/90 leading-relaxed mb-4">
+              <p className="text-base md:text-lg text-white/90 leading-relaxed mb-3 md:mb-4">
                 Every piece of content you create has the potential to touch hearts, change minds, and make our world
                 a better place. Thank you for being part of this mission to combine creative expression with meaningful impact.
               </p>
-              <p className="text-lg text-purple-300 font-semibold leading-relaxed">
+              <p className="text-base md:text-lg text-purple-300 font-semibold leading-relaxed">
                 Together, we are building a community of creators who use their talents to spread kindness,
                 understanding, and hope. Your impact matters more than you know.
               </p>
@@ -60,30 +60,30 @@ export default function Page21({ onNavigate }: PageProps) {
 
             <button
               onClick={() => window.open(EXTERNAL_URLS.guide, '_blank')}
-              className="w-full max-w-2xl mx-auto mb-6 bg-black/50 hover:bg-purple-900/40 rounded-xl p-6 border border-purple-500/30 transition-all cursor-pointer group"
+              className="w-full max-w-2xl mx-auto mb-4 md:mb-6 bg-black/50 hover:bg-purple-900/40 rounded-xl p-4 md:p-6 border border-purple-500/30 transition-all cursor-pointer group"
             >
-              <div className="flex items-center justify-center gap-3 mb-3">
-                <BookOpen className="w-6 h-6 text-purple-400 group-hover:scale-110 transition-transform" />
-                <h2 className="text-2xl font-bold text-purple-400">Full User Guide To MandaStrong Studio</h2>
+              <div className="flex items-center justify-center gap-2 md:gap-3 mb-2 md:mb-3">
+                <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-purple-400 group-hover:scale-110 transition-transform" />
+                <h2 className="text-lg md:text-2xl font-bold text-purple-400">Full User Guide To MandaStrong Studio</h2>
               </div>
-              <p className="text-sm text-white/60">Click to access the complete guide</p>
+              <p className="text-xs md:text-sm text-white/60">Click to access the complete guide</p>
             </button>
 
-            <div className="max-w-3xl mx-auto mb-8 bg-gradient-to-br from-black/50 to-purple-900/30 rounded-2xl p-8 border-2 border-purple-500/40 shadow-xl">
-              <h3 className="text-2xl font-bold text-purple-300 mb-6 text-center">About Our Mission</h3>
-              <div className="space-y-4 text-white/90 leading-relaxed">
-                <p className="text-lg">
+            <div className="max-w-3xl mx-auto mb-6 md:mb-8 bg-gradient-to-br from-black/50 to-purple-900/30 rounded-2xl p-4 md:p-8 border-2 border-purple-500/40 shadow-xl">
+              <h3 className="text-xl md:text-2xl font-bold text-purple-300 mb-4 md:mb-6 text-center">About Our Mission</h3>
+              <div className="space-y-3 md:space-y-4 text-white/90 leading-relaxed">
+                <p className="text-base md:text-lg">
                   <span className="font-bold text-purple-300">MandaStrong Studio</span> is more than a filmmaking platform.
                   It's part of a comprehensive educational initiative designed to bring awareness and action to schools
                   regarding bullying prevention, social skills development, and the cultivation of humanity in our communities.
                 </p>
-                <p className="text-lg">
+                <p className="text-base md:text-lg">
                   <span className="font-semibold text-purple-300">Fundraising Campaign: Educational Program on Bullying Prevention & Social Skills</span>
                   {' '}~ Through this comprehensive program, we provide educational resources and movie-based content to help schools
                   address these critical issues. Our goal is to create safe, supportive environments where every student can thrive.
                   We hope to share a global humanity message that resonates with communities worldwide.
                 </p>
-                <p className="text-xl text-center mt-8 font-semibold">
+                <p className="text-lg md:text-xl text-center mt-6 md:mt-8 font-semibold">
                   Visit our fundraiser and learn more at{' '}
                   <a
                     href={EXTERNAL_URLS.store}
@@ -94,8 +94,8 @@ export default function Page21({ onNavigate }: PageProps) {
                     MandaStrong1.Etsy.com
                   </a>
                 </p>
-                <div className="mt-8 pt-6 border-t border-purple-500/30 text-right">
-                  <p className="text-purple-300 italic text-lg">
+                <div className="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-purple-500/30 text-right">
+                  <p className="text-purple-300 italic text-base md:text-lg">
                     ~ MandaStrong
                   </p>
                 </div>
@@ -144,19 +144,19 @@ export default function Page21({ onNavigate }: PageProps) {
             </div>
           </div>
 
-          <div className="flex gap-4 justify-center">
+          <div className="flex gap-3 md:gap-4 justify-center">
             <button
               onClick={() => onNavigate(19)}
-              className="flex items-center gap-2 bg-black text-white font-bold px-8 py-4 rounded-lg text-lg hover:bg-purple-900 transition-all border border-purple-500"
+              className="flex items-center gap-2 bg-black text-white font-bold px-6 md:px-8 py-3 md:py-4 rounded-lg text-base md:text-lg hover:bg-purple-900 transition-all border border-purple-500"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
               Back
             </button>
             <button
               onClick={() => onNavigate(0)}
-              className="flex items-center gap-2 bg-purple-600 text-white font-bold px-8 py-4 rounded-lg text-lg hover:bg-purple-500 transition-all"
+              className="flex items-center gap-2 bg-purple-600 text-white font-bold px-6 md:px-8 py-3 md:py-4 rounded-lg text-base md:text-lg hover:bg-purple-500 transition-all"
             >
-              <Home className="w-5 h-5" />
+              <Home className="w-4 h-4 md:w-5 md:h-5" />
               Home
             </button>
           </div>

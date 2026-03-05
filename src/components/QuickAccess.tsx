@@ -1,4 +1,4 @@
-import { Home, Film, Upload, Users, HelpCircle } from 'lucide-react';
+import { Home, Film, HelpCircle } from 'lucide-react';
 
 interface QuickAccessProps {
   onNavigate: (page: number) => void;
@@ -20,20 +20,6 @@ export default function QuickAccess({ onNavigate }: QuickAccessProps) {
         title="AI Tools"
       >
         <Film className="w-5 h-5 text-white" />
-      </button>
-      <button
-        onClick={() => onNavigate(10)}
-        className="w-12 h-12 bg-purple-600 hover:bg-purple-500 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110"
-        title="Upload"
-      >
-        <Upload className="w-5 h-5 text-white" />
-      </button>
-      <button
-        onClick={() => onNavigate(20)}
-        className="w-12 h-12 bg-purple-600 hover:bg-purple-500 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110"
-        title="Community"
-      >
-        <Users className="w-5 h-5 text-white" />
       </button>
       <button
         onClick={() => onNavigate(19)}
