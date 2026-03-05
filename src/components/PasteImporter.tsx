@@ -123,65 +123,65 @@ export default function PasteImporter({ onImport, onClose }: PasteImporterProps)
   const scriptScenes = contentType === 'script' ? parseScript(pastedContent) : [];
 
   return (
-    <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4">
-      <div className="bg-zinc-950 border-4 border-[#7c3aed] rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-black uppercase text-white flex items-center gap-3">
-            <Clipboard className="text-[#7c3aed]"/>
+    <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-3 md:p-4">
+      <div className="bg-zinc-950 border-2 md:border-4 border-[#7c3aed] rounded-2xl md:rounded-3xl p-4 md:p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4 md:mb-6">
+          <h2 className="text-xl md:text-3xl font-black uppercase text-white flex items-center gap-2 md:gap-3">
+            <Clipboard className="text-[#7c3aed] w-5 h-5 md:w-6 md:h-6"/>
             PASTE TO CREATE
           </h2>
-          <button onClick={onClose} className="text-white hover:text-red-500 text-2xl font-bold">×</button>
+          <button onClick={onClose} className="text-white hover:text-red-500 text-xl md:text-2xl font-bold">×</button>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           <div>
-            <label className="text-white font-bold mb-2 block">PROJECT NAME</label>
+            <label className="text-white font-bold mb-2 block text-sm md:text-base">PROJECT NAME</label>
             <input
               type="text"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
               placeholder="My Awesome Video Project"
-              className="w-full bg-zinc-900 border-2 border-[#7c3aed] rounded-xl px-4 py-3 text-white placeholder-zinc-500"
+              className="w-full bg-zinc-900 border-2 border-[#7c3aed] rounded-xl px-3 md:px-4 py-2 md:py-3 text-sm md:text-base text-white placeholder-zinc-500"
             />
           </div>
 
-          <div className="flex gap-3 mb-4">
+          <div className="flex gap-2 md:gap-3 mb-3 md:mb-4">
             <button
               onClick={handlePaste}
-              className="flex-1 bg-[#7c3aed] px-6 py-3 rounded-xl font-bold uppercase flex items-center justify-center gap-2 hover:bg-[#6d28d9] transition"
+              className="flex-1 bg-[#7c3aed] px-4 md:px-6 py-2 md:py-3 rounded-xl font-bold uppercase flex items-center justify-center gap-2 hover:bg-[#6d28d9] transition text-xs md:text-sm"
             >
-              <Clipboard size={20}/>
+              <Clipboard size={16} className="md:w-5 md:h-5"/>
               PASTE FROM CLIPBOARD
             </button>
           </div>
 
-          <div className="bg-zinc-900 border-2 border-[#7c3aed] rounded-xl p-4">
-            <div className="flex gap-3 mb-4">
+          <div className="bg-zinc-900 border-2 border-[#7c3aed] rounded-xl p-3 md:p-4">
+            <div className="flex gap-2 md:gap-3 mb-3 md:mb-4">
               <button
                 onClick={() => setContentType('url')}
-                className={`flex-1 px-4 py-2 rounded-lg font-bold uppercase text-sm flex items-center justify-center gap-2 transition ${
+                className={`flex-1 px-2 md:px-4 py-2 rounded-lg font-bold uppercase text-xs md:text-sm flex items-center justify-center gap-1 md:gap-2 transition ${
                   contentType === 'url' ? 'bg-[#7c3aed] text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                 }`}
               >
-                <Link size={16}/>
+                <Link size={14} className="md:w-4 md:h-4"/>
                 URL
               </button>
               <button
                 onClick={() => setContentType('script')}
-                className={`flex-1 px-4 py-2 rounded-lg font-bold uppercase text-sm flex items-center justify-center gap-2 transition ${
+                className={`flex-1 px-2 md:px-4 py-2 rounded-lg font-bold uppercase text-xs md:text-sm flex items-center justify-center gap-1 md:gap-2 transition ${
                   contentType === 'script' ? 'bg-[#7c3aed] text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                 }`}
               >
-                <FileText size={16}/>
+                <FileText size={14} className="md:w-4 md:h-4"/>
                 SCRIPT
               </button>
               <button
                 onClick={() => setContentType('text')}
-                className={`flex-1 px-4 py-2 rounded-lg font-bold uppercase text-sm flex items-center justify-center gap-2 transition ${
+                className={`flex-1 px-2 md:px-4 py-2 rounded-lg font-bold uppercase text-xs md:text-sm flex items-center justify-center gap-1 md:gap-2 transition ${
                   contentType === 'text' ? 'bg-[#7c3aed] text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                 }`}
               >
-                <Sparkles size={16}/>
+                <Sparkles size={14} className="md:w-4 md:h-4"/>
                 TEXT
               </button>
             </div>
@@ -190,7 +190,7 @@ export default function PasteImporter({ onImport, onClose }: PasteImporterProps)
               value={pastedContent}
               onChange={(e) => handleContentChange(e.target.value)}
               placeholder={getPlaceholder()}
-              className="w-full h-64 bg-zinc-800 border-2 border-zinc-700 rounded-lg p-4 text-white placeholder-zinc-600 resize-none focus:border-[#7c3aed] outline-none"
+              className="w-full h-48 md:h-64 bg-zinc-800 border-2 border-zinc-700 rounded-lg p-3 md:p-4 text-sm md:text-base text-white placeholder-zinc-600 resize-none focus:border-[#7c3aed] outline-none"
             />
           </div>
 
@@ -251,26 +251,26 @@ export default function PasteImporter({ onImport, onClose }: PasteImporterProps)
             </div>
           )}
 
-          <div className="flex gap-4">
+          <div className="flex gap-3 md:gap-4">
             <button
               onClick={onClose}
-              className="flex-1 bg-zinc-800 px-6 py-4 rounded-xl font-black uppercase hover:bg-zinc-700 transition"
+              className="flex-1 bg-zinc-800 px-4 md:px-6 py-3 md:py-4 rounded-xl font-black uppercase hover:bg-zinc-700 transition text-xs md:text-sm"
             >
               CANCEL
             </button>
             <button
               onClick={handleImport}
               disabled={processing || !pastedContent.trim() || !projectName.trim()}
-              className="flex-1 bg-[#7c3aed] px-6 py-4 rounded-xl font-black uppercase hover:bg-[#6d28d9] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 bg-[#7c3aed] px-4 md:px-6 py-3 md:py-4 rounded-xl font-black uppercase hover:bg-[#6d28d9] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-xs md:text-sm"
             >
-              <Download size={20}/>
+              <Download size={16} className="md:w-5 md:h-5"/>
               {processing ? 'IMPORTING...' : 'IMPORT & CREATE'}
             </button>
           </div>
         </div>
 
-        <div className="mt-6 bg-zinc-900 border-l-4 border-[#7c3aed] p-4 rounded">
-          <h4 className="text-white font-bold text-sm mb-2">TIPS:</h4>
+        <div className="mt-4 md:mt-6 bg-zinc-900 border-l-4 border-[#7c3aed] p-3 md:p-4 rounded">
+          <h4 className="text-white font-bold text-xs md:text-sm mb-2">TIPS:</h4>
           <ul className="text-zinc-400 text-xs space-y-1">
             <li>• Paste video URLs to automatically add them to your media library</li>
             <li>• Paste scripts to organize your video structure</li>

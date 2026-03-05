@@ -6,8 +6,9 @@ import {
   Share2, Search, AlertCircle, Loader, CheckCircle, Sparkles,
   MessageCircle, Send, User, Lock, CreditCard, LogOut, Settings,
   Volume2, Layers, Scissors, BarChart2, Globe, Star, Award,
-  Camera, Monitor, HardDrive, Cpu, Activity, BookOpen
+  Camera, Monitor, HardDrive, Cpu, Activity, BookOpen, Clipboard
 } from 'lucide-react';
+import PasteImporter from './components/PasteImporter';
 
 // ===================== VIDEOS =====================
 const OCEAN_VIDEO = "https://assets.mixkit.co/videos/preview/mixkit-ocean-waves-loop-1196-large.mp4";
@@ -244,6 +245,7 @@ export default function App() {
     { id: 4, title: 'Music Video Cut', user: 'Alex T.', emoji: '🎵', likes: 5234, loves: 4012 }
   ]);
   const [newComment, setNewComment] = useState<Record<number, string>>({});
+  const [showPasteImporter, setShowPasteImporter] = useState(false);
   // Examples page state
   const [exIsAdmin, setExIsAdmin] = useState(false);
   const [exShowLogin, setExShowLogin] = useState(false);
@@ -312,6 +314,24 @@ export default function App() {
       } catch {}
     }
   }, []);
+
+  const handlePasteImport = useCallback((content: { type: 'url' | 'script' | 'text', data: string, name: string }) => {
+    const asset: Asset = {
+      id: Date.now(),
+      name: content.name,
+      type: content.type === 'url' ? 'video' : 'text',
+      size: `${(content.data.length / 1024).toFixed(1)}KB`,
+      url: content.type === 'url' ? content.data : '',
+      timestamp: new Date().toLocaleString(),
+      aiGenerated: true
+    };
+    setMediaLibrary(prev => [asset, ...prev]);
+    setShowPasteImporter(false);
+    addToast(`${content.name} imported successfully!`, 'success');
+    if (content.type !== 'url') {
+      setAiPrompt(content.data);
+    }
+  }, [addToast]);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -1011,10 +1031,17 @@ export default function App() {
                     {/* Upload */}
                     <div style={{ marginBottom: '1rem' }}>
                       <div className="font-mono" style={{ fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>UPLOAD SOURCE MEDIA</div>
-                      <button onClick={() => fileInputRef.current?.click()}
-                        style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(139,92,246,0.3)', color: 'var(--text-dim)', padding: '1rem', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '0.65rem', letterSpacing: '0.1em' }}>
-                        + BROWSE FILES
-                      </button>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                        <button onClick={() => fileInputRef.current?.click()}
+                          style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(139,92,246,0.3)', color: 'var(--text-dim)', padding: '1rem', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '0.65rem', letterSpacing: '0.1em' }}>
+                          + BROWSE FILES
+                        </button>
+                        <button onClick={() => setShowPasteImporter(true)}
+                          style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.4)', color: 'var(--purple-bright)', padding: '1rem', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '0.65rem', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                          <Clipboard size={14} />
+                          CREATE PASTE AI
+                        </button>
+                      </div>
                     </div>
 
                     {/* Prompt */}
@@ -1596,6 +1623,13 @@ export default function App() {
         )}
 
       </main>
+
+      {showPasteImporter && (
+        <PasteImporter
+          onImport={handlePasteImport}
+          onClose={() => setShowPasteImporter(false)}
+        />
+      )}
     </div>
   );
 }
