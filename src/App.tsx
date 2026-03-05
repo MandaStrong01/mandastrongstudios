@@ -291,11 +291,24 @@ export default function App() {
         
         {/* PAGE 1 */}
         {page === 1 && (
-          <div className="h-screen flex flex-col justify-center items-center text-center px-6">
-            <Sparkles size={64} className="text-[#7c3aed] mb-8 animate-pulse"/>
-            <h1 className="text-7xl md:text-9xl font-black text-[#7c3aed] uppercase mb-6">MANDASTRONG STUDIO</h1>
-            <p className="text-xl md:text-2xl font-bold text-[#7c3aed] max-w-3xl mb-16">Welcome To An All In One Make Your Own Longer Movies!</p>
-            <button onClick={() => setPage(2)} className="bg-[#7c3aed] text-white px-16 py-4 rounded-full font-black uppercase text-xl hover:scale-105 transition shadow-2xl">START CREATING</button>
+          <div className="h-screen relative overflow-hidden">
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover"
+            >
+              <source src="/background.mp4" type="video/mp4" />
+            </video>
+            <div className="absolute inset-0 bg-black/50 flex flex-col justify-center items-center text-center px-6">
+              <div className="bg-black/70 border-4 border-[#7c3aed] rounded-3xl p-12 max-w-4xl">
+                <Sparkles size={64} className="text-[#7c3aed] mb-8 animate-pulse mx-auto"/>
+                <h1 className="text-7xl md:text-9xl font-black text-[#7c3aed] uppercase mb-6">MANDASTRONG STUDIO</h1>
+                <p className="text-xl md:text-2xl font-bold text-white max-w-3xl mb-16">Welcome To An All In One Make Your Own Longer Movies!</p>
+                <button onClick={() => setPage(2)} className="bg-[#7c3aed] text-white px-16 py-4 rounded-full font-black uppercase text-xl hover:scale-105 transition shadow-2xl">START CREATING</button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -311,6 +324,15 @@ export default function App() {
         {/* PAGE 3 - LOGIN & PRICING */}
         {page === 3 && (
           <div className="p-6 pt-16 pb-40 max-w-7xl mx-auto overflow-y-auto scrollbar">
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 border-4 border-green-400 rounded-2xl p-6 mb-8 max-w-5xl mx-auto text-center shadow-2xl">
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <Sparkles size={32} className="text-white animate-pulse"/>
+                <h2 className="text-3xl font-black text-white uppercase">NEW REGISTRANT BONUS!</h2>
+                <Sparkles size={32} className="text-white animate-pulse"/>
+              </div>
+              <p className="text-5xl font-black text-white mb-2">$30 CREDIT</p>
+              <p className="text-xl font-bold text-white/90">All New Registrees Receive $30 to Get Started!</p>
+            </div>
             <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
               <div className="bg-zinc-950 border-2 border-[#7c3aed] p-10 rounded-3xl">
                 <h3 className="text-3xl font-black uppercase mb-6 text-center text-white">Login</h3>
@@ -318,11 +340,14 @@ export default function App() {
                 <input type="password" placeholder="••••••••" className="w-full bg-black border-2 border-[#7c3aed] p-4 rounded-xl text-white mb-6 outline-none"/>
                 <button onClick={() => setPage(4)} className="w-full bg-[#7c3aed] py-4 rounded-xl font-black uppercase hover:bg-[#6d28d9] transition">Login & Start</button>
               </div>
-              <div className="bg-zinc-950 border-2 border-[#7c3aed] p-10 rounded-3xl">
+              <div className="bg-zinc-950 border-2 border-green-500 p-10 rounded-3xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-green-500 text-white text-xs font-black px-4 py-1 rounded-bl-xl">
+                  +$30 BONUS
+                </div>
                 <h3 className="text-3xl font-black uppercase mb-6 text-center text-white">Register</h3>
-                <input type="text" placeholder="Your Name" className="w-full bg-black border-2 border-[#7c3aed] p-4 rounded-xl text-white mb-4 outline-none"/>
-                <input type="email" placeholder="your@email.com" className="w-full bg-black border-2 border-[#7c3aed] p-4 rounded-xl text-white mb-4 outline-none"/>
-                <button onClick={() => setPage(4)} className="w-full bg-[#7c3aed] py-4 rounded-xl font-black uppercase hover:bg-[#6d28d9] transition">Create Account</button>
+                <input type="text" placeholder="Your Name" className="w-full bg-black border-2 border-green-500 p-4 rounded-xl text-white mb-4 outline-none"/>
+                <input type="email" placeholder="your@email.com" className="w-full bg-black border-2 border-green-500 p-4 rounded-xl text-white mb-4 outline-none"/>
+                <button onClick={() => setPage(4)} className="w-full bg-green-600 py-4 rounded-xl font-black uppercase hover:bg-green-700 transition">Create Account & Get $30</button>
               </div>
             </div>
             <div className="max-w-6xl mx-auto">
