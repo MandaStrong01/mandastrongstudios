@@ -162,5 +162,94 @@ function App() {
             />
 
             <div className="relative z-10 flex flex-col items-center justify-center min-h-screen">
+              <h1 className="text-6xl font-bold mb-8">MandaStrong Studio</h1>
+              <p className="text-xl mb-12 max-w-2xl text-center">
+                Create stunning AI-powered films with professional tools
+              </p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setCurrentPage('login')}
+                  className="bg-blue-600 px-8 py-4 rounded-lg text-lg hover:bg-blue-500 transition"
+                >
+                  Get Started
+                </button>
+                <button
+                  onClick={() => setCurrentPage('movies')}
+                  className="bg-gray-800 px-8 py-4 rounded-lg text-lg hover:bg-gray-700 transition"
+                >
+                  Watch Movies
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+    }
+  };
 
-             
+  return (
+    <div className="min-h-screen bg-black">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-sm border-b border-gray-800">
+        <div className="flex items-center justify-between p-4">
+          <button
+            onClick={() => setCurrentPage('home')}
+            className="flex items-center gap-2 text-white hover:text-blue-400 transition"
+          >
+            <Film className="w-6 h-6" />
+            <span className="font-bold text-xl">MandaStrong</span>
+          </button>
+          <div className="flex items-center gap-6">
+            <button
+              onClick={() => setCurrentPage('home')}
+              className="flex items-center gap-2 text-white hover:text-blue-400 transition"
+            >
+              <Home className="w-5 h-5" />
+              <span>Home</span>
+            </button>
+            <button
+              onClick={() => setCurrentPage('editor')}
+              className="flex items-center gap-2 text-white hover:text-blue-400 transition"
+            >
+              <Video className="w-5 h-5" />
+              <span>Studio</span>
+            </button>
+            <button
+              onClick={() => setCurrentPage('community')}
+              className="flex items-center gap-2 text-white hover:text-blue-400 transition"
+            >
+              <Users className="w-5 h-5" />
+              <span>Community</span>
+            </button>
+            <button
+              onClick={() => setCurrentPage('movies')}
+              className="flex items-center gap-2 text-white hover:text-blue-400 transition"
+            >
+              <Film className="w-5 h-5" />
+              <span>Movies</span>
+            </button>
+            {isAuthenticated ? (
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 bg-red-600 px-4 py-2 rounded hover:bg-red-500 transition"
+              >
+                <span>Logout</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setCurrentPage('login')}
+                className="flex items-center gap-2 bg-blue-600 px-4 py-2 rounded hover:bg-blue-500 transition"
+              >
+                <LogIn className="w-5 h-5" />
+                <span>Login</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </nav>
+      <main className="pt-16">
+        {renderPage()}
+      </main>
+    </div>
+  );
+}
+
+export default App;
