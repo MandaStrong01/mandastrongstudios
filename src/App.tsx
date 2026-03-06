@@ -66,10 +66,10 @@ export default function App() {
     setTimeout(() => {
       const newAsset = {
         id: Date.now(),
-        name: \`AI-\${selectedTool.replace(/\\s+/g,'-').toLowerCase()}-\${Date.now()}.mp4\`,
+        name: `AI-${selectedTool.replace(/\s+/g,'-').toLowerCase()}-${Date.now()}.mp4`,
         type: 'video',
         size: (Math.random() * 500 + 100).toFixed(2) + 'MB',
-        url: \`data:video/mp4;base64,SIMULATED_AI_GENERATED_CONTENT\`,
+        url: `data:video/mp4;base64,SIMULATED_AI_GENERATED_CONTENT`,
         aiGenerated: true,
         prompt: aiPrompt,
         timestamp: new Date().toISOString()
@@ -104,10 +104,10 @@ export default function App() {
   const applyEnhancement = useCallback(() => {
     const enhancedAsset = {
       id: Date.now(),
-      name: \`enhanced-\${selectedEnhancement.toLowerCase().replace(/\\s+/g,'-')}-\${Date.now()}.mp4\`,
+      name: `enhanced-${selectedEnhancement.toLowerCase().replace(/\s+/g,'-')}-${Date.now()}.mp4`,
       type: 'video',
       size: (Math.random() * 500 + 100).toFixed(2) + 'MB',
-      url: \`data:video/mp4;base64,ENHANCED_CONTENT\`,
+      url: `data:video/mp4;base64,ENHANCED_CONTENT`,
       enhanced: true,
       enhancement: selectedEnhancement,
       settings: { ...enhancementSettings },
@@ -127,10 +127,10 @@ export default function App() {
           setTimeout(() => {
             const renderedVideo = {
               id: Date.now(),
-              name: \`final-render-\${Date.now()}.\${exportSettings.format.toLowerCase()}\`,
+              name: `final-render-${Date.now()}.${exportSettings.format.toLowerCase()}`,
               type: 'video',
               size: (Math.random() * 1000 + 500).toFixed(2) + 'MB',
-              url: \`data:video/\${exportSettings.format.toLowerCase()};base64,RENDERED_CONTENT\`,
+              url: `data:video/${exportSettings.format.toLowerCase()};base64,RENDERED_CONTENT`,
               rendered: true,
               quality: exportSettings.quality,
               format: exportSettings.format,
@@ -188,14 +188,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-black text-white relative">
-      <style>{\`
+      <style>{`
         [data-bolt-badge], .bolt-badge, #bolt-badge, a[href*="bolt"],
         div[class*="fixed"][class*="bottom"] iframe, [class*="made"],
         [id*="bolt"], footer[class*="bolt"] { display:none!important; }
         .scrollbar::-webkit-scrollbar{width:8px;}
         .scrollbar::-webkit-scrollbar-track{background:#000;}
         .scrollbar::-webkit-scrollbar-thumb{background:#7c3aed;border-radius:10px;}
-      \`}</style>
+      `}</style>
 
       <input ref={fileInputRef} type="file" multiple accept="video/*,audio/*,image/*" onChange={handleFileUpload} className="hidden"/>
 
@@ -282,7 +282,7 @@ export default function App() {
                 ].map(plan => (
                   <div key={plan.t} className="bg-zinc-950 border-2 border-[#7c3aed]/30 rounded-3xl p-8 hover:border-[#7c3aed] transition">
                     <h3 className="text-2xl font-black uppercase mb-2 text-white">{plan.t}</h3>
-                    <div className="text-5xl font-black text-[#7c3aed] mb-8">\${plan.p}<span className="text-sm opacity-50">/mo</span></div>
+                    <div className="text-5xl font-black text-[#7c3aed] mb-8">${plan.p}<span className="text-sm opacity-50">/mo</span></div>
                     <ul className="space-y-3 mb-10">
                       {plan.f.map(f => <li key={f} className="text-sm font-semibold flex items-start gap-2 text-white"><CheckCircle size={16} className="text-[#7c3aed] flex-shrink-0 mt-0.5"/> {f}</li>)}
                     </ul>
@@ -341,17 +341,17 @@ export default function App() {
                       const isUrl = text.startsWith('http') || text.startsWith('data:') || text.includes('://');
                       const newItem = {
                         id: Date.now(),
-                        name: isUrl ? \`pasted-url-\${Date.now()}.mp4\` : \`pasted-text-\${Date.now()}.txt\`,
+                        name: isUrl ? `pasted-url-${Date.now()}.mp4` : `pasted-text-${Date.now()}.txt`,
                         type: isUrl ? 'video' : 'text',
                         size: ((text.length / 1024).toFixed(2)) + ' KB',
-                        url: isUrl ? text : \`data:text/plain;charset=utf-8,\${encodeURIComponent(text)}\`,
+                        url: isUrl ? text : `data:text/plain;charset=utf-8,${encodeURIComponent(text)}`,
                         content: text,
                         pasted: true,
                         timestamp: new Date().toISOString()
                       };
                       setMediaLibrary(prev => [...prev, newItem]);
                       setSelectedTool(null);
-                      alert(\`✓ \${isUrl ? 'URL' : 'Text'} pasted! Check Media Library.\`);
+                      alert(`✓ ${isUrl ? 'URL' : 'Text'} pasted! Check Media Library.`);
                     } else {
                       alert('Nothing to paste. Copy a URL or text first.');
                     }
@@ -444,7 +444,7 @@ export default function App() {
               </div>
               <div className="grid grid-cols-4 gap-3">
                 {[30,60,90,120].map(m => (
-                  <button key={m} onClick={() => setDuration(m)} className={\`py-4 rounded-xl font-bold text-lg transition \${duration===m?'bg-white text-[#7c3aed]':'bg-white/20 text-white hover:bg-white/30'}\`}>{m} min</button>
+                  <button key={m} onClick={() => setDuration(m)} className={`py-4 rounded-xl font-bold text-lg transition ${duration===m?'bg-white text-[#7c3aed]':'bg-white/20 text-white hover:bg-white/30'}`}>{m} min</button>
                 ))}
               </div>
             </div>
@@ -641,11 +641,11 @@ export default function App() {
                 { key: 'sfx', label: 'SFX', icon: Zap },
                 { key: 'master', label: 'MASTER', icon: Sliders, master: true }
               ].map((channel) => (
-                <div key={channel.key} className={\`bg-zinc-950 border-4 rounded-3xl p-6 flex flex-col items-center \${channel.master?'border-[#7c3aed]':'border-zinc-800'}\`}>
+                <div key={channel.key} className={`bg-zinc-950 border-4 rounded-3xl p-6 flex flex-col items-center ${channel.master?'border-[#7c3aed]':'border-zinc-800'}`}>
                   <channel.icon size={36} className="text-[#7c3aed] mb-3"/>
                   <div className="font-black text-base mb-6 text-white">{channel.label}</div>
                   <div className="relative h-72 w-28 bg-gradient-to-b from-zinc-800 to-zinc-900 rounded-3xl mb-6 overflow-hidden">
-                    <div className="absolute bottom-0 w-full rounded-3xl bg-gradient-to-b from-[#a78bfa] to-[#7c3aed] transition-all duration-150" style={{height: \`\${audioLevels[channel.key]}%\`}}/>
+                    <div className="absolute bottom-0 w-full rounded-3xl bg-gradient-to-b from-[#a78bfa] to-[#7c3aed] transition-all duration-150" style={{height: `${audioLevels[channel.key]}%`}}/>
                   </div>
                   <input type="range" min="0" max="100" value={audioLevels[channel.key]} onChange={(e) => setAudioLevels(prev => ({ ...prev, [channel.key]: Number(e.target.value) }))} orient="vertical" className="w-full mb-4" style={{accentColor: '#7c3aed'}}/>
                   <div className="text-3xl font-black text-[#7c3aed]">{audioLevels[channel.key]}%</div>
@@ -705,7 +705,7 @@ export default function App() {
               </div>
               <h2 className="text-5xl font-black text-white mb-4">RENDERING</h2>
               <div className="w-full bg-zinc-800 h-6 rounded-full overflow-hidden mb-4">
-                <div className="h-full bg-gradient-to-r from-[#7c3aed] to-[#a78bfa] transition-all duration-300" style={{width: \`\${renderProgress}%\`}}/>
+                <div className="h-full bg-gradient-to-r from-[#7c3aed] to-[#a78bfa] transition-all duration-300" style={{width: `${renderProgress}%`}}/>
               </div>
               <p className="text-3xl font-black text-[#7c3aed]">{renderProgress}%</p>
               <p className="text-zinc-400 mt-2">Processing {duration} minutes of {exportSettings.quality} video...</p>
@@ -807,7 +807,7 @@ export default function App() {
                   {title:'Enhancement Studio Deep Dive',time:'22:00',level:'Advanced'},
                   {title:'Export & Optimization',time:'8:15',level:'Beginner'}
                 ].map((tut,i) => (
-                  <button key={i} className={\`w-full bg-zinc-950 border-2 border-[#7c3aed] p-6 rounded-2xl hover:bg-[#7c3aed]/20 cursor-pointer transition \${i===0?'bg-[#7c3aed]/10':''}\`}>
+                  <button key={i} className={`w-full bg-zinc-950 border-2 border-[#7c3aed] p-6 rounded-2xl hover:bg-[#7c3aed]/20 cursor-pointer transition ${i===0?'bg-[#7c3aed]/10':''}`}>
                     <div className="flex items-center gap-3 mb-2">
                       <FileVideo size={20} className="text-[#7c3aed]"/>
                       <h4 className="font-bold flex-1 text-white text-left">{tut.title}</h4>
