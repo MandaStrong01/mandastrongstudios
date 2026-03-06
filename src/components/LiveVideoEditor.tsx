@@ -1,5 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, Upload, Trash2, Film, Plus, GripVertical } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, Upload, Trash2, Film, Plus, GripVertical, Video, Download, Loader2 } from 'lucide-react';
+import VideoRecorder from './VideoRecorder';
+import FullscreenMovieViewer from './FullscreenMovieViewer';
 
 interface VideoAsset {
   id: number;
@@ -25,6 +27,10 @@ export default function LiveVideoEditor({ assets: initialAssets = [], onClose }:
   const [currentAssetIndex, setCurrentAssetIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [showRecorder, setShowRecorder] = useState(false);
+  const [showMovieViewer, setShowMovieViewer] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingMessage, setProcessingMessage] = useState('');
 
   const currentAsset = assets[currentAssetIndex];
 
@@ -55,18 +61,45 @@ export default function LiveVideoEditor({ assets: initialAssets = [], onClose }:
 
   const handleFileUpload = useCallback((files: FileList | null) => {
     if (!files) return;
-    const newAssets: VideoAsset[] = Array.from(files)
-      .filter(f => f.type.startsWith('video/') || f.type.startsWith('image/') || f.type.startsWith('audio/'))
-      .map((file, i) => ({
-        id: Date.now() + i,
-        url: URL.createObjectURL(file),
-        name: file.name.replace(/\.[^/.]+$/, ''),
-        type: file.type,
-      }));
-    setAssets(prev => [...prev, ...newAssets]);
-    if (assets.length === 0 && newAssets.length > 0) {
-      setCurrentAssetIndex(0);
-    }
+    setIsProcessing(true);
+    setProcessingMessage('Loading clips...');
+
+    setTimeout(() => {
+      const newAssets: VideoAsset[] = Array.from(files)
+        .filter(f => f.type.startsWith('video/') || f.type.startsWith('image/') || f.type.startsWith('audio/'))
+        .map((file, i) => ({
+          id: Date.now() + i,
+          url: URL.createObjectURL(file),
+          name: file.name.replace(/\.[^/.]+$/, ''),
+          type: file.type,
+        }));
+      setAssets(prev => [...prev, ...newAssets]);
+      if (assets.length === 0 && newAssets.length > 0) {
+        setCurrentAssetIndex(0);
+      }
+      setIsProcessing(false);
+    }, 500);
+  }, [assets.length]);
+
+  const handleRecordingComplete = useCallback((blob: Blob) => {
+    setIsProcessing(true);
+    setProcessingMessage('Processing recording...');
+
+    setTimeout(() => {
+      const url = URL.createObjectURL(blob);
+      const newAsset: VideoAsset = {
+        id: Date.now(),
+        url,
+        name: `Recording ${new Date().toLocaleTimeString()}`,
+        type: blob.type,
+      };
+      setAssets(prev => [...prev, newAsset]);
+      if (assets.length === 0) {
+        setCurrentAssetIndex(0);
+      }
+      setShowRecorder(false);
+      setIsProcessing(false);
+    }, 800);
   }, [assets.length]);
 
   const handleDropZone = (e: React.DragEvent) => {
@@ -141,9 +174,41 @@ export default function LiveVideoEditor({ assets: initialAssets = [], onClose }:
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  if (showRecorder) {
+    return <VideoRecorder onClose={() => setShowRecorder(false)} onRecordingComplete={handleRecordingComplete} />;
+  }
+
+  if (showMovieViewer) {
+    return <FullscreenMovieViewer onClose={() => setShowMovieViewer(false)} />;
+  }
+
   if (assets.length === 0) {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center p-8">
+        {isProcessing && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="bg-slate-800 rounded-xl p-8 flex flex-col items-center gap-4">
+              <Loader2 className="w-12 h-12 text-purple-400 animate-spin" />
+              <p className="text-white text-lg font-semibold">{processingMessage}</p>
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-4 mb-8">
+          <button
+            onClick={() => setShowRecorder(true)}
+            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-semibold transition"
+          >
+            <Video size={20} /> Record Screen
+          </button>
+          <button
+            onClick={() => setShowMovieViewer(true)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition"
+          >
+            <Film size={20} /> Watch Movies
+          </button>
+        </div>
+
         <div
           className={`w-full max-w-2xl border-2 border-dashed rounded-2xl p-16 text-center transition-all cursor-pointer
             ${isDragging ? 'border-purple-400 bg-purple-900/20' : 'border-slate-600 hover:border-purple-500 hover:bg-slate-800/50'}`}
@@ -174,18 +239,41 @@ export default function LiveVideoEditor({ assets: initialAssets = [], onClose }:
 
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col">
+      {isProcessing && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-xl p-8 flex flex-col items-center gap-4">
+            <Loader2 className="w-12 h-12 text-purple-400 animate-spin" />
+            <p className="text-white text-lg font-semibold">{processingMessage}</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between px-6 py-4 bg-slate-800 border-b border-slate-700">
         <div className="flex items-center gap-3">
           <Film className="text-purple-400 w-6 h-6" />
           <span className="font-bold text-lg">MandaStrong Studio</span>
           <span className="text-slate-400 text-sm">— {assets.length} clip{assets.length !== 1 ? 's' : ''}</span>
         </div>
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-semibold transition"
-        >
-          <Plus size={16} /> Add Clips
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowRecorder(true)}
+            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm font-semibold transition"
+          >
+            <Video size={16} /> Record
+          </button>
+          <button
+            onClick={() => setShowMovieViewer(true)}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-semibold transition"
+          >
+            <Film size={16} /> Movies
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-semibold transition"
+          >
+            <Plus size={16} /> Add Clips
+          </button>
+        </div>
         <input
           ref={fileInputRef}
           type="file"
