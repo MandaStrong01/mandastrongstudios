@@ -1,131 +1,206 @@
 import React, { useState, useEffect } from 'react';
-import { Film, Video, Users, Settings, LogIn, Home } from 'lucide-react';
 import { supabase } from './lib/supabase';
+import { EnhancedLoginRegister } from './components/EnhancedLoginRegister';
+import LiveVideoEditor from './components/LiveVideoEditor';
+import FullscreenMovieViewer from './components/FullscreenMovieViewer';
+import VideoRecorder from './components/VideoRecorder';
+import LoadingSpinner from './components/LoadingSpinner';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 
-type Page = 'home' | 'login' | 'editor' | 'community' | 'movies';
-
-const aiTools = [
-  { name: "Text to Text", desc: "Generate or transform written content using AI." },
-  { name: "Text to Image", desc: "Create images from written prompts." },
-  { name: "Image to Image", desc: "Enhance or transform images with AI." },
-  { name: "Image to Video", desc: "Turn still images into cinematic video clips." },
-  { name: "Text to Video", desc: "Generate video clips directly from text prompts." },
-  { name: "Video to Video", desc: "Enhance or modify existing video with AI." },
-  { name: "Text to Audio", desc: "Generate voice or sound from written text." },
-  { name: "Audio to Audio", desc: "Transform or enhance existing audio." },
-  { name: "Audio to Video", desc: "Generate video visuals from audio." },
-  { name: "Video to Audio", desc: "Extract or convert audio from video." },
-  { name: "Text to Music", desc: "Create background music using text prompts." },
-  { name: "Music to Music", desc: "Remix or transform music with AI." },
-  { name: "Script to Movie", desc: "Generate a full AI film from a written script." },
-  { name: "Prompt Builder", desc: "Generate optimized prompts for AI creation." },
-  { name: "Storyboard Generator", desc: "Automatically generate visual storyboards." },
-  { name: "Voice Generator", desc: "Create realistic AI voice narration." },
-  { name: "Subtitle Generator", desc: "Generate subtitles automatically." },
-  { name: "Scene Extender", desc: "Extend scenes with additional AI generated clips." },
-  { name: "Lip Sync Generator", desc: "Match dialogue audio with mouth movement." },
-  { name: "Animation Generator", desc: "Generate animated scenes using AI." },
-  { name: "3D Motion Generator", desc: "Add cinematic motion and depth." },
-  { name: "AI Film Builder", desc: "Combine clips, audio, and scenes into a movie." }
-];
+type Page = 'home' | 'login' | 'editor' | 'movies' | 'recorder';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState('Loading MandaStrong Studio...');
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session);
-      setUserEmail(session?.user?.email || null);
-    });
-
-    const { data: { subscription } } =
-      supabase.auth.onAuthStateChange((_event, session) => {
-        setIsAuthenticated(!!session);
-        setUserEmail(session?.user?.email || null);
-      });
-
-    return () => subscription.unsubscribe();
+    checkAuth();
   }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setCurrentPage('home');
+  const checkAuth = async () => {
+    setIsLoading(true);
+    setLoadingMessage('Checking authentication...');
+
+    const { data: { session } } = await supabase.auth.getSession();
+    setIsAuthenticated(!!session);
+    setUserEmail(session?.user?.email || null);
+
+    if (session?.user?.id) {
+      setLoadingMessage('Loading profile...');
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('subscription_plan')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      setIsAdmin(profile?.subscription_plan === 'studio');
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        setIsAuthenticated(!!session);
+        setUserEmail(session?.user?.email || null);
+
+        if (session?.user?.id) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('subscription_plan')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          setIsAdmin(profile?.subscription_plan === 'studio');
+        } else {
+          setIsAdmin(false);
+        }
+      }
+    );
+
+    setIsLoading(false);
+
+    return () => subscription.unsubscribe();
   };
 
-  const renderEditor = () => (
-    <div className="min-h-screen bg-black text-white p-10">
-      <h1 className="text-4xl font-bold mb-8 text-center">AI Tool Board</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {aiTools.map((tool, i) => (
-          <div key={i} className="bg-gray-900 border border-gray-700 rounded-xl p-5">
-            <h2 className="text-lg font-semibold mb-2">{tool.name}</h2>
-            <p className="text-sm text-gray-300 mb-4">{tool.desc}</p>
-            <div className="flex flex-col gap-2">
-              <button className="bg-gray-800 p-2 rounded hover:bg-gray-700">Browse / Upload</button>
-              <button className="bg-gray-800 p-2 rounded hover:bg-gray-700">Paste</button>
-              <button className="bg-blue-600 p-2 rounded hover:bg-blue-500">AI Create</button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  const handleLogout = async () => {
+    setLoadingMessage('Logging out...');
+    setIsLoading(true);
+    await supabase.auth.signOut();
+    setCurrentPage('home');
+    setIsLoading(false);
+  };
+
+  const handleLoginSuccess = async () => {
+    setLoadingMessage('Welcome! Loading your studio...');
+    setIsLoading(true);
+    await checkAuth();
+    setCurrentPage('editor');
+    setIsLoading(false);
+  };
+
+  if (isLoading) {
+    return <LoadingSpinner size="xl" message={loadingMessage} fullscreen />;
+  }
 
   const renderPage = () => {
     switch (currentPage) {
       case 'login':
         return (
-          <div className="min-h-screen flex items-center justify-center bg-black text-white">
-            <button onClick={() => setCurrentPage('editor')} className="bg-blue-600 px-6 py-3 rounded-lg">
-              Login to Studio
-            </button>
-          </div>
+          <EnhancedLoginRegister
+            onBack={() => setCurrentPage('home')}
+            onLoginSuccess={handleLoginSuccess}
+            onBrowseAsGuest={() => setCurrentPage('movies')}
+          />
         );
+
       case 'editor':
-        return isAuthenticated ? renderEditor() : (
-          <div className="min-h-screen flex items-center justify-center bg-black text-white">
-            Please login first
-          </div>
-        );
-      case 'community':
+        if (!isAuthenticated) {
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-white text-2xl mb-6">Please login to access the studio</p>
+                <button
+                  onClick={() => setCurrentPage('login')}
+                  className="bg-blue-600 hover:bg-blue-700 px-8 py-4 rounded-xl text-white font-bold transition"
+                >
+                  Go to Login
+                </button>
+              </div>
+            </div>
+          );
+        }
+        return <LiveVideoEditor />;
+
+      case 'recorder':
         return (
-          <div className="min-h-screen bg-black text-white p-10">
-            Community Hub
+          <div className="min-h-screen bg-gradient-to-br from-slate-900 via-black to-slate-900 p-8">
+            <div className="max-w-6xl mx-auto">
+              <button
+                onClick={() => setCurrentPage(isAuthenticated ? 'editor' : 'home')}
+                className="mb-6 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold transition"
+              >
+                Back to {isAuthenticated ? 'Studio' : 'Home'}
+              </button>
+              <VideoRecorder />
+            </div>
           </div>
         );
+
       case 'movies':
         return (
-          <div className="min-h-screen bg-black text-white p-10">
-            Movie Viewer
-          </div>
+          <FullscreenMovieViewer
+            onClose={() => setCurrentPage('home')}
+            isAdmin={isAdmin}
+            userEmail={userEmail || undefined}
+          />
         );
+
       default:
         return (
           <div className="min-h-screen bg-black text-white relative overflow-hidden">
-            <video className="absolute inset-0 w-full h-full object-cover opacity-40" src="/background.mp4" autoPlay loop muted playsInline />
-            <div className="relative z-10 flex flex-col items-center justify-center min-h-screen">
-              <h1 className="text-5xl font-bold mb-6">Welcome to MandaStrong Studio</h1>
+            <video
+              className="absolute inset-0 w-full h-full object-cover opacity-40"
+              src="/background.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+            />
+            <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
+              <h1 className="text-4xl md:text-6xl font-black mb-4 text-center bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                MandaStrong Studio
+              </h1>
+              <p className="text-xl md:text-2xl mb-12 text-gray-300 text-center max-w-2xl">
+                Professional Video Creation & Editing Platform
+              </p>
+
               {!isAuthenticated ? (
-                <button onClick={() => setCurrentPage('login')} className="bg-blue-600 px-6 py-3 rounded-lg">
-                  Login
-                </button>
+                <div className="flex flex-col gap-4">
+                  <button
+                    onClick={() => setCurrentPage('login')}
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 px-8 py-4 rounded-xl text-lg font-bold transition shadow-lg"
+                  >
+                    Get Started
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage('movies')}
+                    className="bg-slate-700 hover:bg-slate-600 px-8 py-4 rounded-xl text-lg font-bold transition"
+                  >
+                    Browse Movies
+                  </button>
+                </div>
               ) : (
-                <>
-                  <button onClick={() => setCurrentPage('editor')} className="bg-purple-600 px-6 py-3 rounded-lg mb-4">
-                    Enter Studio
+                <div className="flex flex-col gap-4">
+                  <button
+                    onClick={() => setCurrentPage('editor')}
+                    className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 px-8 py-4 rounded-xl text-lg font-bold transition shadow-lg"
+                  >
+                    Open Video Editor
                   </button>
-                  <button onClick={handleLogout} className="bg-red-600 px-6 py-3 rounded-lg">
-                    Logout
+                  <button
+                    onClick={() => setCurrentPage('recorder')}
+                    className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 px-8 py-4 rounded-xl text-lg font-bold transition shadow-lg"
+                  >
+                    Screen Recorder
                   </button>
-                </>
+                  <button
+                    onClick={() => setCurrentPage('movies')}
+                    className="bg-slate-700 hover:bg-slate-600 px-8 py-4 rounded-xl text-lg font-bold transition"
+                  >
+                    Watch Movies
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="bg-slate-800 hover:bg-slate-700 px-8 py-4 rounded-xl text-lg font-bold transition border border-slate-600"
+                  >
+                    Logout ({userEmail})
+                  </button>
+                </div>
               )}
-              <div className="mt-10 flex gap-6">
-                <button onClick={() => setCurrentPage('community')} className="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">Community</button>
-                <button onClick={() => setCurrentPage('movies')} className="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">Movies</button>
-              </div>
             </div>
+            <PWAInstallPrompt />
           </div>
         );
     }
