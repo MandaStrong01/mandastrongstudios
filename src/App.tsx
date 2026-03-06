@@ -1789,49 +1789,54 @@ export default function App() {
 
               {/* Thank You Letter */}
               <div className="panel" style={{ padding: '3rem', marginBottom: '1px', borderLeft: 0, borderRight: 0 }}>
-                <h2 className="font-display" style={{ fontSize: '2.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>Thank You</h2>
+                <h2 className="font-display" style={{ fontSize: '2.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>A Special Thank You</h2>
                 <div style={{ maxWidth: '800px', margin: '0 auto', fontSize: '1.05rem', lineHeight: 1.8, color: 'var(--text-dim)' }}>
-                  <p style={{ marginBottom: '1.5rem' }}>
-                    To every creator, filmmaker, and storyteller who has chosen MandaStrong Studio—thank you from the bottom of my heart. This platform was built with passion, determination, and a vision to democratize professional video production for everyone.
+                  <p style={{ marginBottom: '1.5rem', fontSize: '1.15rem', fontWeight: 600, color: 'var(--text)' }}>
+                    To all current and future creators, dreamers, and storytellers...
                   </p>
                   <p style={{ marginBottom: '1.5rem' }}>
-                    Your creativity inspires us every single day. Whether you're crafting family memories, building your brand, or creating the next cinematic masterpiece, we're honored to be part of your journey.
+                    Your creativity and passion inspire positive change in the world. Through your films and stories, you have the power to educate, inspire, and bring awareness to critical issues like bullying prevention, social skills development, and humanity's collective growth.
+                  </p>
+                  <p style={{ marginBottom: '1.5rem' }}>
+                    Every piece of content you create has the potential to touch hearts, change minds, and make our world a better place. Thank you for being part of this mission to combine creative expression with meaningful impact.
                   </p>
                   <p style={{ marginBottom: '1.5rem', fontStyle: 'italic', color: 'var(--purple-bright)' }}>
-                    Keep creating. Keep innovating. Keep telling your stories.
-                  </p>
-                  <p style={{ textAlign: 'right', fontWeight: 600 }}>
-                    — Amanda<br />
-                    <span style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>Founder, MandaStrong Studio</span>
+                    Together, we are building a community of creators who use their talents to spread kindness, understanding, and hope. Your impact matters more than you know.
                   </p>
                 </div>
               </div>
 
               {/* Mission Statement */}
               <div className="panel" style={{ padding: '3rem', marginBottom: '1px', borderLeft: 0, borderRight: 0 }}>
-                <h2 className="font-display" style={{ fontSize: '2.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>Our Mission</h2>
+                <h2 className="font-display" style={{ fontSize: '2.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>About Our Mission</h2>
                 <div style={{ maxWidth: '800px', margin: '0 auto', fontSize: '1.05rem', lineHeight: 1.8, color: 'var(--text-dim)' }}>
                   <p style={{ marginBottom: '1.5rem' }}>
-                    MandaStrong Studio exists to empower creators with professional-grade AI tools that make world-class video production accessible to everyone. We believe that storytelling should not be limited by technical barriers or expensive software.
+                    <strong style={{ color: 'var(--purple-bright)' }}>MandaStrong Studio</strong> is more than a filmmaking platform. It's part of a comprehensive educational initiative designed to bring awareness and action to schools regarding bullying prevention, social skills development, and the cultivation of humanity in our communities.
                   </p>
-                  <p style={{ marginBottom: '1.5rem', fontWeight: 600, color: 'var(--text)' }}>
-                    We're committed to three core values:
+                  <p style={{ marginBottom: '1.5rem' }}>
+                    <strong style={{ color: 'var(--purple-bright)' }}>Fundraising Campaign: Educational Program on Bullying Prevention & Social Skills</strong> ~ Through this comprehensive program, we provide educational resources and movie-based content to help schools address these critical issues. Our goal is to create safe, supportive environments where every student can thrive. We hope to share a global humanity message that resonates with communities worldwide.
                   </p>
-                  <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem' }}>
-                    <li style={{ marginBottom: '1rem', paddingLeft: '1.5rem', position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: 0, color: 'var(--purple-bright)' }}>→</span>
-                      <strong>Innovation:</strong> Providing cutting-edge AI tools that push the boundaries of what's possible
-                    </li>
-                    <li style={{ marginBottom: '1rem', paddingLeft: '1.5rem', position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: 0, color: 'var(--purple-bright)' }}>→</span>
-                      <strong>Accessibility:</strong> Making professional video production available to creators at all skill levels
-                    </li>
-                    <li style={{ marginBottom: '1rem', paddingLeft: '1.5rem', position: 'relative' }}>
-                      <span style={{ position: 'absolute', left: 0, color: 'var(--purple-bright)' }}>→</span>
-                      <strong>Community:</strong> Supporting causes that matter—veterans, mental health, and anti-bullying education
-                    </li>
-                  </ul>
+                  <div style={{ background: 'rgba(139,92,246,0.1)', border: '2px solid rgba(139,92,246,0.3)', padding: '2rem', marginTop: '2rem', marginBottom: '2rem' }}>
+                    <p style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--purple-bright)', marginBottom: '1rem', textAlign: 'center' }}>Supporting Our Heroes</p>
+                    <p style={{ fontSize: '1.05rem', textAlign: 'center' }}>
+                      <strong style={{ color: 'var(--text)' }}>All Etsy Store Proceeds Benefit Veterans Mental Health Services</strong> ~ 100% of all proceeds from our Etsy Store fundraiser are donated directly to <strong style={{ color: 'var(--purple-bright)' }}>Veterans Mental Health Services</strong>, supporting those who have sacrificed so much for our freedom.
+                    </p>
+                  </div>
+                  <p style={{ fontSize: '1.15rem', textAlign: 'center', marginTop: '2rem' }}>
+                    Visit our fundraiser and learn more at{' '}
+                    <a href="https://MandaStrong1.Etsy.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--purple-bright)', textDecoration: 'underline', fontWeight: 700 }}>
+                      MandaStrong1.Etsy.com
+                    </a>
+                  </p>
                 </div>
+              </div>
+
+              {/* Full User Guide Link */}
+              <div className="panel" style={{ padding: '2rem', marginBottom: '1px', borderLeft: 0, borderRight: 0, textAlign: 'center' }}>
+                <button onClick={() => window.open('/guide.html', '_blank')} className="btn-primary" style={{ padding: '1.25rem 3rem', fontSize: '1rem', display: 'inline-flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <BookOpen size={20} />
+                  FULL USER GUIDE TO MANDASTRONG STUDIO
+                </button>
               </div>
 
               {/* How To Use Guide */}
@@ -1853,12 +1858,6 @@ export default function App() {
                         <p style={{ fontSize: '0.9rem', color: 'var(--text-dim)', lineHeight: 1.6 }}>{desc}</p>
                       </div>
                     ))}
-                  </div>
-                  <div style={{ marginTop: '3rem', textAlign: 'center' }}>
-                    <button onClick={() => window.open('/guide.html', '_blank')} className="btn-secondary" style={{ padding: '0.85rem 2rem' }}>
-                      <BookOpen size={14} style={{ marginRight: '0.5rem' }} />
-                      FULL USER GUIDE
-                    </button>
                   </div>
                 </div>
               </div>
