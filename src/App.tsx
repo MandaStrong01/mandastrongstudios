@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Film, Video, Users, Settings, LogIn, Home } from 'lucide-react';
 import { supabase } from './lib/supabase';
-import Stripe from 'stripe';
 
 type Page = 'home' | 'login' | 'editor' | 'community' | 'movies';
 
@@ -34,7 +33,6 @@ function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [stripeClient, setStripeClient] = useState<any>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -48,28 +46,12 @@ function App() {
         setUserEmail(session?.user?.email || null);
       });
 
-    // Load Stripe live
-    import('@stripe/stripe-js').then((stripeJs) => {
-      setStripeClient(stripeJs.loadStripe(process.env.NEXT_PUBLIC_STRIPE_KEY!));
-    });
-
     return () => subscription.unsubscribe();
   }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setCurrentPage('home');
-  };
-
-  const handlePurchase = async () => {
-    if (!stripeClient) return alert("Stripe not loaded");
-
-    const { data } = await supabase.functions.invoke('create-stripe-session', {
-      body: { email: userEmail }
-    });
-
-    const stripe = await stripeClient;
-    stripe?.redirectToCheckout({ sessionId: data.sessionId });
   };
 
   const renderEditor = () => (
@@ -87,11 +69,6 @@ function App() {
             </div>
           </div>
         ))}
-      </div>
-      <div className="mt-10 flex justify-center">
-        <button onClick={handlePurchase} className="bg-purple-700 px-6 py-3 rounded-lg text-white hover:bg-purple-600">
-          Unlock Full AI Movie Features
-        </button>
       </div>
     </div>
   );
