@@ -11,6 +11,7 @@ import {
 import { uploadFile, getSignedUrl, createAIGeneratedAsset, MediaAsset as StorageAsset, createProject, updateProject } from './lib/storage';
 import { exportVideo } from './lib/renderer';
 import { supabase } from './lib/supabase';
+import ToolBoardPage from './components/ToolBoardPage';
 
 // ===================== VIDEOS =====================
 const OCEAN_VIDEO = "https://assets.mixkit.co/videos/preview/mixkit-ocean-waves-loop-1196-large.mp4";
@@ -726,7 +727,7 @@ export default function App() {
     { label: '20 — Terms', p: 20 },
     { label: '21 — Agent Grok', p: 21 },
     { label: '22 — Community', p: 22 },
-    { label: '23 — Thank You', p: 23 },
+    { label: '23 — That\'s All Folks', p: 23 },
   ];
 
   const toolCategories = ['Writing', 'Voice', 'Image', 'Video', 'Motion', 'Enhancement'];
@@ -1146,100 +1147,24 @@ export default function App() {
         )}
 
         {/* PAGES 5–10 — AI TOOL BOARDS */}
-        {page >= 5 && page <= 10 && (() => {
-          const cat = toolCategories[page - 5];
-          const allTools = AI_TOOLS[cat] || [];
-          const filtered = toolSearch.trim() ? allTools.filter(t => t.toLowerCase().includes(toolSearch.toLowerCase())) : allTools;
-          const catIcons: Record<string, any> = { Writing: BookOpen, Voice: Mic, Image: Camera, Video: Film, Motion: Activity, Enhancement: Sparkles };
-          const CatIcon = catIcons[cat] || Zap;
-          return (
-            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingTop: '4rem', paddingBottom: '6rem' }}>
-              {/* Header */}
-              <div className="panel" style={{ padding: '1.5rem 2rem', borderLeft: 0, borderRight: 0, borderTop: 0, marginBottom: '1px', display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <CatIcon size={20} style={{ color: 'var(--purple-bright)' }} />
-                  <div>
-                    <div className="font-mono" style={{ fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--text-dim)' }}>AI WORKSTATION 0{page - 3}</div>
-                    <div className="font-display" style={{ fontSize: '1.8rem', lineHeight: 1 }}>{cat.toUpperCase()} TOOLS</div>
-                  </div>
-                </div>
-
-                {/* Category tabs */}
-                <div style={{ display: 'flex', gap: '1px', background: 'var(--border)', marginLeft: 'auto', flexWrap: 'wrap' }}>
-                  {toolCategories.map((c, i) => (
-                    <button key={c} onClick={() => goTo(5 + i)}
-                      className="font-mono"
-                      style={{ padding: '0.4rem 0.75rem', fontSize: '0.6rem', letterSpacing: '0.1em', background: c === cat ? 'var(--purple)' : 'var(--panel)', color: c === cat ? 'white' : 'var(--text-dim)', border: 'none', cursor: 'pointer' }}>
-                      {c.slice(0, 3).toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Search */}
-                <div style={{ position: 'relative' }}>
-                  <Search size={12} style={{ position: 'absolute', left: '0.6rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
-                  <input type="text" value={toolSearch} onChange={e => setToolSearch(e.target.value)}
-                    placeholder={`Search ${filtered.length} tools...`}
-                    className="font-mono"
-                    style={{ background: 'var(--deep)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.4rem 0.5rem 0.4rem 2rem', fontSize: '0.65rem', width: '200px', outline: 'none' }} />
-                </div>
-
-                <div className="font-mono" style={{ fontSize: '0.6rem', color: 'var(--purple-bright)' }}>{filtered.length} TOOLS</div>
-              </div>
-
-              {/* Tools grid */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: '1px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: '1px', background: 'var(--border)', alignContent: 'start' }}>
-                {filtered.map((tool, i) => (
-                  <button key={i} onClick={() => setSelectedTool(tool)} className="tool-card" style={{ minHeight: '70px' }}>
-                    <div className="font-mono" style={{ fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--text-dim)', marginBottom: '0.3rem' }}>TOOL {String(i + 1).padStart(3, '0')}</div>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>{tool}</div>
-                  </button>
-                ))}
-              </div>
-
-              {/* Tool Modal */}
-              {selectedTool && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-                  <div className="panel" style={{ maxWidth: '600px', width: '100%', padding: '2rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                      <div>
-                        <div className="font-mono" style={{ fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--purple-bright)', marginBottom: '0.25rem' }}>{cat.toUpperCase()} TOOL</div>
-                        <h2 className="font-display" style={{ fontSize: '2rem' }}>{selectedTool}</h2>
-                      </div>
-                      <button onClick={() => { setSelectedTool(null); setAiPrompt(''); }} style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-dim)', padding: '0.3rem', cursor: 'pointer' }}>
-                        <X size={16} />
-                      </button>
-                    </div>
-
-                    {/* Upload */}
-                    <div style={{ marginBottom: '1rem' }}>
-                      <div className="font-mono" style={{ fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>UPLOAD SOURCE MEDIA</div>
-                      <button onClick={() => fileInputRef.current?.click()}
-                        style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(139,92,246,0.3)', color: 'var(--text-dim)', padding: '1rem', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '0.65rem', letterSpacing: '0.1em' }}>
-                        + BROWSE FILES
-                      </button>
-                    </div>
-
-                    {/* Prompt */}
-                    <div style={{ marginBottom: '1rem' }}>
-                      <div className="font-mono" style={{ fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>AI GENERATION PROMPT</div>
-                      <textarea value={aiPrompt} onChange={e => setAiPrompt(e.target.value)}
-                        placeholder={`Describe what you want to generate with ${selectedTool}...`}
-                        style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.75rem 1rem', fontFamily: 'Barlow', fontSize: '0.85rem', height: '100px', resize: 'none', outline: 'none' }} />
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button onClick={() => { setSelectedTool(null); setAiPrompt(''); }} className="btn-secondary" style={{ flex: 1, padding: '0.75rem' }}>CANCEL</button>
-                      <button onClick={handleAIGenerate} disabled={!aiPrompt.trim() || generating} className="btn-primary" style={{ flex: 2, padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: (!aiPrompt.trim() || generating) ? 0.4 : 1 }}>
-                        {generating ? <><Loader size={14} className="animate-spin" /> GENERATING...</> : <><Zap size={14} /> GENERATE & SAVE</>}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })()}
+        {page >= 5 && page <= 10 && (
+          <ToolBoardPage
+            page={page}
+            toolCategories={toolCategories}
+            AI_TOOLS={AI_TOOLS}
+            toolSearch={toolSearch}
+            setToolSearch={setToolSearch}
+            goTo={goTo}
+            fileInputRef={fileInputRef}
+            handleAIGenerate={handleAIGenerate}
+            handleUrlImport={handleUrlImport}
+            generating={generating}
+            aiPrompt={aiPrompt}
+            setAiPrompt={setAiPrompt}
+            importUrl={importUrl}
+            setImportUrl={setImportUrl}
+          />
+        )}
 
         {/* PAGE 11 — UPLOAD MEDIA */}
         {page === 11 && (
@@ -1645,25 +1570,62 @@ export default function App() {
                   </div>
               )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border)' }}>
-                {[
-                  { icon: Download, label: 'DOWNLOAD TO DEVICE', color: 'var(--purple)', action: () => { if (currentVideo) { const a = document.createElement('a'); a.href = currentVideo.url; a.download = currentVideo.name; a.click(); } else addToast('No render available', 'error'); } },
-                  { icon: Save, label: 'SAVE PROJECT FILE', color: '#A78BFA', action: () => {
-                    const projectData = { mediaLibrary, timeline, audioLevels, duration, exportSettings, savedAt: new Date().toISOString() };
-                    const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
-                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `MandaStrong_Project_${Date.now()}.json`; a.click();
-                    addToast('Project file downloaded!', 'success');
-                  }},
-                  { icon: Share2, label: 'SHARE TO COMMUNITY HUB', color: '#3B82F6', action: () => { addToast('Shared to Community!', 'success'); setTimeout(() => goTo(22), 800); } },
-                ].map(({ icon: Icon, label, color, action }) => (
-                  <button key={label} onClick={action}
+              <div style={{ marginBottom: '2rem' }}>
+                <div className="font-mono" style={{ fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--text-dim)', marginBottom: '0.75rem' }}>EXPORT OPTIONS</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border)' }}>
+                  {[
+                    { icon: Download, label: 'DOWNLOAD TO DEVICE', color: 'var(--purple)', action: () => { if (currentVideo) { const a = document.createElement('a'); a.href = currentVideo.url; a.download = currentVideo.name; a.click(); addToast('Download started!', 'success'); } else addToast('No render available', 'error'); } },
+                    { icon: Save, label: 'SAVE PROJECT FILE', color: '#A78BFA', action: () => {
+                      const projectData = { mediaLibrary, timeline, audioLevels, duration, exportSettings, savedAt: new Date().toISOString() };
+                      const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+                      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `MandaStrong_Project_${Date.now()}.json`; a.click();
+                      addToast('Project file downloaded!', 'success');
+                    }},
+                  ].map(({ icon: Icon, label, color, action }) => (
+                    <button key={label} onClick={action}
+                      className="panel"
+                      style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', border: '1px solid var(--border)', cursor: 'pointer', background: 'var(--panel)', transition: 'all 0.15s', opacity: currentVideo ? 1 : 0.4 }}>
+                      <Icon size={18} style={{ color }} />
+                      <span className="font-mono" style={{ fontSize: '0.7rem', letterSpacing: '0.1em' }}>{label}</span>
+                      <ChevronRight size={14} style={{ color: 'var(--text-dim)', marginLeft: 'auto' }} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '2rem' }}>
+                <div className="font-mono" style={{ fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--text-dim)', marginBottom: '0.75rem' }}>SOCIAL MEDIA PLATFORMS</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1px', background: 'var(--border)' }}>
+                  {[
+                    { label: 'YouTube', icon: Film, color: '#FF0000', url: 'https://studio.youtube.com' },
+                    { label: 'Instagram', icon: Camera, color: '#E4405F', url: 'https://www.instagram.com' },
+                    { label: 'TikTok', icon: Music, color: '#000000', url: 'https://www.tiktok.com/upload' },
+                    { label: 'Facebook', icon: Globe, color: '#1877F2', url: 'https://www.facebook.com' },
+                    { label: 'Twitter / X', icon: Share2, color: '#1DA1F2', url: 'https://twitter.com/compose/tweet' },
+                    { label: 'Vimeo', icon: Film, color: '#1AB7EA', url: 'https://vimeo.com/upload' },
+                  ].map(({ label, icon: Icon, color, url }) => (
+                    <button key={label} onClick={() => { addToast(`Opening ${label}...`, 'info'); window.open(url, '_blank'); }}
+                      className="panel"
+                      style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', border: '1px solid var(--border)', cursor: 'pointer', background: 'var(--panel)', transition: 'all 0.15s', opacity: currentVideo ? 1 : 0.4 }}>
+                      <Icon size={18} style={{ color }} />
+                      <span className="font-mono" style={{ fontSize: '0.7rem', letterSpacing: '0.1em' }}>{label}</span>
+                      <ChevronRight size={14} style={{ color: 'var(--text-dim)', marginLeft: 'auto' }} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="font-mono" style={{ fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--text-dim)', marginBottom: '0.75rem' }}>COMMUNITY</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border)' }}>
+                  <button onClick={() => { addToast('Shared to Community!', 'success'); setTimeout(() => goTo(22), 800); }}
                     className="panel"
                     style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', border: '1px solid var(--border)', cursor: 'pointer', background: 'var(--panel)', transition: 'all 0.15s', opacity: currentVideo ? 1 : 0.4 }}>
-                    <Icon size={18} style={{ color }} />
-                    <span className="font-mono" style={{ fontSize: '0.7rem', letterSpacing: '0.1em' }}>{label}</span>
+                    <Star size={18} style={{ color: '#3B82F6' }} />
+                    <span className="font-mono" style={{ fontSize: '0.7rem', letterSpacing: '0.1em' }}>SHARE TO COMMUNITY HUB</span>
                     <ChevronRight size={14} style={{ color: 'var(--text-dim)', marginLeft: 'auto' }} />
                   </button>
-                ))}
+                </div>
               </div>
             </div>
           </div>
@@ -1810,25 +1772,148 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 23 — THANK YOU */}
+        {/* PAGE 23 — THAT'S ALL FOLKS */}
         {page === 23 && (
-          <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(139,92,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.04) 1px,transparent 1px)', backgroundSize: '60px 60px', pointerEvents: 'none' }} />
-            <div className="font-mono" style={{ fontSize: '0.6rem', letterSpacing: '0.4em', color: 'var(--purple-bright)', marginBottom: '2rem' }}>THAT'S ALL FOLKS</div>
-            <h1 className="font-display" style={{ fontSize: 'clamp(4rem,15vw,12rem)', lineHeight: 0.85, marginBottom: '2rem', textShadow: '0 0 80px rgba(139,92,246,0.5)' }}>
-              MANDA<br />STRONG<br />STUDIO
-            </h1>
-            <blockquote style={{ maxWidth: '600px', fontSize: '1.1rem', fontWeight: 300, fontStyle: 'italic', color: 'var(--text-dim)', lineHeight: 1.7, marginBottom: '3rem' }}>
-              "Amanda's thank you to creators now and in the future.<br />Supporting cinematic innovation through our Veteran Fundraiser mission."
-            </blockquote>
-            <a href="https://MandaStrong1.Etsy.com" target="_blank" rel="noopener noreferrer"
-              className="font-display"
-              style={{ fontSize: 'clamp(1.5rem,5vw,3.5rem)', color: 'var(--purple-bright)', textDecoration: 'none', borderBottom: '2px solid var(--purple)', paddingBottom: '0.25rem', marginBottom: '3rem', display: 'block', transition: 'all 0.2s' }}>
-              MandaStrong1.Etsy.com
-            </a>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <button onClick={() => goTo(1)} className="btn-primary" style={{ padding: '0.85rem 2.5rem', fontSize: '0.8rem' }}>← HOME</button>
-              <button onClick={() => goTo(5)} className="btn-secondary" style={{ padding: '0.85rem 2.5rem', fontSize: '0.8rem' }}>BACK TO TOOLS</button>
+          <div style={{ minHeight: '100vh', padding: '2rem', paddingTop: '5rem' }}>
+            <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+              {/* Video Section */}
+              <div style={{ marginBottom: '3rem', textAlign: 'center' }}>
+                <div className="font-mono" style={{ fontSize: '0.6rem', letterSpacing: '0.4em', color: 'var(--purple-bright)', marginBottom: '1rem' }}>FINAL SCENE</div>
+                <h1 className="font-display" style={{ fontSize: 'clamp(3rem,10vw,8rem)', lineHeight: 0.9, marginBottom: '2rem' }}>
+                  THAT'S ALL FOLKS
+                </h1>
+                <div style={{ maxWidth: '900px', margin: '0 auto 2rem', aspectRatio: '16/9', background: '#000', border: '2px solid var(--border)', overflow: 'hidden' }}>
+                  <video controls autoPlay loop muted style={{ width: '100%', height: '100%', objectFit: 'contain' }} src="/thatsallfolks.mp4" />
+                </div>
+              </div>
+
+              {/* Thank You Letter */}
+              <div className="panel" style={{ padding: '3rem', marginBottom: '1px', borderLeft: 0, borderRight: 0 }}>
+                <h2 className="font-display" style={{ fontSize: '2.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>Thank You</h2>
+                <div style={{ maxWidth: '800px', margin: '0 auto', fontSize: '1.05rem', lineHeight: 1.8, color: 'var(--text-dim)' }}>
+                  <p style={{ marginBottom: '1.5rem' }}>
+                    To every creator, filmmaker, and storyteller who has chosen MandaStrong Studio—thank you from the bottom of my heart. This platform was built with passion, determination, and a vision to democratize professional video production for everyone.
+                  </p>
+                  <p style={{ marginBottom: '1.5rem' }}>
+                    Your creativity inspires us every single day. Whether you're crafting family memories, building your brand, or creating the next cinematic masterpiece, we're honored to be part of your journey.
+                  </p>
+                  <p style={{ marginBottom: '1.5rem', fontStyle: 'italic', color: 'var(--purple-bright)' }}>
+                    Keep creating. Keep innovating. Keep telling your stories.
+                  </p>
+                  <p style={{ textAlign: 'right', fontWeight: 600 }}>
+                    — Amanda<br />
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>Founder, MandaStrong Studio</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Mission Statement */}
+              <div className="panel" style={{ padding: '3rem', marginBottom: '1px', borderLeft: 0, borderRight: 0 }}>
+                <h2 className="font-display" style={{ fontSize: '2.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>Our Mission</h2>
+                <div style={{ maxWidth: '800px', margin: '0 auto', fontSize: '1.05rem', lineHeight: 1.8, color: 'var(--text-dim)' }}>
+                  <p style={{ marginBottom: '1.5rem' }}>
+                    MandaStrong Studio exists to empower creators with professional-grade AI tools that make world-class video production accessible to everyone. We believe that storytelling should not be limited by technical barriers or expensive software.
+                  </p>
+                  <p style={{ marginBottom: '1.5rem', fontWeight: 600, color: 'var(--text)' }}>
+                    We're committed to three core values:
+                  </p>
+                  <ul style={{ listStyle: 'none', padding: 0, marginBottom: '1.5rem' }}>
+                    <li style={{ marginBottom: '1rem', paddingLeft: '1.5rem', position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: 0, color: 'var(--purple-bright)' }}>→</span>
+                      <strong>Innovation:</strong> Providing cutting-edge AI tools that push the boundaries of what's possible
+                    </li>
+                    <li style={{ marginBottom: '1rem', paddingLeft: '1.5rem', position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: 0, color: 'var(--purple-bright)' }}>→</span>
+                      <strong>Accessibility:</strong> Making professional video production available to creators at all skill levels
+                    </li>
+                    <li style={{ marginBottom: '1rem', paddingLeft: '1.5rem', position: 'relative' }}>
+                      <span style={{ position: 'absolute', left: 0, color: 'var(--purple-bright)' }}>→</span>
+                      <strong>Community:</strong> Supporting causes that matter—veterans, mental health, and anti-bullying education
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* How To Use Guide */}
+              <div className="panel" style={{ padding: '3rem', marginBottom: '1px', borderLeft: 0, borderRight: 0 }}>
+                <h2 className="font-display" style={{ fontSize: '2.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>How To Use MandaStrong Studio</h2>
+                <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem' }}>
+                    {[
+                      { step: '01', title: 'Create Account', desc: 'Sign up for your 7-day free trial or browse as guest' },
+                      { step: '02', title: 'Choose AI Tools', desc: 'Access 600+ AI tools across Writing, Voice, Image, Video, Motion & Enhancement' },
+                      { step: '03', title: 'Upload Media', desc: 'Import your videos, audio, and images or generate with AI' },
+                      { step: '04', title: 'Edit Timeline', desc: 'Drag and drop clips onto multi-track timeline' },
+                      { step: '05', title: 'Enhance & Mix', desc: 'Apply AI enhancements and mix audio levels' },
+                      { step: '06', title: 'Render & Export', desc: 'Export in 8K, 4K, or HD to any platform' },
+                    ].map(({ step, title, desc }) => (
+                      <div key={step}>
+                        <div className="font-mono" style={{ fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--purple-bright)', marginBottom: '0.5rem' }}>STEP {step}</div>
+                        <h3 className="font-display" style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{title}</h3>
+                        <p style={{ fontSize: '0.9rem', color: 'var(--text-dim)', lineHeight: 1.6 }}>{desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: '3rem', textAlign: 'center' }}>
+                    <button onClick={() => window.open('/guide.html', '_blank')} className="btn-secondary" style={{ padding: '0.85rem 2rem' }}>
+                      <BookOpen size={14} style={{ marginRight: '0.5rem' }} />
+                      FULL USER GUIDE
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Support Our Causes */}
+              <div className="panel" style={{ padding: '3rem', marginBottom: '1px', borderLeft: 0, borderRight: 0 }}>
+                <h2 className="font-display" style={{ fontSize: '2.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>Support Our Causes</h2>
+                <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                  <p style={{ fontSize: '1.05rem', lineHeight: 1.8, color: 'var(--text-dim)', marginBottom: '2rem', textAlign: 'center' }}>
+                    A portion of every MandaStrong Studio subscription directly supports these vital initiatives:
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    {[
+                      { icon: Shield, title: 'Veterans Mental Health', desc: 'Supporting mental health services and resources for veterans and their families' },
+                      { icon: Heart, title: 'Anti-Bullying Education', desc: 'Funding programs that prevent bullying in schools and online communities' },
+                      { icon: Globe, title: 'Community Humanity', desc: 'Building compassionate communities through education and outreach' },
+                    ].map(({ icon: Icon, title, desc }) => (
+                      <div key={title} style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start', padding: '1.5rem', background: 'rgba(139,92,246,0.05)', border: '1px solid rgba(139,92,246,0.2)' }}>
+                        <Icon size={32} style={{ color: 'var(--purple-bright)', flexShrink: 0 }} />
+                        <div>
+                          <h3 className="font-display" style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>{title}</h3>
+                          <p style={{ fontSize: '0.95rem', color: 'var(--text-dim)', lineHeight: 1.6 }}>{desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Schools & Community Use */}
+              <div className="panel" style={{ padding: '3rem', borderLeft: 0, borderRight: 0, borderBottom: 0 }}>
+                <h2 className="font-display" style={{ fontSize: '2.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>Schools & Community Use</h2>
+                <div style={{ maxWidth: '800px', margin: '0 auto', fontSize: '1.05rem', lineHeight: 1.8, color: 'var(--text-dim)', textAlign: 'center' }}>
+                  <p style={{ marginBottom: '1.5rem' }}>
+                    Educational institutions and non-profit organizations can apply for special pricing and community licenses. We believe in empowering the next generation of storytellers.
+                  </p>
+                  <p style={{ marginBottom: '2rem', fontWeight: 600, color: 'var(--purple-bright)' }}>
+                    Contact us about educational discounts and bulk licensing options.
+                  </p>
+                  <a href="https://MandaStrong1.Etsy.com" target="_blank" rel="noopener noreferrer"
+                    className="font-display"
+                    style={{ fontSize: '2rem', color: 'var(--purple-bright)', textDecoration: 'none', borderBottom: '2px solid var(--purple)', paddingBottom: '0.5rem', display: 'inline-block', marginBottom: '3rem' }}>
+                    MandaStrong1.Etsy.com
+                  </a>
+                </div>
+              </div>
+
+              {/* Navigation Buttons */}
+              <div style={{ textAlign: 'center', marginTop: '3rem', paddingBottom: '3rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <button onClick={() => goTo(1)} className="btn-primary" style={{ padding: '0.85rem 2.5rem', fontSize: '0.8rem' }}>← BACK TO HOME</button>
+                  <button onClick={() => goTo(5)} className="btn-secondary" style={{ padding: '0.85rem 2.5rem', fontSize: '0.8rem' }}>START CREATING</button>
+                  <button onClick={() => goTo(22)} className="btn-secondary" style={{ padding: '0.85rem 2.5rem', fontSize: '0.8rem' }}>COMMUNITY HUB</button>
+                </div>
+              </div>
             </div>
           </div>
         )}
