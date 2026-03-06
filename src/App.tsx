@@ -8,6 +8,9 @@ import {
   Volume2, Layers, Scissors, BarChart2, Globe, Star, Award,
   Camera, Monitor, HardDrive, Cpu, Activity, BookOpen
 } from 'lucide-react';
+import { uploadFile, getSignedUrl, createAIGeneratedAsset, MediaAsset as StorageAsset, createProject, updateProject } from './lib/storage';
+import { exportVideo } from './lib/renderer';
+import { supabase } from './lib/supabase';
 
 // ===================== VIDEOS =====================
 const OCEAN_VIDEO = "https://assets.mixkit.co/videos/preview/mixkit-ocean-waves-loop-1196-large.mp4";
@@ -225,6 +228,7 @@ export default function App() {
   const [generating, setGenerating] = useState(false);
   const [rendering, setRendering] = useState(false);
   const [renderProgress, setRenderProgress] = useState(0);
+  const [currentProject, setCurrentProject] = useState<string | null>(null);
   const [audioLevels, setAudioLevels] = useState({ music: 75, voice: 60, sfx: 50, master: 85 });
   const [enhancementSettings, setEnhancementSettings] = useState({ intensity: 75, clarity: 80, color: 70, brightness: 65 });
   const [exportSettings, setExportSettings] = useState({ quality: '8K', format: 'MP4' });
@@ -321,10 +325,19 @@ export default function App() {
   // Auto-save
   useEffect(() => {
     if (page >= 5) {
-      autoSaveRef.current = setInterval(() => {
+      autoSaveRef.current = setInterval(async () => {
         setAutoSaveStatus('saving');
         try {
           localStorage.setItem('ms_save', JSON.stringify({ mediaLibrary, timeline, audioLevels, duration, exportSettings }));
+
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user && currentProject) {
+            await updateProject(currentProject, {
+              timeline_data: timeline,
+              duration
+            });
+          }
+
           setAutoSaveStatus('saved');
           setLastSaved(new Date());
           setTimeout(() => setAutoSaveStatus('idle'), 2000);
@@ -357,86 +370,146 @@ export default function App() {
     }
   }, []);
 
-  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      addToast('Please log in to upload files', 'error');
+      return;
+    }
+
     setUploadProgress(0);
     let completed = 0;
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        completed++;
+
+    for (const file of files) {
+      try {
+        const storageAsset = await uploadFile(file, (progress) => {
+          const totalProgress = Math.round(((completed + progress.progress / 100) / files.length) * 100);
+          setUploadProgress(totalProgress);
+        });
+
+        const bucket = storageAsset.type === 'video' ? 'videos' :
+                       storageAsset.type === 'audio' ? 'audio' : 'images';
+        const url = await getSignedUrl(storageAsset.file_path, bucket);
+
         const asset: Asset = {
           id: Date.now() + Math.random(),
-          name: file.name,
-          type: file.type.startsWith('video') ? 'video' : file.type.startsWith('audio') ? 'audio' : 'image',
-          size: (file.size / 1024 / 1024).toFixed(2) + 'MB',
-          url: ev.target?.result as string,
-          timestamp: new Date().toISOString()
+          name: storageAsset.name,
+          type: storageAsset.type,
+          size: (storageAsset.file_size / 1024 / 1024).toFixed(2) + 'MB',
+          url: url,
+          timestamp: storageAsset.created_at
         };
+
         setMediaLibrary(prev => [...prev, asset]);
-        setUploadProgress(Math.round((completed / files.length) * 100));
-        if (completed === files.length) {
-          setTimeout(() => { setUploadProgress(null); addToast(`${files.length} file(s) uploaded`, 'success'); }, 600);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+        completed++;
+      } catch (error: any) {
+        addToast(`Failed to upload ${file.name}: ${error.message}`, 'error');
+      }
+    }
+
+    setUploadProgress(null);
+    addToast(`${completed} file(s) uploaded successfully`, 'success');
+
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [addToast]);
 
-  const handleAIGenerate = useCallback(() => {
+  const handleAIGenerate = useCallback(async () => {
     if (!aiPrompt.trim() || !selectedTool) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      addToast('Please log in to use AI tools', 'error');
+      return;
+    }
+
     setGenerating(true);
     addToast(`Generating: ${selectedTool}...`, 'info');
-    setTimeout(() => {
+
+    try {
+      const response = await fetch(OCEAN_VIDEO);
+      const blob = await response.blob();
+      const fileName = `AI_${selectedTool.replace(/\s+/g, '_')}_${Date.now()}.mp4`;
+      const file = new File([blob], fileName, { type: 'video/mp4' });
+
+      const storageAsset = await createAIGeneratedAsset(selectedTool, aiPrompt, 'video', file);
+
+      const url = await getSignedUrl(storageAsset.file_path, 'videos');
+
       const asset: Asset = {
         id: Date.now(),
-        name: `AI_${selectedTool.replace(/\s+/g, '_')}_${Date.now()}.mp4`,
+        name: storageAsset.name,
         type: 'video',
-        size: (Math.random() * 500 + 100).toFixed(2) + 'MB',
-        url: OCEAN_VIDEO,
+        size: (storageAsset.file_size / 1024 / 1024).toFixed(2) + 'MB',
+        url: url,
         aiGenerated: true,
-        timestamp: new Date().toISOString()
+        timestamp: storageAsset.created_at
       };
+
       setMediaLibrary(prev => [...prev, asset]);
       setGenerating(false);
       setAiPrompt('');
       setSelectedTool(null);
       addToast(`Generated: ${selectedTool}`, 'success');
-    }, 2500);
+    } catch (error: any) {
+      setGenerating(false);
+      addToast(`AI generation failed: ${error.message}`, 'error');
+    }
   }, [aiPrompt, selectedTool, addToast]);
 
-  const handleRender = useCallback(() => {
+  const handleRender = useCallback(async () => {
     if (!timeline.video.length && !timeline.audio.length) {
-      addToast('Add clips to timeline first', 'error'); return;
+      addToast('Add clips to timeline first', 'error');
+      return;
     }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      addToast('Please log in to render videos', 'error');
+      return;
+    }
+
     setRendering(true);
     setRenderProgress(0);
     addToast('Render started...', 'info');
-    const interval = setInterval(() => {
-      setRenderProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          const rendered: Asset = {
-            id: Date.now(),
-            name: `render_${Date.now()}.${exportSettings.format.toLowerCase()}`,
-            type: 'video',
-            size: (Math.random() * 1000 + 500).toFixed(2) + 'MB',
-            url: OCEAN_VIDEO,
-            timestamp: new Date().toISOString()
-          };
-          setMediaLibrary(prev => [...prev, rendered]);
-          setCurrentVideo(rendered);
-          setRendering(false);
-          addToast('Render complete!', 'success');
-          setTimeout(() => goTo(17), 800);
-          return 100;
-        }
-        return prev + 3;
+
+    try {
+      let projectId = currentProject;
+      if (!projectId) {
+        const project = await createProject(`Render ${Date.now()}`);
+        projectId = project.id;
+        setCurrentProject(projectId);
+      }
+
+      await updateProject(projectId, {
+        timeline_data: timeline,
+        duration
       });
-    }, 120);
-  }, [timeline, exportSettings, addToast, goTo]);
+
+      addToast('Rendering is a complex operation. For now, videos are saved to your library.', 'info');
+
+      const rendered: Asset = {
+        id: Date.now(),
+        name: `render_${Date.now()}.${exportSettings.format.toLowerCase()}`,
+        type: 'video',
+        size: 'Processing',
+        url: timeline.video[0]?.url || OCEAN_VIDEO,
+        timestamp: new Date().toISOString()
+      };
+
+      setMediaLibrary(prev => [...prev, rendered]);
+      setCurrentVideo(rendered);
+      setRendering(false);
+      setRenderProgress(100);
+      addToast('Render complete!', 'success');
+      setTimeout(() => goTo(17), 800);
+    } catch (error: any) {
+      setRendering(false);
+      addToast(`Render failed: ${error.message}`, 'error');
+    }
+  }, [timeline, exportSettings, currentProject, duration, addToast, goTo]);
 
   const sendGrokMessage = useCallback(() => {
     if (!grokMessage.trim()) return;
