@@ -149,56 +149,80 @@ function App() {
               playsInline
             />
             <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4">
-              <h1 className="text-4xl md:text-6xl font-black mb-4 text-center bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                MandaStrong Studio
-              </h1>
-              <p className="text-xl md:text-2xl mb-12 text-gray-300 text-center max-w-2xl">
-                Professional Video Creation & Editing Platform
-              </p>
+              <div className="text-center mb-8">
+                <div className="text-xs tracking-[0.3em] text-gray-400 mb-6">
+                  CINEMA INTELLIGENCE PLATFORM — EST. 2026
+                </div>
+                <h1 className="text-6xl md:text-8xl font-black mb-6 tracking-tight">
+                  <span className="block text-white">MANDA</span>
+                  <span className="block text-white">STRONG</span>
+                  <span className="block bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
+                    STUDIO
+                  </span>
+                </h1>
+                <div className="text-sm tracking-[0.2em] text-gray-300 mb-8">
+                  600+ AI TOOLS • 8K EXPORT • UP TO 3-HOUR FILMS
+                </div>
+                <p className="text-2xl md:text-3xl font-light text-gray-200 mb-12">
+                  The All-In-One Professional AI Movie Creation Platform
+                </p>
+                <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/50 rounded-lg px-6 py-3 inline-block mb-8">
+                  <span className="text-orange-400">🎬 Special Offer:</span>
+                  <span className="text-white ml-2">New Studio Plan Subscribers Receive 3 Hours Free Trial</span>
+                </div>
+              </div>
 
               {!isAuthenticated ? (
                 <div className="flex flex-col gap-4">
                   <button
                     onClick={() => setCurrentPage('login')}
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 px-8 py-4 rounded-xl text-lg font-bold transition shadow-lg"
+                    className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 px-12 py-4 rounded-lg text-lg font-bold transition shadow-2xl uppercase tracking-wider"
                   >
-                    Get Started
+                    Start Creating
                   </button>
                   <button
-                    onClick={() => setCurrentPage('movies')}
-                    className="bg-slate-700 hover:bg-slate-600 px-8 py-4 rounded-xl text-lg font-bold transition"
+                    onClick={() => setCurrentPage('login')}
+                    className="bg-white/10 hover:bg-white/20 border border-white/30 px-12 py-4 rounded-lg text-lg font-bold transition uppercase tracking-wider backdrop-blur-sm"
                   >
-                    Browse Movies
+                    Login / Register
                   </button>
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
                   <button
                     onClick={() => setCurrentPage('editor')}
-                    className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 px-8 py-4 rounded-xl text-lg font-bold transition shadow-lg"
+                    className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 px-12 py-4 rounded-lg text-lg font-bold transition shadow-2xl uppercase tracking-wider"
                   >
                     Open Video Editor
                   </button>
                   <button
                     onClick={() => setCurrentPage('recorder')}
-                    className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 px-8 py-4 rounded-xl text-lg font-bold transition shadow-lg"
+                    className="bg-white/10 hover:bg-white/20 border border-white/30 px-12 py-4 rounded-lg text-lg font-bold transition uppercase tracking-wider backdrop-blur-sm"
                   >
                     Screen Recorder
                   </button>
                   <button
                     onClick={() => setCurrentPage('movies')}
-                    className="bg-slate-700 hover:bg-slate-600 px-8 py-4 rounded-xl text-lg font-bold transition"
+                    className="bg-white/10 hover:bg-white/20 border border-white/30 px-12 py-4 rounded-lg text-lg font-bold transition uppercase tracking-wider backdrop-blur-sm"
                   >
                     Watch Movies
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="bg-slate-800 hover:bg-slate-700 px-8 py-4 rounded-xl text-lg font-bold transition border border-slate-600"
+                    className="bg-slate-800/50 hover:bg-slate-700/50 px-12 py-4 rounded-lg text-sm font-medium transition border border-slate-600"
                   >
                     Logout ({userEmail})
                   </button>
                 </div>
               )}
+
+              <div className="absolute bottom-8 left-8 flex items-center gap-3 text-xs text-gray-400">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="uppercase tracking-wider">System Online</span>
+              </div>
+              <div className="absolute bottom-8 right-8 text-xs text-gray-400 uppercase tracking-wider">
+                Build 2026.03.05
+              </div>
             </div>
             <PWAInstallPrompt />
           </div>
