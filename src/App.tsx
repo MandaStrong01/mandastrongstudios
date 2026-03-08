@@ -1479,16 +1479,7 @@ export default function App() {
                 <div className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.4em', color: 'var(--purple-bright)', marginBottom: '0.5rem' }}>SHOWCASE</div>
                 <h1 className="font-display" style={{ fontSize: 'clamp(3rem,8vw,7rem)', lineHeight: 0.85 }}>EXAMPLES MADE BY<br /><span style={{ color: 'var(--purple-bright)' }}>MANDASTRONG STUDIO</span></h1>
               </div>
-              {exIsAdmin ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'DM Mono', fontSize: '0.9rem', color: 'var(--purple-bright)', letterSpacing: '0.1em' }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--purple-bright)' }} className="animate-pulse" /> ADMIN ACTIVE
-                  <button onClick={() => setExIsAdmin(false)} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', marginLeft: '0.25rem' }}><X size={12} /></button>
-                </div>
-              ) : (
-                <button onClick={() => setExShowLogin(true)} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem' }}>
-                  <Lock size={10} /> ADMIN
-                </button>
-              )}
+
             </div>
 
             <div style={{ width: '100%', height: '1px', background: 'linear-gradient(90deg,transparent,rgba(139,92,246,0.3),transparent)', marginBottom: '2rem' }} />
@@ -1507,10 +1498,15 @@ export default function App() {
                       {exIsAdmin && <button onClick={e => { e.stopPropagation(); exRefs[i].current?.click(); }} className="btn-primary" style={{ position: 'absolute', bottom: '0.75rem', right: '0.75rem', zIndex: 20, padding: '0.2rem 0.6rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Upload size={10} /> REPLACE</button>}
                     </>
                   ) : (
-                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', background: 'linear-gradient(135deg,rgba(107,33,168,0.08),#000)' }}>
-                      <Film size={28} style={{ color: 'rgba(139,92,246,0.3)' }} />
-                      <div className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.25)' }}>FILM UPLOADING SOON</div>
-                      {exIsAdmin && <button onClick={e => { e.stopPropagation(); exRefs[i].current?.click(); }} className="btn-primary" style={{ fontSize: '0.9rem', padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Upload size={10} /> UPLOAD</button>}
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', background: 'linear-gradient(135deg,rgba(107,33,168,0.12),#000)', backgroundImage: 'linear-gradient(rgba(139,92,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.04) 1px,transparent 1px)', backgroundSize: '30px 30px' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                        {[0,1,2,3,4].map(b => (
+                          <div key={b} style={{ width: '4px', background: 'var(--purple-bright)', borderRadius: '2px', animation: `pulse 1.2s ease-in-out ${b * 0.15}s infinite`, height: `${12 + b * 6}px`, opacity: 0.8 }} />
+                        ))}
+                      </div>
+                      <div className="font-mono" style={{ fontSize: '0.85rem', letterSpacing: '0.2em', color: 'rgba(167,139,250,0.7)' }}>AI RENDERING IN PROGRESS</div>
+                      <div className="font-mono" style={{ fontSize: '0.7rem', letterSpacing: '0.15em', color: 'rgba(255,255,255,0.2)' }}>{exVideos[i].title.toUpperCase()}</div>
+                      {exIsAdmin && <button onClick={e => { e.stopPropagation(); exRefs[i].current?.click(); }} className="btn-primary" style={{ fontSize: '0.75rem', padding: '0.3rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Upload size={10} /> UPLOAD</button>}
                     </div>
                   )}
                 </div>
@@ -1528,10 +1524,16 @@ export default function App() {
                   {exIsAdmin && <button onClick={e => { e.stopPropagation(); exRefs[2].current?.click(); }} className="btn-primary" style={{ position: 'absolute', bottom: '0.75rem', left: '0.75rem', zIndex: 20, padding: '0.3rem 0.75rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Upload size={10} /> REPLACE FEATURE</button>}
                 </>
               ) : (
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', background: 'linear-gradient(135deg,rgba(107,33,168,0.05),#000)', backgroundImage: 'linear-gradient(rgba(139,92,246,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.03) 1px,transparent 1px)', backgroundSize: '40px 40px' }}>
-                  <Film size={48} style={{ color: 'rgba(139,92,246,0.2)' }} />
-                  <div className="font-display" style={{ fontSize: '2rem', color: 'rgba(255,255,255,0.08)', letterSpacing: '0.1em' }}>FEATURE SHOWCASE</div>
-                  {exIsAdmin ? <button onClick={e => { e.stopPropagation(); exRefs[2].current?.click(); }} className="btn-primary" style={{ fontSize: '1rem', padding: '0.6rem 2rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Upload size={14} /> UPLOAD FEATURE FILM</button> : <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Film size={12} /> FEATURE FILM UPLOADING SOON</div>}
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', background: 'linear-gradient(135deg,rgba(107,33,168,0.1),#000)', backgroundImage: 'linear-gradient(rgba(139,92,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.04) 1px,transparent 1px)', backgroundSize: '40px 40px' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
+                    {[0,1,2,3,4,5,6].map(b => (
+                      <div key={b} style={{ width: '6px', background: 'var(--purple-bright)', borderRadius: '3px', animation: `pulse 1.4s ease-in-out ${b * 0.12}s infinite`, height: `${16 + b * 8}px`, opacity: 0.7 }} />
+                    ))}
+                  </div>
+                  <div className="font-display" style={{ fontSize: '2.5rem', color: 'rgba(167,139,250,0.4)', letterSpacing: '0.1em' }}>AI RENDERING</div>
+                  <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.25em', color: 'rgba(167,139,250,0.5)' }}>HUMANITY OF AI — FEATURE CUT</div>
+                  <div className="font-mono" style={{ fontSize: '0.75rem', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.15)' }}>MANDASTRONG STUDIO × DOXY</div>
+                  {exIsAdmin && <button onClick={e => { e.stopPropagation(); exRefs[2].current?.click(); }} className="btn-primary" style={{ fontSize: '0.9rem', padding: '0.4rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.5rem' }}><Upload size={12} /> UPLOAD</button>}
                 </div>
               )}
             </div>
@@ -1694,7 +1696,7 @@ export default function App() {
                   <CatIcon size={20} style={{ color: 'var(--purple-bright)' }} />
                   <div>
 
-                    <div className="font-display" style={{ fontSize: '1.8rem', lineHeight: 1 }}>{cat.toUpperCase()} TOOLS</div>
+                    <div className="font-display" style={{ fontSize: '2.5rem', lineHeight: 1 }}>{cat.toUpperCase()} TOOLS</div>
                   </div>
                 </div>
 
@@ -1718,7 +1720,7 @@ export default function App() {
                     style={{ background: 'var(--deep)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.4rem 0.5rem 0.4rem 2rem', fontSize: '0.95rem', width: '200px', outline: 'none' }} />
                 </div>
 
-                <div className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--purple-bright)' }}>{filtered.length} TOOLS</div>
+                <div className="font-mono" style={{ fontSize: '1.1rem', color: 'var(--purple-bright)' }}>{filtered.length} TOOLS</div>
               </div>
 
               {/* Tools grid — 4 across, name only on card */}
@@ -1726,11 +1728,11 @@ export default function App() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '2px', background: 'rgba(139,92,246,0.15)' }}>
                   {filtered.map((tool, i) => (
                     <button key={i} onClick={() => setSelectedTool(tool)}
-                      style={{ background: '#0c0c10', padding: '1.25rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '70px', border: '1px solid rgba(139,92,246,0.2)', transition: 'all 0.15s', cursor: 'pointer', textAlign: 'left', gap: '0.5rem' }}
+                      style={{ background: '#0c0c10', padding: '1.5rem 1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '90px', border: '1px solid rgba(139,92,246,0.2)', transition: 'all 0.15s', cursor: 'pointer', textAlign: 'left', gap: '0.5rem' }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'rgba(107,33,168,0.2)'; e.currentTarget.style.borderColor = 'rgba(167,139,250,0.7)'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = '#0c0c10'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.2)'; }}>
-                      <span style={{ fontSize: '1.05rem', fontWeight: 700, color: '#FFFFFF', lineHeight: 1.3, letterSpacing: '0.01em' }}>{tool}</span>
-                      <span style={{ color: 'rgba(167,139,250,0.5)', fontSize: '1rem', flexShrink: 0 }}>›</span>
+                      <span style={{ fontSize: '1.35rem', fontWeight: 700, color: '#FFFFFF', lineHeight: 1.35, letterSpacing: '0.01em' }}>{tool}</span>
+                      <span style={{ color: 'rgba(167,139,250,0.5)', fontSize: '1.3rem', flexShrink: 0 }}>›</span>
                     </button>
                   ))}
                 </div>
@@ -1968,69 +1970,116 @@ export default function App() {
 
         {/* PAGE 13 — TIMELINE */}
         {page === 13 && (
-          <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', paddingTop: '4rem', paddingBottom: '5rem' }}>
-            <div className="panel" style={{ padding: '1rem 1.5rem', borderLeft: 0, borderRight: 0, borderTop: 0, display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div className="font-display" style={{ fontSize: '1.5rem' }}>TIMELINE EDITOR</div>
-              <div className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--text-dim)', marginLeft: 'auto' }}>{duration} MIN PROJECT</div>
+          <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingTop: '4.5rem', paddingBottom: '6rem' }}>
+            {/* Header */}
+            <div className="panel" style={{ padding: '1.2rem 1.5rem', borderLeft: 0, borderRight: 0, borderTop: 0, display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+              <div className="font-display" style={{ fontSize: '2rem' }}>TIMELINE EDITOR</div>
+              <div className="font-mono" style={{ fontSize: '1rem', color: 'var(--purple-bright)', marginLeft: 'auto' }}>{duration} MIN PROJECT</div>
             </div>
 
-            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-              {/* Media panel */}
-              <div className="panel" style={{ width: '200px', flexShrink: 0, overflowY: 'auto', borderTop: 0, borderBottom: 0, padding: '1rem' }}>
-                <div className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.15em', color: 'var(--text-dim)', marginBottom: '0.75rem' }}>MEDIA POOL</div>
-                {mediaLibrary.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '1rem' }}>
-                    <Film size={16} style={{ color: 'var(--text-dim)', marginBottom: '0.4rem' }} />
-                    <div style={{ fontSize: '0.95rem', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>Upload media first</div>
-                    <button onClick={() => goTo(11)} className="btn-secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '1rem' }}>UPLOAD</button>
-                  </div>
-                ) : mediaLibrary.map(asset => (
-                  <div key={asset.id} draggable onDragStart={() => setDraggedItem(asset)}
-                    style={{ padding: '0.5rem', marginBottom: '1px', background: 'var(--deep)', border: '1px solid var(--border)', cursor: 'grab', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <FileVideo size={10} style={{ color: 'var(--purple-bright)', flexShrink: 0 }} />
-                    <div style={{ fontSize: '0.9rem', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{asset.name}</div>
-                  </div>
-                ))}
+            <div style={{ padding: '1.5rem', maxWidth: '1100px', width: '100%', margin: '0 auto' }}>
+
+              {/* Helper tip */}
+              <div style={{ background: 'rgba(107,33,168,0.15)', border: '1px solid var(--purple-bright)', borderRadius: '6px', padding: '1rem 1.5rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <Sparkles size={20} style={{ color: 'var(--purple-bright)', flexShrink: 0 }} />
+                <div className="font-mono" style={{ fontSize: '1.05rem', color: 'var(--text)', lineHeight: 1.6 }}>
+                  <strong style={{ color: 'var(--purple-bright)' }}>DRAG & DROP</strong> clips from the Media Pool onto a track below — or use the <strong style={{ color: 'var(--purple-bright)' }}>+ buttons</strong>. Remove clips with ✕. Hit RENDER when ready.
+                </div>
               </div>
 
-              {/* Timeline tracks */}
-              <div style={{ flex: 1, overflowX: 'auto', padding: '1rem' }}>
-                {(['video', 'audio', 'text'] as const).map(track => (
-                  <div key={track} style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div className="font-mono" style={{ width: '50px', fontSize: '1rem', letterSpacing: '0.1em', color: 'var(--text-dim)', flexShrink: 0 }}>{track.toUpperCase()}</div>
-                    <div className="track-bar" style={{ flex: 1 }}
-                      onDragOver={e => e.preventDefault()}
-                      onDrop={() => {
-                        if (draggedItem) {
-                          setTimeline(prev => ({ ...prev, [track]: [...prev[track], { ...draggedItem }] }));
-                          setDraggedItem(null);
-                          addToast(`Added to ${track} track`, 'success');
-                        }
-                      }}>
-                      {timeline[track].map((clip, i) => (
-                        <div key={i} className="timeline-clip"
-                          style={{ left: `${i * 12}%`, width: '100px', background: track === 'video' ? 'rgba(107,33,168,0.6)' : track === 'audio' ? 'rgba(16,185,129,0.6)' : 'rgba(245,158,11,0.6)', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
-                          {clip.name.slice(0, 12)}
+              {/* Media Pool */}
+              <div style={{ marginBottom: '2.5rem' }}>
+                <div className="font-mono" style={{ fontSize: '1.1rem', letterSpacing: '0.2em', color: 'var(--text-dim)', marginBottom: '1rem' }}>◈ MEDIA POOL — CLICK TRACK TO ADD</div>
+                {mediaLibrary.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '2.5rem', border: '1px dashed var(--border)', borderRadius: '6px' }}>
+                    <Film size={28} style={{ color: 'var(--text-dim)', marginBottom: '0.75rem' }} />
+                    <div style={{ fontSize: '1.1rem', color: 'var(--text-dim)', marginBottom: '1rem' }}>No media yet — upload first</div>
+                    <button onClick={() => goTo(11)} className="btn-primary" style={{ padding: '0.75rem 2rem', fontSize: '1.1rem' }}>↑ GO TO UPLOAD</button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.75rem' }}>
+                    {mediaLibrary.map(asset => (
+                      <div key={asset.id}
+                        draggable
+                        onDragStart={e => { setDraggedItem(asset); e.dataTransfer.effectAllowed = 'copy'; }}
+                        onDragEnd={() => setDraggedItem(null)}
+                        style={{ background: 'var(--deep)', border: '1px solid var(--border)', borderRadius: '6px', padding: '1rem 1.25rem', cursor: 'grab' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.9rem' }}>
+                          <span style={{ fontSize: '1rem', color: 'var(--text-dim)' }}>⠿</span>
+                          <FileVideo size={18} style={{ color: 'var(--purple-bright)', flexShrink: 0 }} />
+                          <div style={{ fontSize: '1.05rem', color: 'var(--text)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{asset.name}</div>
+                          <div className="font-mono" style={{ fontSize: '0.85rem', color: 'var(--text-dim)', flexShrink: 0 }}>{asset.type}</div>
                         </div>
-                      ))}
-                      {timeline[track].length === 0 && (
-                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <span className="font-mono" style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.1)', letterSpacing: '0.2em' }}>DROP CLIPS HERE</span>
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          {(['video', 'audio', 'text'] as const).map(track => (
+                            <button key={track} onClick={() => {
+                              setTimeline(prev => ({ ...prev, [track]: [...prev[track], { ...asset }] }));
+                              addToast(`✓ Added to ${track.toUpperCase()} track`, 'success');
+                            }}
+                              style={{ flex: 1, minWidth: '70px', padding: '0.55rem 0.5rem', fontSize: '0.95rem', fontWeight: 700, letterSpacing: '0.08em', cursor: 'pointer', border: 'none', borderRadius: '4px', background: track === 'video' ? 'rgba(107,33,168,0.6)' : track === 'audio' ? 'rgba(16,185,129,0.5)' : 'rgba(245,158,11,0.5)', color: '#fff', transition: 'opacity 0.15s' }}
+                              onMouseOver={e => (e.currentTarget.style.opacity = '0.8')}
+                              onMouseOut={e => (e.currentTarget.style.opacity = '1')}
+                            >
+                              + {track.toUpperCase()}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Timeline Tracks */}
+              <div style={{ marginBottom: '2.5rem' }}>
+                <div className="font-mono" style={{ fontSize: '1.1rem', letterSpacing: '0.2em', color: 'var(--text-dim)', marginBottom: '1rem' }}>◈ YOUR TIMELINE</div>
+                {(['video', 'audio', 'text'] as const).map(track => {
+                  const trackColor = track === 'video' ? 'rgba(107,33,168,0.7)' : track === 'audio' ? 'rgba(16,185,129,0.6)' : 'rgba(245,158,11,0.6)';
+                  const trackBorder = track === 'video' ? '#8B5CF6' : track === 'audio' ? '#10B981' : '#F59E0B';
+                  return (
+                    <div key={track} style={{ marginBottom: '1.25rem', background: 'var(--deep)', border: `1px solid ${trackBorder}`, borderRadius: '6px', padding: '1rem 1.25rem' }}
+                      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; (e.currentTarget as HTMLDivElement).style.background = 'rgba(107,33,168,0.18)'; }}
+                      onDragLeave={e => { (e.currentTarget as HTMLDivElement).style.background = 'var(--deep)'; }}
+                      onDrop={e => { e.preventDefault(); (e.currentTarget as HTMLDivElement).style.background = 'var(--deep)'; if (draggedItem) { setTimeline(prev => ({ ...prev, [track]: [...prev[track], { ...draggedItem }] })); addToast(`✓ Dropped onto ${track.toUpperCase()} track`, 'success'); setDraggedItem(null); } }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+                        <div className="font-mono" style={{ fontSize: '1.1rem', fontWeight: 700, color: trackBorder, letterSpacing: '0.15em', minWidth: '60px' }}>{track.toUpperCase()}</div>
+                        <div className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>{timeline[track].length} clip{timeline[track].length !== 1 ? 's' : ''}</div>
+                      </div>
+                      {timeline[track].length === 0 ? (
+                        <div style={{ padding: '1.2rem', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '4px' }}>
+                          <span className="font-mono" style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.2)', letterSpacing: '0.15em' }}>EMPTY — ADD CLIPS ABOVE</span>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          {timeline[track].map((clip, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: trackColor, borderRadius: '4px', padding: '0.5rem 0.75rem', maxWidth: '200px' }}>
+                              <span style={{ fontSize: '1rem', color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{clip.name}</span>
+                              <button onClick={() => {
+                                setTimeline(prev => ({ ...prev, [track]: prev[track].filter((_, idx) => idx !== i) }));
+                                addToast(`Removed from ${track} track`, 'warning');
+                              }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', padding: '0 2px', fontSize: '1.1rem', lineHeight: 1, flexShrink: 0 }}>✕</button>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
-                  </div>
-                ))}
-
-                <div style={{ marginTop: '2rem' }}>
-                  <button onClick={() => { goTo(16); setTimeout(() => handleRender(), 300); }} className="btn-primary" style={{ marginRight: '0.5rem' }}>
-                    → RENDER
-                  </button>
-                  <button onClick={() => { setTimeline({ video: [], audio: [], text: [] }); addToast('Timeline cleared', 'warning'); }} className="btn-secondary">
-                    CLEAR ALL
-                  </button>
-                </div>
+                  );
+                })}
               </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <button onClick={() => { goTo(16); setTimeout(() => handleRender(), 300); }} className="btn-primary"
+                  style={{ flex: 2, minWidth: '200px', padding: '1.1rem 2rem', fontSize: '1.2rem', fontWeight: 700, letterSpacing: '0.1em' }}>
+                  ▶ RENDER MY FILM
+                </button>
+                <button onClick={() => { setTimeline({ video: [], audio: [], text: [] }); addToast('Timeline cleared', 'warning'); }} className="btn-secondary"
+                  style={{ flex: 1, minWidth: '140px', padding: '1.1rem 1.5rem', fontSize: '1.1rem' }}>
+                  CLEAR ALL
+                </button>
+              </div>
+
             </div>
           </div>
         )}
@@ -2397,25 +2446,132 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 23 — THANK YOU */}
+        {/* PAGE 23 — THANK YOU MISSION */}
         {page === 23 && (
-          <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(139,92,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.04) 1px,transparent 1px)', backgroundSize: '60px 60px', pointerEvents: 'none' }} />
-            <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.4em', color: 'var(--purple-bright)', marginBottom: '2rem' }}>THAT'S ALL FOLKS</div>
-            <h1 className="font-display" style={{ fontSize: 'clamp(4rem,15vw,12rem)', lineHeight: 0.85, marginBottom: '2rem', textShadow: '0 0 80px rgba(139,92,246,0.5)' }}>
-              MANDA<br />STRONG<br />STUDIO
-            </h1>
-            <blockquote style={{ maxWidth: '600px', fontSize: '1.1rem', fontWeight: 300, fontStyle: 'italic', color: 'var(--text-dim)', lineHeight: 1.7, marginBottom: '3rem' }}>
-              "Amanda's thank you to creators now and in the future.<br />Supporting cinematic innovation through our Veteran Fundraiser mission."
-            </blockquote>
-            <a href="https://MandaStrong1.Etsy.com" target="_blank" rel="noopener noreferrer"
-              className="font-display"
-              style={{ fontSize: 'clamp(1.5rem,5vw,3.5rem)', color: 'var(--purple-bright)', textDecoration: 'none', borderBottom: '2px solid var(--purple)', paddingBottom: '0.25rem', marginBottom: '3rem', display: 'block', transition: 'all 0.2s' }}>
-              MandaStrong1.Etsy.com
-            </a>
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-              <button onClick={() => goTo(1)} className="btn-primary" style={{ padding: '0.85rem 2.5rem', fontSize: '0.95rem' }}>← HOME</button>
-              <button onClick={() => goTo(5)} className="btn-secondary" style={{ padding: '0.85rem 2.5rem', fontSize: '0.95rem' }}>BACK TO TOOLS</button>
+          <div style={{ minHeight: '100vh', background: '#000', color: 'white', paddingBottom: '5rem' }}>
+            <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '3rem 1.5rem 6rem' }}>
+
+              {/* Video */}
+              <div style={{ marginBottom: '2rem' }}>
+                <video autoPlay loop muted={false} playsInline
+                  style={{ width: '100%', maxWidth: '900px', display: 'block', margin: '0 auto', borderRadius: '12px', border: '2px solid #7C3AED' }}>
+                  <source src="/thatsallfolks.mp4" type="video/mp4" />
+                </video>
+              </div>
+
+              {/* Big heading */}
+              <h1 className="font-display" style={{ fontSize: 'clamp(3rem,10vw,6rem)', textAlign: 'center', color: '#A78BFA', marginBottom: '2rem', letterSpacing: '0.05em' }}>
+                THAT'S ALL FOLKS!
+              </h1>
+
+              {/* Special Thank You box */}
+              <div style={{ background: 'linear-gradient(135deg,#4C1D95,#6B21A8)', border: '2px solid #7C3AED', borderRadius: '16px', padding: '2.5rem', marginBottom: '2rem' }}>
+                <h2 className="font-display" style={{ fontSize: '2.5rem', textAlign: 'center', marginBottom: '1.5rem' }}>A Special Thank You</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'center', color: '#E2E8F0' }}>
+                  <p style={{ fontSize: '1.1rem', fontWeight: 700 }}>To all current and future creators, dreamers, and storytellers...</p>
+                  <p style={{ fontSize: '1rem', lineHeight: 1.7 }}>Your creativity and passion inspire positive change in the world. Through your films and stories, you have the power to educate, inspire, and bring awareness to critical issues like bullying prevention, social skills development, and humanity's collective growth.</p>
+                  <p style={{ fontSize: '1rem', lineHeight: 1.7 }}>Every piece of content you create has the potential to touch hearts, change minds, and make our world a better place. Thank you for being part of this mission to combine creative expression with meaningful impact.</p>
+                  <p style={{ fontSize: '1rem', lineHeight: 1.7, fontWeight: 700 }}>Together, we are building a community of creators who use their talents to spread kindness, understanding, and hope. Your impact matters more than you know.</p>
+                </div>
+              </div>
+
+              {/* User Guide button */}
+              <div style={{ background: '#111116', border: '2px solid #7C3AED', borderRadius: '16px', padding: '1.5rem', marginBottom: '2rem', textAlign: 'center', cursor: 'pointer', transition: 'border-color 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = '#A78BFA')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = '#7C3AED')}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                  <BookOpen size={32} style={{ color: '#A78BFA' }} />
+                  <h3 className="font-display" style={{ fontSize: '2rem', color: '#A78BFA' }}>Full User Guide To MandaStrong Studio</h3>
+                </div>
+                <p style={{ color: '#64748B', fontSize: '1rem' }}>Click to access the complete guide</p>
+              </div>
+
+              {/* About Our Mission */}
+              <div style={{ background: 'linear-gradient(135deg,#111116,#1a1a20)', border: '2px solid #7C3AED', borderRadius: '16px', padding: '2.5rem', marginBottom: '2rem' }}>
+                <h2 className="font-display" style={{ fontSize: '2.5rem', marginBottom: '1.5rem' }}>About Our Mission</h2>
+                <p style={{ fontSize: '1rem', lineHeight: 1.7, marginBottom: '1.5rem', color: '#E2E8F0' }}>
+                  <strong>MandaStrong Studio</strong> is more than a filmmaking platform. It's part of a comprehensive educational initiative designed to bring awareness and action to schools regarding bullying prevention, social skills development, and the cultivation of humanity in our communities.
+                </p>
+
+                {/* Fundraiser box */}
+                <div style={{ background: 'rgba(107,33,168,0.4)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.75rem' }}>Fundraiser: Educational Program on Bullying Prevention & Social Skills</h3>
+                  <p style={{ fontSize: '0.95rem', lineHeight: 1.7, color: '#CBD5E1' }}>Through this comprehensive program, we provide educational resources and movie-based content to help schools address these critical issues. Our goal is to create safe, supportive environments where every student can thrive.</p>
+                </div>
+
+                {/* Veterans box */}
+                <div style={{ background: '#1a1a20', borderRadius: '12px', padding: '1.5rem', border: '2px solid #7C3AED' }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Heart size={22} style={{ color: '#EF4444' }} /> Supporting Our Heroes
+                  </h3>
+                  <p style={{ fontSize: '0.95rem', lineHeight: 1.7, color: '#CBD5E1', marginBottom: '1rem' }}>
+                    <strong>All Etsy Store Proceeds Benefit Veterans Mental Health Services</strong> — 100% of all proceeds from our Etsy Store fundraiser are donated directly to <strong>Veterans Mental Health Services</strong>, supporting those who have sacrificed so much for our freedom.
+                  </p>
+                  <p style={{ textAlign: 'center', fontSize: '1.1rem', color: '#E2E8F0' }}>
+                    Visit our fundraiser and learn more at{' '}
+                    <a href="https://MandaStrong1.Etsy.com" target="_blank" rel="noopener noreferrer"
+                      style={{ color: '#A78BFA', fontWeight: 700, fontSize: '1.4rem', textDecoration: 'underline' }}>
+                      MandaStrong1.Etsy.com
+                    </a>
+                  </p>
+                </div>
+              </div>
+
+              {/* Full User Guide grid */}
+              <div style={{ background: '#111116', border: '2px solid #7C3AED', borderRadius: '16px', padding: '2.5rem', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
+                  <BookOpen size={32} style={{ color: '#A78BFA' }} />
+                  <h2 className="font-display" style={{ fontSize: '2.5rem', color: '#A78BFA' }}>Full User Guide To MandaStrong Studio</h2>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: '2rem' }}>
+                  <div>
+                    <h3 style={{ color: '#A78BFA', fontWeight: 700, marginBottom: '1rem', fontSize: '1.1rem' }}>Navigation</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {[
+                        'Use Back and Next buttons to navigate between pages',
+                        'Pages 1–3: Welcome, Story & Concept, Login/Register',
+                        'Pages 4–9: AI Tool Board with 600+ creative tools',
+                        'Page 10: Upload your existing movie',
+                        'Page 11: Media Box with all generated assets',
+                      ].map(item => (
+                        <div key={item} style={{ display: 'flex', gap: '0.5rem', fontSize: '0.95rem', color: '#CBD5E1', alignItems: 'flex-start' }}>
+                          <span style={{ color: '#A78BFA', flexShrink: 0 }}>•</span> {item}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h3 style={{ color: '#A78BFA', fontWeight: 700, marginBottom: '1rem', fontSize: '1.1rem' }}>Editing & Export</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {[
+                        'Pages 12–16: Professional editing tools with timeline',
+                        'Page 17: Full screen preview of your finished film',
+                        'Page 18: Terms of Service and Disclaimer',
+                        'Page 19: Agent Grok 24/7 Help Desk',
+                        'Page 20: Community Hub to share your work',
+                      ].map(item => (
+                        <div key={item} style={{ display: 'flex', gap: '0.5rem', fontSize: '0.95rem', color: '#CBD5E1', alignItems: 'flex-start' }}>
+                          <span style={{ color: '#A78BFA', flexShrink: 0 }}>•</span> {item}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Back button */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '3rem' }}>
+                <button onClick={() => goTo(1)} className="btn-primary" style={{ padding: '1rem 3rem', fontSize: '1.1rem' }}>← BACK TO HOME</button>
+              </div>
+
+            </div>
+
+            {/* Fixed footer bar */}
+            <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#7C3AED', color: 'white', padding: '0.75rem 1.5rem', textAlign: 'center', zIndex: 50, fontSize: '0.9rem' }}>
+              MandaStrong 2026 ~ Author Doxy The School Bully ~{' '}
+              <a href="https://MandaStrong1.Etsy.com" target="_blank" rel="noopener noreferrer" style={{ color: 'white', textDecoration: 'underline' }}>
+                Click MandaStrong1.Etsy.com
+              </a>
             </div>
           </div>
         )}
