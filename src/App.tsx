@@ -14,8 +14,8 @@ import { AgentGrokHelpDesk } from './components/AgentGrokHelpDesk';
 import { ThankYouMissionPage } from './components/ThankYouMissionPage';
 import FullscreenMovieViewer from './components/FullscreenMovieViewer';
 import PasteImporter from './components/PasteImporter';
-import { Bolt Database } from './lib/supabase';
-import type { User } from '@supabase/Bolt Database-js';
+import { supabase } from './lib/supabase';
+import type { User } from '@supabase/supabase-js';
 
 type Tool =
   | 'home'
