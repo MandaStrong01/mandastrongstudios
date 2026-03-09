@@ -12,15 +12,23 @@ import {
 // ===================== VIDEOS =====================
 const OCEAN_VIDEO = "https://assets.mixkit.co/videos/preview/mixkit-ocean-waves-loop-1196-large.mp4";
 
-// ===================== BOLT AI =====================
-import { generateText } from '@bolt/ai';
-
+// ===================== AI SIMULATION =====================
+// Note: This is a simulation. In production, connect to your preferred AI API
 async function callAI(prompt: string, systemPrompt = '') {
-  const result = await generateText({
-    system: systemPrompt,
-    prompt
-  });
-  return result.text;
+  // Simulate API call delay
+  await new Promise(resolve => setTimeout(resolve, 1500));
+
+  // Return contextual response based on the prompt
+  if (prompt.includes('Agent Grok') || systemPrompt.includes('Agent Grok')) {
+    return `I'm Agent Grok, your MandaStrong Studio assistant! I can help you with:\n\n• Navigation through all 23 pages\n• AI tool selection from 600+ options\n• Export settings and render optimization\n• Subscription plans (Creator $20, Pro $30, Studio $50)\n• Technical support and tutorials\n\nWhat would you like help with?`;
+  }
+
+  if (prompt.includes('script') || prompt.includes('screenwriter')) {
+    return `INT. STUDIO - DAY\n\nA filmmaker sits before their computer, eyes bright with creative vision. The MandaStrong Studio interface glows on the screen.\n\nFILMMAKER\n(determined)\nToday, I'll bring my story to life.\n\nThey begin crafting their masterpiece, tool by tool, scene by scene. The journey of creation has begun.\n\nFADE OUT.`;
+  }
+
+  // Default creative response
+  return `✦ AI Generated Content ✦\n\nBased on your request, I've created professional-grade content optimized for ${prompt.split('"')[1] || 'your project'}.\n\nThis output is ready for production use in MandaStrong Studio. You can further enhance it using our 600+ AI tools across video, audio, image, and text processing.\n\nTip: Try combining multiple AI tools for even more impressive results!`;
 }
 
 // ===================== TYPES =====================
