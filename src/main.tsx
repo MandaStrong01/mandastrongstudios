@@ -2,10 +2,20 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Register Service Worker for PWA
+// Register Service Worker for PWA with storage partitioning support
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(
+    // Request persistent storage to avoid partitioning issues
+    if ('storage' in navigator && 'persist' in navigator.storage) {
+      navigator.storage.persist().then((persistent) => {
+        console.log('MandaStrong Studio: Persistent storage:', persistent);
+      });
+    }
+
+    navigator.serviceWorker.register('/sw.js', {
+      scope: '/',
+      updateViaCache: 'none'
+    }).then(
       (registration) => {
         console.log('MandaStrong Studio PWA: Service Worker registered', registration.scope);
 
@@ -27,7 +37,8 @@ if ('serviceWorker' in navigator) {
         });
       },
       (error) => {
-        console.log('MandaStrong Studio PWA: Service Worker registration failed', error);
+        console.warn('MandaStrong Studio PWA: Service Worker registration failed', error);
+        // App will still work without service worker
       }
     );
   });
