@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Video, Scissors, Image as ImageIcon, Share2, Sparkles, Upload, Save, Play, Pause, SkipBack, SkipForward, Volume2, Download, Film, ChevronDown, ChevronUp, Music, Wand2, Type, Palette, Layers, Grid2x2 as Grid, Home, Moon, Sun, Mic, Settings, PlusCircle, List, Users, X, MessageSquare, Check, LayoutGrid, Smartphone, Loader, CheckCircle, XCircle, User, LogOut } from 'lucide-react';
+import { Video, Scissors, Image as ImageIcon, Share2, Sparkles, Upload, Save, Play, Pause, SkipBack, SkipForward, Volume2, Download, Film, ChevronDown, ChevronUp, Music, Wand2, Type, Palette, Layers, Grid2x2 as Grid, Home, Moon, Sun, Mic, Settings, PlusCircle, List, Users, X, MessageSquare, Check, LayoutGrid, Smartphone, Loader, CheckCircle, XCircle, User, LogOut, Clipboard } from 'lucide-react';
 import VideoRecorder from './components/VideoRecorder';
 import { AudioMixer } from './components/AudioMixer';
 import { EnhancedCommunityHub } from './components/EnhancedCommunityHub';
@@ -13,8 +13,9 @@ import QuickAccess from './components/QuickAccess';
 import { AgentGrokHelpDesk } from './components/AgentGrokHelpDesk';
 import { ThankYouMissionPage } from './components/ThankYouMissionPage';
 import FullscreenMovieViewer from './components/FullscreenMovieViewer';
-import { supabase } from './lib/supabase';
-import type { User } from '@supabase/supabase-js';
+import PasteImporter from './components/PasteImporter';
+import { Bolt Database } from './lib/supabase';
+import type { User } from '@supabase/Bolt Database-js';
 
 type Tool =
   | 'home'
@@ -53,6 +54,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showPasteImporter, setShowPasteImporter] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -100,7 +102,7 @@ function App() {
   }, [isDarkMode]);
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const file = e.target?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
       setVideoSrc(url);
@@ -250,6 +252,12 @@ function App() {
 
   const handleAuthSuccess = () => {
     setShowAuthModal(false);
+  };
+
+  const handlePasteImport = (content: { type: 'url' | 'script' | 'text', data: string, name: string }) => {
+    console.log('Imported content:', content);
+    setShowPasteImporter(false);
+    setActiveTool('video-editor');
   };
 
   if (authLoading) {
@@ -499,6 +507,13 @@ function App() {
                         <span className="font-medium">Upload Video</span>
                         <input type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" />
                       </label>
+                      <button
+                        onClick={() => setShowPasteImporter(true)}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white rounded-lg transition-all transform hover:scale-105 shadow-lg font-medium"
+                      >
+                        <Clipboard className="w-4 h-4" />
+                        Paste Content
+                      </button>
                     </div>
                   </div>
 
@@ -606,6 +621,13 @@ function App() {
         <DevTools
           onClose={() => setShowDevTools(false)}
           userEmail={user?.email}
+        />
+      )}
+
+      {showPasteImporter && (
+        <PasteImporter
+          onImport={handlePasteImport}
+          onClose={() => setShowPasteImporter(false)}
         />
       )}
     </div>
