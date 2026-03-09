@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import {
-  Video, Scissors, Image as ImageIcon, Share2, Sparkles,
-  Upload, Save, Play, Pause, SkipBack, SkipForward,
-  Volume2, Download, Film, ChevronDown, ChevronUp, Music,
-  Wand2, Type, Palette, Layers, Grid, Home, Moon, Sun,
-  Mic, Settings, PlusCircle, List, Users, X, MessageSquare,
-  Check, LayoutGrid, Smartphone, Loader, CheckCircle, XCircle, User, LogOut
-} from 'lucide-react';
+import { Video, Scissors, Image as ImageIcon, Share2, Sparkles, Upload, Save, Play, Pause, SkipBack, SkipForward, Volume2, Download, Film, ChevronDown, ChevronUp, Music, Wand2, Type, Palette, Layers, Grid2x2 as Grid, Home, Moon, Sun, Mic, Settings, PlusCircle, List, Users, X, MessageSquare, Check, LayoutGrid, Smartphone, Loader, CheckCircle, XCircle, User, LogOut } from 'lucide-react';
 import VideoRecorder from './components/VideoRecorder';
 import { AudioMixer } from './components/AudioMixer';
 import { EnhancedCommunityHub } from './components/EnhancedCommunityHub';
