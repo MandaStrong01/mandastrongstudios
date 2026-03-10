@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Bot, Zap, MessageCircle, HelpCircle } from 'lucide-react';
+import Anthropic from '@anthropic-ai/sdk';
 
 interface AgentGrokHelpDeskProps {
   onBack: () => void;
@@ -8,6 +9,7 @@ interface AgentGrokHelpDeskProps {
 
 export const AgentGrokHelpDesk: React.FC<AgentGrokHelpDeskProps> = ({ onBack, onNext }) => {
   const [message, setMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState([
     {
       id: 1,
@@ -40,26 +42,62 @@ export const AgentGrokHelpDesk: React.FC<AgentGrokHelpDeskProps> = ({ onBack, on
     { name: 'File Storage', status: 'Operational' }
   ];
 
-  const sendMessage = () => {
-    if (!message.trim()) return;
+  const sendMessage = async () => {
+    if (!message.trim() || isLoading) return;
 
-    setChatMessages([...chatMessages, {
-      id: chatMessages.length + 1,
+    const userMessage = message;
+    setMessage('');
+    setIsLoading(true);
+
+    setChatMessages(prev => [...prev, {
+      id: prev.length + 1,
       sender: 'user',
-      text: message,
+      text: userMessage,
       time: 'Just now'
     }]);
 
-    setTimeout(() => {
+    try {
+      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+
+      if (!apiKey) {
+        throw new Error('Anthropic API key not configured');
+      }
+
+      const anthropic = new Anthropic({
+        apiKey: apiKey,
+        dangerouslyAllowBrowser: true
+      });
+
+      const response = await anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 1024,
+        messages: [
+          {
+            role: 'user',
+            content: `You are Agent Grok, a helpful AI assistant for MandaStrong Studio, a video editing platform. Answer the following question: ${userMessage}`
+          }
+        ],
+      });
+
+      const aiResponse = response.content[0].type === 'text' ? response.content[0].text : 'Sorry, I could not generate a response.';
+
       setChatMessages(prev => [...prev, {
         id: prev.length + 1,
         sender: 'agent',
-        text: "I'm here to help! Let me look that up for you...",
+        text: aiResponse,
         time: 'Just now'
       }]);
-    }, 1000);
-
-    setMessage('');
+    } catch (error) {
+      console.error('Error calling Anthropic API:', error);
+      setChatMessages(prev => [...prev, {
+        id: prev.length + 1,
+        sender: 'agent',
+        text: 'Sorry, I encountered an error. Please make sure your API key is configured correctly.',
+        time: 'Just now'
+      }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -130,9 +168,10 @@ export const AgentGrokHelpDesk: React.FC<AgentGrokHelpDeskProps> = ({ onBack, on
                 />
                 <button
                   onClick={sendMessage}
-                  className="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg font-bold transition"
+                  disabled={isLoading}
+                  className="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Send
+                  {isLoading ? 'Sending...' : 'Send'}
                 </button>
               </div>
             </div>
