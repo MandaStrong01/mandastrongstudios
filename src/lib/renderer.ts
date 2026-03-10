@@ -33,18 +33,6 @@ async function loadVideoElement(url: string): Promise<HTMLVideoElement> {
   });
 }
 
-async function loadAudioElement(url: string): Promise<HTMLAudioElement> {
-  return new Promise((resolve, reject) => {
-    const audio = document.createElement('audio');
-    audio.crossOrigin = 'anonymous';
-    audio.preload = 'auto';
-
-    audio.onloadeddata = () => resolve(audio);
-    audio.onerror = () => reject(new Error('Failed to load audio'));
-
-    audio.src = url;
-  });
-}
 
 function getQualitySettings(quality: 'hd' | '4k' | '8k') {
   switch (quality) {
@@ -59,8 +47,7 @@ function getQualitySettings(quality: 'hd' | '4k' | '8k') {
 
 export async function renderTimeline(
   timeline: RenderTimeline,
-  options: RenderOptions,
-  projectId: string
+  options: RenderOptions
 ): Promise<Blob> {
   const { quality, format, onProgress } = options;
   const settings = getQualitySettings(quality);
@@ -103,7 +90,7 @@ export async function renderTimeline(
       resolve(blob);
     };
 
-    mediaRecorder.onerror = (e) => {
+    mediaRecorder.onerror = () => {
       reject(new Error('MediaRecorder error'));
     };
 

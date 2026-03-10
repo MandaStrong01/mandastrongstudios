@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Video, Scissors, Image as ImageIcon, Share2, Sparkles, Upload, Save, Play, Pause, SkipBack, SkipForward, Volume2, Download, Film, ChevronDown, ChevronUp, Music, Wand2, Type, Palette, Layers, Grid2x2 as Grid, Home, Moon, Sun, Mic, Settings, PlusCircle, List, Users, X, MessageSquare, Check, LayoutGrid, Smartphone, Loader, CheckCircle, XCircle, User as UserIcon, LogOut, Clipboard } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Video, Share2, Sparkles, Upload, Save, Play, Download, Film, Music, Wand2, Home, Moon, Sun, Mic, Settings, Users, X, MessageSquare, Smartphone, Loader, User as UserIcon, LogOut, Clipboard } from 'lucide-react';
 import VideoRecorder from './components/VideoRecorder';
 import { AudioMixer } from './components/AudioMixer';
 import { EnhancedCommunityHub } from './components/EnhancedCommunityHub';
@@ -102,7 +102,7 @@ function App() {
   }, [isDarkMode]);
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target?.[0];
+    const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
       setVideoSrc(url);
@@ -594,7 +594,10 @@ function App() {
             />
           )}
           {activeTool === 'recorder' && user && (
-            <VideoRecorder onRecordingComplete={(url) => setVideoSrc(url)} />
+            <VideoRecorder onRecordingComplete={(blob) => {
+              const url = URL.createObjectURL(blob);
+              setVideoSrc(url);
+            }} />
           )}
           {activeTool === 'social' && user && (
             <EnhancedCommunityHub
@@ -606,7 +609,7 @@ function App() {
           {activeTool === 'thank-you' && (
             <ThankYouMissionPage onBackToHome={() => setActiveTool('home')} />
           )}
-          {activeTool === 'movies' && <FullscreenMovieViewer />}
+          {activeTool === 'movies' && <FullscreenMovieViewer onClose={() => setActiveTool('home')} />}
         </main>
 
         <Footer onOpenDevTools={() => setShowDevTools(true)} />

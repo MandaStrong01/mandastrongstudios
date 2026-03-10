@@ -1,4 +1,8 @@
-export default function Footer() {
+interface FooterProps {
+  onOpenDevTools?: () => void;
+}
+
+export default function Footer({}: FooterProps = {}) {
   return (
     <footer className="bg-black/50 backdrop-blur-sm border-t border-purple-500/30 py-6 px-4">
       <div className="max-w-6xl mx-auto text-center">

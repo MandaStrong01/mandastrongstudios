@@ -1,8 +1,23 @@
 import { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward } from 'lucide-react';
 
+interface TimelineClip {
+  id: string;
+  type: 'video' | 'audio' | 'image' | 'text';
+  src?: string;
+  text?: string;
+  start: number;
+  duration: number;
+  track: number;
+  thumbnail?: string;
+  volume?: number;
+  effects?: string[];
+}
+
 interface VideoPlayerProps {
-  src: string;
+  src?: string;
+  videoSrc?: string;
+  clips?: TimelineClip[];
   className?: string;
   autoPlay?: boolean;
   loop?: boolean;
@@ -13,6 +28,7 @@ interface VideoPlayerProps {
 
 export default function VideoPlayer({
   src,
+  videoSrc,
   className = '',
   autoPlay = false,
   loop = false,
@@ -20,6 +36,7 @@ export default function VideoPlayer({
   controls = true,
   poster
 }: VideoPlayerProps) {
+  const actualSrc = src || videoSrc || '';
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isMuted, setIsMuted] = useState(muted);
   const [currentTime, setCurrentTime] = useState(0);
@@ -159,7 +176,7 @@ export default function VideoPlayer({
     >
       <video
         ref={videoRef}
-        src={src}
+        src={actualSrc}
         className="w-full h-full"
         autoPlay={autoPlay}
         loop={loop}

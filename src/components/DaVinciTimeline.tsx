@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Dispatch, SetStateAction } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Scissors, Copy, Trash2, Lock, Unlock } from 'lucide-react';
 
 interface TimelineTrack {
@@ -11,14 +11,48 @@ interface TimelineTrack {
   thumbnail?: string;
 }
 
-export default function DaVinciTimeline() {
+interface TimelineClip {
+  id: string;
+  type: 'video' | 'audio' | 'image' | 'text';
+  src?: string;
+  text?: string;
+  start: number;
+  duration: number;
+  track: number;
+  thumbnail?: string;
+  volume?: number;
+  effects?: string[];
+}
+
+interface DaVinciTimelineProps {
+  clips?: TimelineClip[];
+  currentTime?: number;
+  duration?: number;
+  onSeek?: (time: number) => void;
+  onClipSelect?: Dispatch<SetStateAction<TimelineClip | null>>;
+  onClipUpdate?: (clip: TimelineClip) => void;
+  onClipRemove?: (id: string) => void;
+  selectedClip?: TimelineClip | null;
+  zoom?: number;
+  onZoomChange?: Dispatch<SetStateAction<number>>;
+}
+
+export default function DaVinciTimeline(props: DaVinciTimelineProps = {}) {
+  const {
+    clips: propClips,
+    currentTime: propCurrentTime,
+    duration: propDuration,
+    onSeek,
+    zoom: propZoom,
+    onZoomChange
+  } = props;
   const [tracks, setTracks] = useState<TimelineTrack[]>([
     { id: '1', type: 'video', name: 'Main Video', duration: 10, startTime: 0, locked: false },
     { id: '2', type: 'audio', name: 'Background Music', duration: 15, startTime: 0, locked: false },
   ]);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [currentTime] = useState(propCurrentTime || 0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [zoom, setZoom] = useState(1);
+  const [zoom] = useState(propZoom || 1);
   const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
 
   const totalDuration = Math.max(...tracks.map(t => t.startTime + t.duration), 20);

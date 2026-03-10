@@ -2,8 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { Video, Square, Pause, Play, Download, Upload, Trash2, Monitor, Camera, Mic, MicOff, Loader2 } from 'lucide-react';
 
 interface VideoRecorderProps {
-  onRecordingComplete?: (blob: Blob, filename: string) => void;
+  onRecordingComplete?: (blob: Blob, filename?: string) => void;
   onUploadToLibrary?: (file: File) => void;
+  onClose?: () => void;
 }
 
 export default function VideoRecorder({ onRecordingComplete, onUploadToLibrary }: VideoRecorderProps) {

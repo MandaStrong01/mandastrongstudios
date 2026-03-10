@@ -86,7 +86,6 @@ export class VideoProcessor {
       drawFrame();
     });
   }
-}
 
   async exportVideo(format: string = 'webm'): Promise<Blob> {
     if (this.recordedChunks.length === 0) {

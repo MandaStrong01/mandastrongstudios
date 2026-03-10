@@ -1,7 +1,14 @@
 import { useState, useRef } from 'react';
 import { X, Film, Music, Type, FileText, ZoomIn, ZoomOut } from 'lucide-react';
 
-function parseSRT(content) {
+interface SubtitleCue {
+  index: number;
+  start: number;
+  end: number;
+  text: string;
+}
+
+function parseSRT(content: string): SubtitleCue[] {
   const blocks = content.trim().split(/\n\s*\n/);
   return blocks.map(block => {
     const lines = block.trim().split('\n');
@@ -9,37 +16,69 @@ function parseSRT(content) {
     const text = lines.slice(2).join(' ').replace(/<[^>]+>/g, '').trim();
     const m = lines[1].match(/(\d{2}):(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})[,.](\d{3})/);
     if (!m) return null;
-    const toSec = (h, mn, s, ms) => parseInt(h)*3600 + parseInt(mn)*60 + parseInt(s) + parseInt(ms)/1000;
+    const toSec = (h: string, mn: string, s: string, ms: string) => parseInt(h)*3600 + parseInt(mn)*60 + parseInt(s) + parseInt(ms)/1000;
     return { index: parseInt(lines[0]), start: toSec(m[1],m[2],m[3],m[4]), end: toSec(m[5],m[6],m[7],m[8]), text };
-  }).filter(Boolean);
+  }).filter(Boolean) as SubtitleCue[];
 }
 
-function fmt(sec) {
+function fmt(sec: number): string {
   const m = Math.floor(sec/60), s = Math.floor(sec%60);
   return `${m}:${String(s).padStart(2,'0')}`;
 }
 
-const TRACKS = [
+interface MediaItem {
+  id: number;
+  name: string;
+  type: string;
+  url?: string;
+  duration?: number;
+  thumbnail?: string;
+}
+
+interface ClipItem extends MediaItem {
+  offset: number;
+  size?: string;
+  subtitles?: SubtitleCue[];
+}
+
+interface TrackConfig {
+  key: string;
+  label: string;
+  Icon: typeof Film;
+  color: string;
+  accept: string[];
+}
+
+interface Toast {
+  msg: string;
+  type: 'success' | 'error' | 'warning';
+}
+
+const TRACKS: TrackConfig[] = [
   { key:'video',    label:'VIDEO',    Icon:Film,     color:'#7c3aed', accept:['video','image'] },
   { key:'audio',    label:'AUDIO',    Icon:Music,    color:'#22d3ee', accept:['audio'] },
   { key:'text',     label:'TEXT',     Icon:Type,     color:'#4ade80', accept:['text'] },
   { key:'subtitle', label:'SUBTITLE', Icon:FileText, color:'#facc15', accept:['srt'] },
 ];
 
-export default function TimelineEditor({ mediaLibrary = [] }) {
-  const [tracks, setTracks] = useState({ video:[], audio:[], text:[], subtitle:[] });
+interface TimelineEditorProps {
+  mediaLibrary?: MediaItem[];
+}
+
+export default function TimelineEditor({ mediaLibrary = [] }: TimelineEditorProps) {
+  const [tracks, setTracks] = useState<Record<string, ClipItem[]>>({ video:[], audio:[], text:[], subtitle:[] });
   const [zoom, setZoom] = useState(60);
-  const [dragging, setDragging] = useState(null);
-  const [overTrack, setOverTrack] = useState(null);
-  const [toast, setToast] = useState(null);
+  const [dragging, setDragging] = useState<MediaItem | null>(null);
+  const [overTrack, setOverTrack] = useState<string | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
   const srtRef = useRef(null);
 
-  const showToast = (msg, type='success') => {
+  const showToast = (msg: string, type: 'success' | 'error' | 'warning' = 'success') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleDrop = (trackKey, e) => {
+  const handleDrop = (trackKey: string, e: React.DragEvent) => {
     e.preventDefault();
     setOverTrack(null);
     if (!dragging) return;
@@ -55,18 +94,20 @@ export default function TimelineEditor({ mediaLibrary = [] }) {
     setDragging(null);
   };
 
-  const removeClip = (trackKey, id) => {
+  const removeClip = (trackKey: string, id: number) => {
     setTracks(prev => ({ ...prev, [trackKey]: prev[trackKey].filter(c => c.id !== id) }));
     showToast('Clip removed', 'warning');
   };
 
-  const handleSRTFile = (e) => {
-    const file = e.target.files[0];
+  const handleSRTFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
     if (!file.name.toLowerCase().endsWith('.srt')) { showToast('❌ Must be a .srt file', 'error'); return; }
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const subtitles = parseSRT(ev.target.result);
+      const result = ev.target?.result;
+      if (typeof result !== 'string') return;
+      const subtitles = parseSRT(result);
       if (!subtitles.length) { showToast('❌ Could not parse SRT file', 'error'); return; }
       const duration = subtitles[subtitles.length-1].end;
       const offset = tracks.subtitle.reduce((max,c) => Math.max(max,(c.offset||0)+(c.duration||10)), 0);
