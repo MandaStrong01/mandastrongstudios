@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Video, Scissors, Image as ImageIcon, Share2, Sparkles, Upload, Save, Play, Pause, SkipBack, SkipForward, Volume2, Download, Film, ChevronDown, ChevronUp, Music, Wand2, Type, Palette, Layers, Grid2x2 as Grid, Home, Moon, Sun, Mic, Settings, PlusCircle, List, Users, X, MessageSquare, Check, LayoutGrid, Smartphone, Loader, CheckCircle, XCircle, User, LogOut, Clipboard } from 'lucide-react';
+import { Video, Scissors, Image as ImageIcon, Share2, Sparkles, Upload, Save, Play, Pause, SkipBack, SkipForward, Volume2, Download, Film, ChevronDown, ChevronUp, Music, Wand2, Type, Palette, Layers, Grid2x2 as Grid, Home, Moon, Sun, Mic, Settings, PlusCircle, List, Users, X, MessageSquare, Check, LayoutGrid, Smartphone, Loader, CheckCircle, XCircle, User as UserIcon, LogOut, Clipboard } from 'lucide-react';
 import VideoRecorder from './components/VideoRecorder';
 import { AudioMixer } from './components/AudioMixer';
 import { EnhancedCommunityHub } from './components/EnhancedCommunityHub';
@@ -325,7 +325,7 @@ function App() {
                 {user ? (
                   <div className="flex items-center gap-2">
                     <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm border border-white/20">
-                      <User className="w-4 h-4" />
+                      <UserIcon className="w-4 h-4" />
                       <span className="text-sm font-medium">{user.email?.split('@')[0]}</span>
                     </div>
                     <button
@@ -341,7 +341,7 @@ function App() {
                     onClick={() => setShowAuthModal(true)}
                     className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 text-sm font-medium"
                   >
-                    <User className="w-4 h-4" />
+                    <UserIcon className="w-4 h-4" />
                     <span className="hidden sm:inline">Sign In</span>
                   </button>
                 )}
