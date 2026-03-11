@@ -229,7 +229,10 @@ export default function App() {
   const [showPasteImporter, setShowPasteImporter] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState('idle');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-
+const [loginEmail, setLoginEmail] = useState('');
+const [loginPassword, setLoginPassword] = useState('');
+const [registerName, setRegisterName] = useState('');
+const [registerEmail, setRegisterEmail] = useState('');
   // ✅ PERSISTENT FORM STATE — survives navigation between pages
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -664,79 +667,35 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 3 - LOGIN & PRICING — ✅ inputs persist via state */}
-        {page === 3 && (
-          <div className="p-6 pt-16 pb-40 max-w-7xl mx-auto overflow-y-auto scrollbar fade-up">
-            <div className="text-center mb-12">
-              <button onClick={() => goTo(4)} className="bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] text-white px-12 py-4 rounded-full font-black uppercase text-lg hover:scale-105 transition shadow-2xl border-2 border-[#a78bfa]">
-                Browse First — Explore Tools
-              </button>
-            </div>
-            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
-              {/* LOGIN */}
-              <div className="bg-zinc-950 border-2 border-[#7c3aed] p-10 rounded-3xl">
-                <h3 className="text-3xl font-black uppercase mb-6 text-center text-white">Login</h3>
-                <input
-                  type="email" placeholder="your@email.com"
-                  value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
-                  className="w-full bg-black border-2 border-[#7c3aed] p-4 rounded-xl text-white mb-4 outline-none font-bold"
-                />
-                <input
-                  type="password" placeholder="••••••••"
-                  value={loginPassword} onChange={e => setLoginPassword(e.target.value)}
-                  className="w-full bg-black border-2 border-[#7c3aed] p-4 rounded-xl text-white mb-6 outline-none font-bold"
-                />
-                <button
-                  onClick={() => { addToast('✅ Welcome back!', 'success'); setTimeout(() => goTo(4), 800); }}
-                  className="w-full bg-[#7c3aed] py-4 rounded-xl font-black uppercase text-lg hover:bg-[#6d28d9] transition flex items-center justify-center gap-2">
-                  <Zap size={20} /> Login & Start
-                </button>
-              </div>
-              {/* REGISTER */}
-              <div className="bg-zinc-950 border-2 border-[#7c3aed] p-10 rounded-3xl">
-                <h3 className="text-3xl font-black uppercase mb-6 text-center text-white">Register</h3>
-                <input
-                  type="text" placeholder="Your Name"
-                  value={registerName} onChange={e => setRegisterName(e.target.value)}
-                  className="w-full bg-black border-2 border-[#7c3aed] p-4 rounded-xl text-white mb-4 outline-none font-bold"
-                />
-                <input
-                  type="email" placeholder="your@email.com"
-                  value={registerEmail} onChange={e => setRegisterEmail(e.target.value)}
-                  className="w-full bg-black border-2 border-[#7c3aed] p-4 rounded-xl text-white mb-6 outline-none font-bold"
-                />
-                <button
-                  onClick={() => { addToast('✅ Account created! Welcome!', 'success'); setTimeout(() => goTo(4), 800); }}
-                  className="w-full bg-[#7c3aed] py-4 rounded-xl font-black uppercase text-lg hover:bg-[#6d28d9] transition flex items-center justify-center gap-2">
-                  <Sparkles size={20} /> Create Account
-                </button>
-              </div>
-            </div>
-            {/* PRICING */}
-            <div className="max-w-6xl mx-auto">
-              <h2 className="text-4xl font-black text-center mb-12 uppercase text-white">Choose Your Plan</h2>
-              <div className="grid md:grid-cols-3 gap-6">
-                {[
-                  { t: 'Basic',  p: '20', s: 'https://buy.stripe.com/test_basic',  f: ['HD Export (1080p)', '100 AI Tools', '10GB Storage', 'Email Support'] },
-                  { t: 'Pro',    p: '30', s: 'https://buy.stripe.com/test_pro',    f: ['4K Export', '300 AI Tools', '100GB Storage', 'Priority Support', 'Commercial License'] },
-                  { t: 'Studio', p: '50', s: 'https://buy.stripe.com/test_studio', f: ['8K Export', '600 AI Tools', '1TB Storage', '24/7 Support', 'Full Rights', 'API Access'] },
-                ].map((plan, i) => (
-                  <div key={plan.t} className={`bg-zinc-950 rounded-3xl p-8 border-2 transition ${i === 2 ? 'border-[#7c3aed] relative' : 'border-zinc-800 hover:border-[#7c3aed]'}`}>
-                    {i === 2 && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#7c3aed] text-white px-6 py-1 rounded-full text-xs font-black uppercase">Most Popular</div>}
-                    <h3 className="text-2xl font-black uppercase mb-2 text-white">{plan.t}</h3>
-                    <div className="text-5xl font-black text-[#7c3aed] mb-8">${plan.p}<span className="text-sm opacity-50">/mo</span></div>
-                    <ul className="space-y-3 mb-10">
-                      {plan.f.map(f => <li key={f} className="text-sm font-semibold flex items-start gap-2 text-white"><CheckCircle size={16} className="text-[#7c3aed] flex-shrink-0 mt-0.5" />{f}</li>)}
-                    </ul>
-                    <a href={plan.s} target="_blank" rel="noopener noreferrer" className="block w-full py-4 bg-[#7c3aed] text-center rounded-xl font-black uppercase hover:bg-[#6d28d9] transition">
-                      SUBSCRIBE NOW
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* PAGE 3 - {page === 3 && (
+  <div className="p-6 pt-16 pb-40 max-w-7xl mx-auto overflow-y-auto scrollbar fade-up">
+    <div className="text-center mb-12">
+      <button onClick={() => goTo(4)} className="bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] text-white px-12 py-4 rounded-full font-black uppercase text-lg hover:scale-105 transition shadow-2xl border-2 border-[#a78bfa]">
+        Browse First - Explore Tools
+      </button>
+    </div>
+    <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
+      <div className="bg-zinc-950 border-2 border-[#7c3aed] p-10 rounded-3xl">
+        <h3 className="text-3xl font-black uppercase mb-6 text-center text-white">Login</h3>
+        <input value={loginEmail} onChange={e => setLoginEmail(e.target.value)} type="email" placeholder="your@email.com" className="w-full bg-black border-2 border-[#7c3aed] p-4 rounded-xl text-white mb-4 outline-none font-bold"/>
+        <input value={loginPassword} onChange={e => setLoginPassword(e.target.value)} type="password" placeholder="••••••••" className="w-full bg-black border-2 border-[#7c3aed] p-4 rounded-xl text-white mb-6 outline-none font-bold"/>
+        <button onClick={() => { addToast('✅ Welcome back! Redirecting...', 'success'); setTimeout(() => goTo(4), 800); }}
+          className="w-full bg-[#7c3aed] py-4 rounded-xl font-black uppercase text-lg hover:bg-[#6d28d9] transition flex items-center justify-center gap-2">
+          <Zap size={20}/> Login & Start
+        </button>
+      </div>
+      <div className="bg-zinc-950 border-2 border-[#7c3aed] p-10 rounded-3xl">
+        <h3 className="text-3xl font-black uppercase mb-6 text-center text-white">Register</h3>
+        <input value={registerName} onChange={e => setRegisterName(e.target.value)} type="text" placeholder="Your Name" className="w-full bg-black border-2 border-[#7c3aed] p-4 rounded-xl text-white mb-4 outline-none font-bold"/>
+        <input value={registerEmail} onChange={e => setRegisterEmail(e.target.value)} type="email" placeholder="your@email.com" className="w-full bg-black border-2 border-[#7c3aed] p-4 rounded-xl text-white mb-6 outline-none font-bold"/>
+        <button onClick={() => { addToast('✅ Account created! Welcome to MandaStrong!', 'success'); setTimeout(() => goTo(4), 800); }}
+          className="w-full bg-[#7c3aed] py-4 rounded-xl font-black uppercase text-lg hover:bg-[#6d28d9] transition flex items-center justify-center gap-2">
+          <Sparkles size={20}/> Create Account
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
         {/* PAGES 4–9: AI TOOL BOARDS */}
         {page >= 4 && page <= 9 && (() => {
