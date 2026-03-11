@@ -582,7 +582,7 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 3 - LOGIN & PRICING */}
+        {/* PAGE 3 */}
         {page === 3 && (
           <div className="p-6 pt-16 pb-40 max-w-7xl mx-auto overflow-y-auto scrollbar fade-up">
             <div className="text-center mb-12">
@@ -635,7 +635,7 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGES 4-9 AI TOOL BOARDS */}
+        {/* PAGES 4-9 */}
         {page >= 4 && page <= 9 && (() => {
           const boards = ['Writing','Voice','Image','Video','Motion','Enhancement'];
           const icons  = ['✍️','🎙','🖼','🎬','🌀','✨'];
@@ -867,18 +867,33 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 15 */}
+        {/* PAGE 15 - RENDER WITH DURATION SLIDER */}
         {page === 15 && (
           <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
             <div className="max-w-4xl mx-auto">
               <h1 className="text-5xl font-black text-[#7c3aed] mb-4 text-center uppercase">🎬 Render Your Film</h1>
-              <p className="text-center text-zinc-400 mb-10 font-bold">Add clips to your timeline (page 12), then render here</p>
+              <p className="text-center text-zinc-400 mb-10 font-bold">Set your duration, then render</p>
               <div className="bg-zinc-950 border-4 border-[#7c3aed] rounded-3xl p-12 mb-8">
+
+                {/* ✅ DURATION SLIDER */}
                 <div className="text-center mb-8">
-                  <Zap size={80} className="text-[#7c3aed] mx-auto mb-4 animate-pulse" />
-                  <p className="text-white text-xl font-bold mb-2">Ready to Render</p>
-                  <p className="text-zinc-400">Timeline clips will be processed into your final film</p>
+                  <Clock size={48} className="text-[#7c3aed] mx-auto mb-4" />
+                  <div className="text-8xl font-black text-white">{duration}</div>
+                  <div className="text-xl font-bold text-white/80 uppercase mb-4">Minutes</div>
+                  <input type="range" min="0" max="180" value={duration}
+                    onChange={e => setDuration(Number(e.target.value))}
+                    className="w-full h-4 bg-zinc-800 rounded-full cursor-pointer mb-2" />
+                  <div className="flex justify-between text-sm text-zinc-500 mb-4"><span>0 min</span><span>180 min</span></div>
+                  <div className="grid grid-cols-4 gap-3 mb-8">
+                    {[30,60,90,120].map(m => (
+                      <button key={m} onClick={() => {setDuration(m); addToast(`Duration set to ${m} min`,'info');}}
+                        className={`py-3 rounded-xl font-bold transition ${duration===m?'bg-[#7c3aed] text-white':'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}>
+                        {m} min
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
                 <div className="grid md:grid-cols-2 gap-6 mb-10">
                   <div className="bg-black border-2 border-[#7c3aed]/40 p-5 rounded-2xl">
                     <h3 className="font-black mb-3 text-white uppercase text-sm">Quality</h3>
@@ -905,7 +920,7 @@ export default function App() {
           </div>
         )}
 
-        {/* PAGE 16 - FIXED VIDEO PREVIEW */}
+        {/* PAGE 16 - VIDEO PREVIEW */}
         {page === 16 && (
           <div className="h-screen flex flex-col items-center justify-center bg-black p-6 fade-up">
             <h1 className="text-4xl font-black uppercase text-[#7c3aed] mb-6 text-center">🎬 YOUR MASTERPIECE IS READY</h1>
