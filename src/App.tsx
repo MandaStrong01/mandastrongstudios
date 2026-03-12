@@ -117,13 +117,23 @@ const ENHANCEMENT_TOOLS = [
   "Chromatic Correction","Film Grain Advanced","Halation Effect","Bloom Control","Light Wrap"
 ];
 
+type Comment = { id: number; text: string; user: string; timestamp: string };
+type CommunityPost = { id: number; title: string; user: string; emoji: string; likes: number; loves: number; comments: Comment[] };
+
+const INITIAL_POSTS: CommunityPost[] = [
+  { id: 1, title: 'Epic Action Movie',  user: 'Sarah J.',  emoji: '🎬', likes: 2847, loves: 1923, comments: [] },
+  { id: 2, title: 'Family Vacation',    user: 'Mike Chen', emoji: '✈️', likes: 1256, loves: 892,  comments: [] },
+  { id: 3, title: 'First Documentary',  user: 'Emily R.',  emoji: '📹', likes: 3421, loves: 2156, comments: [] },
+  { id: 4, title: 'Music Video',        user: 'Alex T.',   emoji: '🎵', likes: 5234, loves: 4012, comments: [] },
+];
+
 function Toast({ toasts, removeToast }: { toasts: any[]; removeToast: (id: number) => void }) {
   return (
     <div className="fixed top-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none">
       {toasts.map((t: any) => (
         <div key={t.id} className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border pointer-events-auto min-w-72 max-w-sm
           ${t.type === 'success' ? 'bg-zinc-950 border-green-500 text-green-400' :
-            t.type === 'error' ? 'bg-zinc-950 border-red-500 text-red-400' :
+            t.type === 'error'   ? 'bg-zinc-950 border-red-500 text-red-400' :
             t.type === 'warning' ? 'bg-zinc-950 border-[#7c3aed] text-[#a78bfa]' :
             'bg-zinc-950 border-[#7c3aed] text-white'}`}>
           <span className="text-lg flex-shrink-0">
@@ -184,6 +194,11 @@ function ProgressOverlay({ progress, label, subLabel }: { progress: number; labe
   );
 }
 
+const safeStorage = {
+  get: (key: string): string | null => { try { return localStorage.getItem(key); } catch { return null; } },
+  set: (key: string, value: string): void => { try { localStorage.setItem(key, value); } catch { /* ignore */ } },
+};
+
 export default function App() {
   const [page, setPage] = useState(1);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -191,8 +206,6 @@ export default function App() {
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [selectedEnhancement, setSelectedEnhancement] = useState<string | null>(null);
   const [mediaLibrary, setMediaLibrary] = useState<any[]>([]);
-  const [timeline, setTimeline] = useState<{ video: any[]; audio: any[]; text: any[] }>({ video: [], audio: [], text: [] });
-  const [draggedItem, setDraggedItem] = useState<any>(null);
   const [currentVideo, setCurrentVideo] = useState<any>(null);
   const [aiPrompt, setAiPrompt] = useState('');
   const [generating, setGenerating] = useState(false);
@@ -201,12 +214,7 @@ export default function App() {
   const [audioLevels, setAudioLevels] = useState({ music: 75, voice: 50, sfx: 65, master: 80 });
   const [enhancementSettings, setEnhancementSettings] = useState({ intensity: 75, clarity: 75, color: 75, brightness: 75 });
   const [exportSettings, setExportSettings] = useState({ quality: '8K', format: 'MP4' });
-  const [communityPosts, setCommunityPosts] = useState([
-    { id: 1, title: 'Epic Action Movie', user: 'Sarah J.', emoji: '🎬', likes: 2847, loves: 1923, comments: [] as any[] },
-    { id: 2, title: 'Family Vacation', user: 'Mike Chen', emoji: '✈️', likes: 1256, loves: 892, comments: [] as any[] },
-    { id: 3, title: 'First Documentary', user: 'Emily R.', emoji: '📹', likes: 3421, loves: 2156, comments: [] as any[] },
-    { id: 4, title: 'Music Video', user: 'Alex T.', emoji: '🎵', likes: 5234, loves: 4012, comments: [] as any[] },
-  ]);
+  const [communityPosts, setCommunityPosts] = useState<CommunityPost[]>(INITIAL_POSTS);
   const [newComment, setNewComment] = useState<Record<number, string>>({});
   const [toolSearch, setToolSearch] = useState('');
   const [userPlan] = useState('Studio • Admin');
@@ -284,43 +292,41 @@ export default function App() {
   }, [addToast, goTo]);
 
   const saveProject = useCallback(() => {
-    try {
-      localStorage.setItem('mandastrong_autosave', JSON.stringify({
-        mediaLibrary, timeline, audioLevels, enhancementSettings, exportSettings, duration,
-        timestamp: new Date().toISOString(),
-      }));
-      setAutoSaveStatus('saved');
-      setLastSaved(new Date());
-      setTimeout(() => setAutoSaveStatus('idle'), 2000);
-    } catch {
-      setAutoSaveStatus('error');
-      setTimeout(() => setAutoSaveStatus('idle'), 3000);
-    }
-  }, [mediaLibrary, timeline, audioLevels, enhancementSettings, exportSettings, duration]);
+    safeStorage.set('mandastrong_autosave', JSON.stringify({
+      mediaLibrary, audioLevels, enhancementSettings, exportSettings, duration,
+      timestamp: new Date().toISOString(),
+    }));
+    setAutoSaveStatus('saved');
+    setLastSaved(new Date());
+    setTimeout(() => setAutoSaveStatus('idle'), 2000);
+  }, [mediaLibrary, audioLevels, enhancementSettings, exportSettings, duration]);
+
+  const saveProjectRef = useRef(saveProject);
+  useEffect(() => { saveProjectRef.current = saveProject; }, [saveProject]);
 
   useEffect(() => {
-    const saved = localStorage.getItem('mandastrong_autosave');
-    if (saved) {
-      try {
-        const d = JSON.parse(saved);
-        setMediaLibrary(d.mediaLibrary || []);
-        setTimeline(d.timeline || { video: [], audio: [], text: [] });
-        setAudioLevels(d.audioLevels || { music: 75, voice: 50, sfx: 65, master: 80 });
-        setEnhancementSettings(d.enhancementSettings || { intensity: 75, clarity: 75, color: 75, brightness: 75 });
-        setExportSettings(d.exportSettings || { quality: '8K', format: 'MP4' });
-        setDuration(d.duration || 90);
-        setLastSaved(new Date(d.timestamp));
-      } catch { /* ignore */ }
-    }
+    const raw = safeStorage.get('mandastrong_autosave');
+    if (!raw) return;
+    try {
+      const d = JSON.parse(raw);
+      if (d.mediaLibrary) setMediaLibrary(d.mediaLibrary);
+      if (d.audioLevels) setAudioLevels(d.audioLevels);
+      if (d.enhancementSettings) setEnhancementSettings(d.enhancementSettings);
+      if (d.exportSettings) setExportSettings(d.exportSettings);
+      if (d.duration) setDuration(d.duration);
+      if (d.timestamp) setLastSaved(new Date(d.timestamp));
+    } catch { /* ignore */ }
   }, []);
 
   useEffect(() => {
-    if (page >= 4) {
-      if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
-      autoSaveTimerRef.current = setInterval(() => { setAutoSaveStatus('saving'); saveProject(); }, 10000);
-      return () => { if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current); };
-    }
-  }, [page, mediaLibrary, timeline, saveProject]);
+    if (page < 4) return;
+    if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setInterval(() => {
+      setAutoSaveStatus('saving');
+      saveProjectRef.current();
+    }, 10000);
+    return () => { if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current); };
+  }, [page]);
 
   const handleAIGenerate = useCallback(() => {
     if (!aiPrompt.trim() || !selectedTool) return;
@@ -339,26 +345,6 @@ export default function App() {
     }, 2500);
   }, [aiPrompt, selectedTool, addToast]);
 
-  const handleDrop = useCallback((track: string) => {
-    if (!draggedItem) return;
-    setTimeline(prev => ({ ...prev, [track]: [...(prev as any)[track], { ...draggedItem, trackPosition: Date.now() }] }));
-    setDraggedItem(null);
-    addToast(`✅ Clip added to ${track} track`, 'success');
-  }, [draggedItem, addToast]);
-
-  const removeFromTimeline = useCallback((track: string, index: number) => {
-    setTimeline(prev => ({ ...prev, [track]: (prev as any)[track].filter((_: any, i: number) => i !== index) }));
-    addToast('Clip removed', 'warning');
-  }, [addToast]);
-
-  const deleteFromLibrary = useCallback((id: number) => {
-    setModal({
-      title: 'Delete Asset?', body: 'Permanently remove this asset from your Media Library?',
-      confirmLabel: 'Delete',
-      onConfirm: () => { setMediaLibrary(prev => prev.filter(item => item.id !== id)); setModal(null); addToast('Asset deleted', 'warning'); },
-    });
-  }, [addToast]);
-
   const applyEnhancement = useCallback(() => {
     if (!selectedEnhancement) return;
     setApplyingEnhancement(true);
@@ -376,6 +362,14 @@ export default function App() {
     }, 2000);
   }, [selectedEnhancement, addToast]);
 
+  const deleteFromLibrary = useCallback((id: number) => {
+    setModal({
+      title: 'Delete Asset?', body: 'Permanently remove this asset from your Media Library?',
+      confirmLabel: 'Delete',
+      onConfirm: () => { setMediaLibrary(prev => prev.filter(item => item.id !== id)); setModal(null); addToast('Asset deleted', 'warning'); },
+    });
+  }, [addToast]);
+
   const handleRender = useCallback(() => {
     setModal({
       title: 'Start Final Render?',
@@ -392,19 +386,14 @@ export default function App() {
                 const rendered = {
                   id: Date.now(),
                   name: `final-render-${Date.now()}.${exportSettings.format.toLowerCase()}`,
-                  type: 'video',
-                  size: (Math.random() * 1000 + 500).toFixed(2) + 'MB',
-                  url: DEMO_VIDEOS[0],
-                  rendered: true,
-                  quality: exportSettings.quality,
-                  format: exportSettings.format,
-                  duration,
-                  timestamp: new Date().toISOString(),
+                  type: 'video', size: (Math.random() * 1000 + 500).toFixed(2) + 'MB',
+                  url: DEMO_VIDEOS[0], rendered: true,
+                  quality: exportSettings.quality, format: exportSettings.format,
+                  duration, timestamp: new Date().toISOString(),
                 };
                 setMediaLibrary(prev => [...prev, rendered]);
                 setCurrentVideo(rendered);
-                setRendering(false);
-                setRenderProgress(0);
+                setRendering(false); setRenderProgress(0);
                 addToast('✅ Your movie is ready!', 'success');
                 setTimeout(() => setPage(16), 800);
               }, 600);
@@ -428,13 +417,19 @@ export default function App() {
     setTimeout(() => { setSavingPreset(false); addToast('✅ Preset saved!', 'success'); }, 1200);
   }, [addToast]);
 
-  const handleLike    = useCallback((id: number) => setCommunityPosts(prev => prev.map(p => p.id === id ? { ...p, likes: p.likes + 1 } : p)), []);
-  const handleLove    = useCallback((id: number) => setCommunityPosts(prev => prev.map(p => p.id === id ? { ...p, loves: p.loves + 1 } : p)), []);
+  const handleLike = useCallback((id: number) => {
+    setCommunityPosts(prev => prev.map(p => p.id === id ? { ...p, likes: p.likes + 1 } : p));
+  }, []);
+
+  const handleLove = useCallback((id: number) => {
+    setCommunityPosts(prev => prev.map(p => p.id === id ? { ...p, loves: p.loves + 1 } : p));
+  }, []);
+
   const handleComment = useCallback((postId: number) => {
-    const c = newComment[postId];
-    if (!c?.trim()) return;
-    setCommunityPosts(prev => prev.map(p => p.id === postId
-      ? { ...p, comments: [...p.comments, { id: Date.now(), text: c, user: 'You', timestamp: new Date().toISOString() }] } : p));
+    const text = newComment[postId];
+    if (!text?.trim()) return;
+    const newC: Comment = { id: Date.now(), text: text.trim(), user: 'You', timestamp: new Date().toISOString() };
+    setCommunityPosts(prev => prev.map(p => p.id === postId ? { ...p, comments: [...p.comments, newC] } : p));
     setNewComment(prev => ({ ...prev, [postId]: '' }));
     addToast('✅ Comment posted!', 'success');
   }, [newComment, addToast]);
@@ -443,8 +438,6 @@ export default function App() {
     if (!currentVideo) { addToast('Render your movie first!', 'warning'); return; }
     addToast('✅ Shared to Community Hub!', 'success'); setPage(21);
   }, [currentVideo, addToast]);
-
-  void handleDrop; void removeFromTimeline; void deleteFromLibrary;
 
   return (
     <div className="min-h-screen bg-black text-white relative">
@@ -726,18 +719,19 @@ export default function App() {
                   <p className="text-zinc-400 mt-1 text-xs">URLs • Scripts • Text</p>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                {[{icon:FileVideo,label:'Videos',formats:'MP4, MOV, AVI, MKV',info:'Up to 100GB per file'},
-                  {icon:Music,label:'Audio',formats:'MP3, WAV, AAC, FLAC',info:'Lossless quality'},
-                  {icon:Eye,label:'Images',formats:'JPG, PNG, GIF, RAW',info:'Up to 200MP'}].map(({icon:Icon,label,formats,info}) => (
-                  <div key={label} className="bg-zinc-950 border-2 border-[#7c3aed]/40 p-5 rounded-2xl hover:border-[#7c3aed] transition">
-                    <Icon size={32} className="text-[#7c3aed] mb-2" />
-                    <p className="text-sm font-black text-white uppercase">{label}</p>
-                    <p className="text-xs text-zinc-400 mt-1">{formats}</p>
-                    <p className="text-xs text-[#7c3aed] mt-1 font-bold">{info}</p>
-                  </div>
-                ))}
-              </div>
+              {mediaLibrary.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                  {mediaLibrary.map(item => (
+                    <div key={item.id} className="bg-zinc-950 border-2 border-zinc-800 rounded-2xl p-4 text-left group relative">
+                      <p className="text-xs font-black text-white truncate mb-1">{item.name}</p>
+                      <p className="text-xs text-zinc-500">{String(item.type).toUpperCase()} • {item.size}</p>
+                      <button onClick={() => deleteFromLibrary(item.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition text-red-400 hover:text-red-300">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="grid grid-cols-3 gap-4">
                 {[{icon:Database,label:'Cloud Storage',info:'1TB Included',sub:'Auto-backup enabled'},
                   {icon:Zap,label:'Fast Upload',info:'Multi-file support',sub:'Drag & drop ready'},
@@ -945,45 +939,19 @@ export default function App() {
           <div className="h-screen flex flex-col items-center justify-center bg-black p-6 fade-up">
             <h1 className="text-4xl font-black uppercase text-[#7c3aed] mb-6 text-center">🎬 YOUR MASTERPIECE IS READY</h1>
             <div className="w-full max-w-5xl rounded-3xl overflow-hidden border-4 border-[#7c3aed] shadow-2xl mb-6 bg-black">
-              <video
-                ref={previewVideoRef}
-                key={currentVideo?.url ?? DEMO_VIDEOS[0]}
-                src={currentVideo?.url ?? DEMO_VIDEOS[0]}
-                autoPlay
-                controls
-                loop
-                playsInline
-                className="w-full"
-                style={{ minHeight: '360px', background: '#000' }}
-                onCanPlay={() => {
-                  if (previewVideoRef.current) {
-                    previewVideoRef.current.play().catch(() => {
-                      if (previewVideoRef.current) {
-                        previewVideoRef.current.muted = true;
-                        previewVideoRef.current.play();
-                      }
-                    });
-                  }
-                }}
+              <video ref={previewVideoRef} key={currentVideo?.url ?? DEMO_VIDEOS[0]}
+                src={currentVideo?.url ?? DEMO_VIDEOS[0]} autoPlay controls loop playsInline
+                className="w-full" style={{ minHeight: '360px', background: '#000' }}
+                onCanPlay={() => { if (previewVideoRef.current) { previewVideoRef.current.play().catch(() => { if (previewVideoRef.current) { previewVideoRef.current.muted = true; previewVideoRef.current.play(); } }); } }}
               />
             </div>
-            {currentVideo ? (
-              <p className="text-zinc-400 text-sm mb-6 font-bold text-center">
-                {currentVideo.name} • {currentVideo.size} • {currentVideo.quality} {currentVideo.format}
-              </p>
-            ) : (
-              <p className="text-zinc-400 text-sm mb-6 font-bold text-center">Demo Preview — Render your film to see your movie here</p>
-            )}
+            {currentVideo
+              ? <p className="text-zinc-400 text-sm mb-6 font-bold text-center">{currentVideo.name} • {currentVideo.size} • {currentVideo.quality} {currentVideo.format}</p>
+              : <p className="text-zinc-400 text-sm mb-6 font-bold text-center">Demo Preview — Render your film to see your movie here</p>}
             <div className="flex gap-4 flex-wrap justify-center">
-              <button onClick={() => goTo(17)} className="bg-[#7c3aed] px-12 py-4 rounded-xl font-black uppercase hover:bg-[#6d28d9] transition flex items-center gap-2">
-                <Download size={20} /> EXPORT
-              </button>
-              <button onClick={handleShare} className="bg-blue-600 px-12 py-4 rounded-xl font-black uppercase hover:bg-blue-700 transition flex items-center gap-2">
-                <Share2 size={20} /> SHARE
-              </button>
-              <button onClick={() => goTo(15)} className="bg-zinc-800 px-12 py-4 rounded-xl font-black uppercase hover:bg-zinc-700 transition">
-                🔄 RE-RENDER
-              </button>
+              <button onClick={() => goTo(17)} className="bg-[#7c3aed] px-12 py-4 rounded-xl font-black uppercase hover:bg-[#6d28d9] transition flex items-center gap-2"><Download size={20}/> EXPORT</button>
+              <button onClick={handleShare} className="bg-blue-600 px-12 py-4 rounded-xl font-black uppercase hover:bg-blue-700 transition flex items-center gap-2"><Share2 size={20}/> SHARE</button>
+              <button onClick={() => goTo(15)} className="bg-zinc-800 px-12 py-4 rounded-xl font-black uppercase hover:bg-zinc-700 transition">🔄 RE-RENDER</button>
             </div>
           </div>
         )}
@@ -996,43 +964,28 @@ export default function App() {
               {currentVideo && (
                 <div className="bg-black border-2 border-green-500 rounded-2xl p-5 mb-8 flex items-center gap-4">
                   <CheckCircle size={36} className="text-green-500 flex-shrink-0" />
-                  <div>
-                    <p className="text-lg font-black text-white">{currentVideo.name}</p>
-                    <p className="text-sm text-zinc-400">{currentVideo.size} • {currentVideo.quality} • Ready!</p>
-                  </div>
+                  <div><p className="text-lg font-black text-white">{currentVideo.name}</p><p className="text-sm text-zinc-400">{currentVideo.size} • {currentVideo.quality} • Ready!</p></div>
                 </div>
               )}
               <div className="grid md:grid-cols-2 gap-6 mb-10">
                 <div className="bg-black border-2 border-[#7c3aed]/40 p-5 rounded-2xl">
                   <h3 className="font-black mb-3 text-white uppercase text-sm">Export Quality</h3>
-                  <select value={exportSettings.quality} onChange={e => setExportSettings(p => ({...p,quality:e.target.value}))}
-                    className="w-full bg-zinc-900 border border-[#7c3aed] p-3 rounded-xl text-white outline-none font-bold">
-                    <option value="8K">8K (4320p)</option><option value="4K">4K (2160p)</option>
-                    <option value="HD">HD (1080p)</option><option value="SD">SD (720p)</option>
+                  <select value={exportSettings.quality} onChange={e => setExportSettings(p => ({...p,quality:e.target.value}))} className="w-full bg-zinc-900 border border-[#7c3aed] p-3 rounded-xl text-white outline-none font-bold">
+                    <option value="8K">8K (4320p)</option><option value="4K">4K (2160p)</option><option value="HD">HD (1080p)</option><option value="SD">SD (720p)</option>
                   </select>
                 </div>
                 <div className="bg-black border-2 border-[#7c3aed]/40 p-5 rounded-2xl">
                   <h3 className="font-black mb-3 text-white uppercase text-sm">Format</h3>
-                  <select value={exportSettings.format} onChange={e => setExportSettings(p => ({...p,format:e.target.value}))}
-                    className="w-full bg-zinc-900 border border-[#7c3aed] p-3 rounded-xl text-white outline-none font-bold">
+                  <select value={exportSettings.format} onChange={e => setExportSettings(p => ({...p,format:e.target.value}))} className="w-full bg-zinc-900 border border-[#7c3aed] p-3 rounded-xl text-white outline-none font-bold">
                     <option>MP4</option><option>MOV</option><option>AVI</option><option>WebM</option>
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4 mb-5">
-                <button onClick={() => currentVideo && handleDownload(currentVideo)} disabled={!currentVideo}
-                  className="bg-[#7c3aed] py-5 rounded-xl font-black uppercase text-lg hover:bg-[#6d28d9] transition disabled:opacity-40 flex items-center justify-center gap-3">
-                  <Download size={22} /> DOWNLOAD
-                </button>
-                <button disabled={!currentVideo} onClick={() => addToast('☁️ Saving to cloud...','info')}
-                  className="bg-green-600 py-5 rounded-xl font-black uppercase text-lg hover:bg-green-700 transition disabled:opacity-40 flex items-center justify-center gap-3">
-                  <Save size={22} /> SAVE TO CLOUD
-                </button>
+                <button onClick={() => currentVideo && handleDownload(currentVideo)} disabled={!currentVideo} className="bg-[#7c3aed] py-5 rounded-xl font-black uppercase text-lg hover:bg-[#6d28d9] transition disabled:opacity-40 flex items-center justify-center gap-3"><Download size={22}/> DOWNLOAD</button>
+                <button disabled={!currentVideo} onClick={() => addToast('☁️ Saving to cloud...','info')} className="bg-green-600 py-5 rounded-xl font-black uppercase text-lg hover:bg-green-700 transition disabled:opacity-40 flex items-center justify-center gap-3"><Save size={22}/> SAVE TO CLOUD</button>
               </div>
-              <button onClick={handleShare} disabled={!currentVideo}
-                className="w-full bg-blue-600 py-5 rounded-xl font-black uppercase text-lg hover:bg-blue-700 transition disabled:opacity-40 flex items-center justify-center gap-3">
-                <Share2 size={22} /> SHARE TO COMMUNITY HUB
-              </button>
+              <button onClick={handleShare} disabled={!currentVideo} className="w-full bg-blue-600 py-5 rounded-xl font-black uppercase text-lg hover:bg-blue-700 transition disabled:opacity-40 flex items-center justify-center gap-3"><Share2 size={22}/> SHARE TO COMMUNITY HUB</button>
             </div>
           </div>
         )}
@@ -1043,15 +996,13 @@ export default function App() {
             <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
               <div className="bg-black rounded-3xl border-4 border-[#7c3aed] p-12 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="w-48 h-48 rounded-full bg-[#7c3aed]/20 flex items-center justify-center mb-6 mx-auto">
-                    <Play size={80} className="text-[#7c3aed]" />
-                  </div>
+                  <div className="w-48 h-48 rounded-full bg-[#7c3aed]/20 flex items-center justify-center mb-6 mx-auto"><Play size={80} className="text-[#7c3aed]" /></div>
                   <h3 className="text-2xl font-bold text-white">Video Tutorial Player</h3>
                   <p className="text-zinc-400 mt-2 text-sm">Click a tutorial to play</p>
                 </div>
               </div>
               <div className="space-y-4">
-                <h3 className="text-2xl font-bold mb-6 text-white flex items-center gap-3"><BookOpen size={24} className="text-[#7c3aed]" />Tutorial Library</h3>
+                <h3 className="text-2xl font-bold mb-6 text-white flex items-center gap-3"><BookOpen size={24} className="text-[#7c3aed]"/>Tutorial Library</h3>
                 {[{title:'Getting Started with MandaStrong',time:'5:30',level:'Beginner'},
                   {title:'Multi-Track Timeline Editing',time:'12:45',level:'Intermediate'},
                   {title:'Professional Color Grading',time:'18:20',level:'Advanced'},
@@ -1060,14 +1011,8 @@ export default function App() {
                   {title:'Export & Optimization',time:'8:15',level:'Beginner'}].map((tut,i) => (
                   <button key={i} onClick={() => addToast(`▶️ Playing: ${tut.title}`,'info')}
                     className="w-full bg-zinc-950 border-2 border-[#7c3aed]/30 p-5 rounded-2xl hover:bg-[#7c3aed]/10 hover:border-[#7c3aed] cursor-pointer transition text-left">
-                    <div className="flex items-center gap-3 mb-2">
-                      <FileVideo size={18} className="text-[#7c3aed]" />
-                      <h4 className="font-bold flex-1 text-white">{tut.title}</h4>
-                    </div>
-                    <div className="flex gap-3 text-xs text-zinc-400">
-                      <span>⏱ {tut.time}</span><span>•</span>
-                      <span className="bg-[#7c3aed] px-2 py-0.5 rounded text-white font-bold">{tut.level}</span>
-                    </div>
+                    <div className="flex items-center gap-3 mb-2"><FileVideo size={18} className="text-[#7c3aed]"/><h4 className="font-bold flex-1 text-white">{tut.title}</h4></div>
+                    <div className="flex gap-3 text-xs text-zinc-400"><span>⏱ {tut.time}</span><span>•</span><span className="bg-[#7c3aed] px-2 py-0.5 rounded text-white font-bold">{tut.level}</span></div>
                   </button>
                 ))}
               </div>
@@ -1099,28 +1044,20 @@ export default function App() {
               ))}
             </div>
             <div className="mt-10 text-center">
-              <button onClick={() => {addToast('✅ Terms accepted!','success'); goTo(4);}}
-                className="bg-[#7c3aed] px-20 py-5 rounded-full font-black uppercase text-2xl hover:bg-[#6d28d9] transition">
-                ACCEPT & CONTINUE
-              </button>
+              <button onClick={() => {addToast('✅ Terms accepted!','success'); goTo(4);}} className="bg-[#7c3aed] px-20 py-5 rounded-full font-black uppercase text-2xl hover:bg-[#6d28d9] transition">ACCEPT & CONTINUE</button>
             </div>
           </div>
         )}
 
         {page === 20 && (
           <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
-            <h1 className="text-5xl font-black uppercase mb-12 flex items-center gap-4 text-white">
-              <MessageCircle size={48} className="text-[#7c3aed]"/>AGENT GROK — 24/7 HELP
-            </h1>
+            <h1 className="text-5xl font-black uppercase mb-12 flex items-center gap-4 text-white"><MessageCircle size={48} className="text-[#7c3aed]"/>AGENT GROK — 24/7 HELP</h1>
             <div className="grid md:grid-cols-2 gap-12 max-w-7xl mx-auto">
               <div>
                 <div className="bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] rounded-3xl p-8 mb-8 border-4 border-[#a78bfa]">
                   <div className="flex items-center gap-6">
                     <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-3xl font-black">G</div>
-                    <div>
-                      <h3 className="text-2xl font-black text-white">Agent Grok</h3>
-                      <p className="text-white/80 flex items-center gap-2 font-bold"><span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse"/>Online & Ready</p>
-                    </div>
+                    <div><h3 className="text-2xl font-black text-white">Agent Grok</h3><p className="text-white/80 flex items-center gap-2 font-bold"><span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse"/>Online & Ready</p></div>
                     <div className="ml-auto bg-yellow-500 text-black px-4 py-2 rounded-full text-xs font-black">⚡ INSTANT</div>
                   </div>
                 </div>
@@ -1131,21 +1068,15 @@ export default function App() {
                 </div>
                 <div className="bg-zinc-950 border-2 border-[#7c3aed] rounded-3xl p-6">
                   <input type="text" placeholder="Ask anything..." className="w-full bg-black border border-[#7c3aed] p-4 rounded-xl text-white outline-none mb-4 font-bold"/>
-                  <button onClick={() => addToast('📨 Message sent to Agent Grok!','success')}
-                    className="w-full bg-[#7c3aed] py-4 rounded-xl font-black uppercase hover:bg-[#6d28d9] transition">SEND MESSAGE</button>
+                  <button onClick={() => addToast('📨 Message sent to Agent Grok!','success')} className="w-full bg-[#7c3aed] py-4 rounded-xl font-black uppercase hover:bg-[#6d28d9] transition">SEND MESSAGE</button>
                 </div>
               </div>
               <div className="space-y-8">
                 <div>
                   <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-white"><HelpCircle size={24} className="text-[#7c3aed]"/>Common Questions</h3>
                   <div className="space-y-3">
-                    {['How do I upload files?','How does AI generation work?','How do I add clips to timeline?',
-                      'What enhancements are available?','How do I adjust audio levels?',
-                      'What export qualities can I use?','How do I download my video?','Can I share to community?'].map(q => (
-                      <button key={q} onClick={() => addToast(`💬 "${q}" — Agent Grok is answering...`,'info')}
-                        className="w-full bg-zinc-950 border-2 border-zinc-800 p-4 rounded-xl text-left hover:bg-[#7c3aed]/10 hover:border-[#7c3aed] text-sm font-bold transition text-white">
-                        {q}
-                      </button>
+                    {['How do I upload files?','How does AI generation work?','How do I add clips to timeline?','What enhancements are available?','How do I adjust audio levels?','What export qualities can I use?','How do I download my video?','Can I share to community?'].map(q => (
+                      <button key={q} onClick={() => addToast(`💬 "${q}" — Agent Grok is answering...`,'info')} className="w-full bg-zinc-950 border-2 border-zinc-800 p-4 rounded-xl text-left hover:bg-[#7c3aed]/10 hover:border-[#7c3aed] text-sm font-bold transition text-white">{q}</button>
                     ))}
                   </div>
                 </div>
@@ -1182,7 +1113,7 @@ export default function App() {
                   <div className="p-8">
                     <h3 className="text-2xl font-black mb-4 text-white">{post.title}</h3>
                     <div className="flex items-center gap-3 mb-6">
-                      <div className="w-10 h-10 rounded-full bg-[#7c3aed] flex items-center justify-center font-black">{post.user[0]}</div>
+                      <div className="w-10 h-10 rounded-full bg-[#7c3aed] flex items-center justify-center font-black text-white">{post.user[0]}</div>
                       <div><div className="font-bold text-white">{post.user}</div><div className="text-xs text-zinc-500">2 hours ago</div></div>
                     </div>
                     <div className="flex gap-8 mb-6">
@@ -1193,9 +1124,9 @@ export default function App() {
                         <Heart className="text-red-400" size={18}/> {post.loves.toLocaleString()}
                       </button>
                     </div>
-                    {post.comments?.length > 0 && (
+                    {post.comments.length > 0 && (
                       <div className="mb-4 space-y-2">
-                        {post.comments.map((c:any) => (
+                        {post.comments.map(c => (
                           <div key={c.id} className="bg-black/50 p-3 rounded-xl">
                             <span className="font-bold text-sm text-[#7c3aed]">{c.user}</span>
                             <p className="text-sm text-white mt-1">{c.text}</p>
@@ -1203,9 +1134,12 @@ export default function App() {
                         ))}
                       </div>
                     )}
-                    <textarea value={newComment[post.id]||''} onChange={e => setNewComment(prev=>({...prev,[post.id]:e.target.value}))}
+                    <textarea
+                      value={newComment[post.id] || ''}
+                      onChange={e => setNewComment(prev => ({ ...prev, [post.id]: e.target.value }))}
                       className="w-full p-4 bg-black border-2 border-[#7c3aed]/30 rounded-xl text-white text-sm mb-4 outline-none resize-none focus:border-[#7c3aed] transition"
-                      placeholder="Add a comment..." rows={2}/>
+                      placeholder="Add a comment..." rows={2}
+                    />
                     <button onClick={() => handleComment(post.id)} className="bg-[#7c3aed] px-8 py-3 rounded-xl font-black uppercase hover:bg-[#6d28d9] transition text-sm">
                       POST COMMENT
                     </button>
