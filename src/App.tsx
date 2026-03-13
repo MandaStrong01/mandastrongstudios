@@ -1,12 +1,17 @@
 import React, { useState, useRef } from "react";
 import { Music, Mic, Zap, Sliders, Loader, Save, Share2 } from "lucide-react";
-import { addToast } from "./utils";
+
+// Simple self-contained addToast function
+const addToast = (message: string, type: "success" | "error" | "info" = "info") => {
+  // You can replace this with a proper toast library if you want later
+  console.log(`[${type.toUpperCase()}] ${message}`);
+  alert(message); // simple fallback for demo
+};
 
 export default function App() {
   const [page, setPage] = useState(1);
   const [audioLevels, setAudioLevels] = useState({ music: 75, voice: 50, sfx: 65, master: 80 });
   const [savingPreset, setSavingPreset] = useState(false);
-  const [duration, setDuration] = useState(90);
   const [exportSettings, setExportSettings] = useState({ quality: "1080p", format: "MP4" });
   const [currentVideo, setCurrentVideo] = useState<any>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
@@ -23,9 +28,9 @@ export default function App() {
 
   const handleRender = (videoUrl: string, videoName: string) => {
     const renderedVideo = {
-      url: videoUrl, // now your actual tutorial/video URL
+      url: videoUrl,
       name: videoName,
-      size: "150MB", // optional, can be dynamic
+      size: "150MB",
       quality: exportSettings.quality,
       format: exportSettings.format,
     };
