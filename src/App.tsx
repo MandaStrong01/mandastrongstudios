@@ -1,4 +1,4 @@
-is this the latest App.tsx fixed?   import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Menu, Sparkles, MessageCircle, ChevronLeft, ChevronRight,
   CheckCircle, Play, Upload, Mic, Zap, Shield, Music, Sliders,
