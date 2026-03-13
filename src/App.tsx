@@ -11,7 +11,7 @@ export default function App() {
 
   const goTo = (p: number) => setPage(p);
 
-  // --- Enable storage partitioning fix (prevents Chromium warnings) ---
+  // --- Page 1 fix: enable storage partitioning ---
   useEffect(() => {
     if (window.navigator.storage && window.navigator.storage.persist) {
       window.navigator.storage.persist().then(granted => {
@@ -20,18 +20,15 @@ export default function App() {
     }
   }, []);
 
-  // --- Toast function inside App.tsx ---
+  // --- Toast function (basic) ---
   const addToast = (message: string, type: "success" | "info" | "error" = "info") => {
     const toast = document.createElement("div");
     toast.textContent = message;
     toast.className = `fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg font-bold text-white ${
       type === "success" ? "bg-green-600" : type === "error" ? "bg-red-600" : "bg-blue-600"
-    } animate-fade-in`;
+    }`;
     document.body.appendChild(toast);
-    setTimeout(() => {
-      toast.classList.add("animate-fade-out");
-      setTimeout(() => toast.remove(), 500);
-    }, 2000);
+    setTimeout(() => toast.remove(), 2000);
   };
 
   const handleSavePreset = () => {
@@ -150,14 +147,12 @@ export default function App() {
                 style={{ minHeight: "360px", background: "#000" }}
                 onCanPlay={() => {
                   if (previewVideoRef.current) {
-                    previewVideoRef.current
-                      .play()
-                      .catch(() => {
-                        if (previewVideoRef.current) {
-                          previewVideoRef.current.muted = true;
-                          previewVideoRef.current.play();
-                        }
-                      });
+                    previewVideoRef.current.play().catch(() => {
+                      if (previewVideoRef.current) {
+                        previewVideoRef.current.muted = true;
+                        previewVideoRef.current.play();
+                      }
+                    });
                   }
                 }}
               />
