@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Music, Mic, Zap, Sliders, Loader, Save, Share2 } from "lucide-react";
 
 export default function App() {
@@ -10,6 +10,15 @@ export default function App() {
   const previewVideoRef = useRef<HTMLVideoElement>(null);
 
   const goTo = (p: number) => setPage(p);
+
+  // --- Enable storage partitioning fix (prevents Chromium warnings) ---
+  useEffect(() => {
+    if (window.navigator.storage && window.navigator.storage.persist) {
+      window.navigator.storage.persist().then(granted => {
+        console.log("Storage persist granted:", granted);
+      });
+    }
+  }, []);
 
   // --- Toast function inside App.tsx ---
   const addToast = (message: string, type: "success" | "info" | "error" = "info") => {
