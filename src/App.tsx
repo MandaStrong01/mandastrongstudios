@@ -1,98 +1,54 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Music, Mic, Zap, Sliders, Loader, Save, Share2 } from "lucide-react";
 
-// Minimal toast function, replace with your actual utils if needed
-const addToast = (message: string, type: "success" | "info" = "info") => {
-  console.log(`${type.toUpperCase()}: ${message}`);
-};
-
-interface AudioLevels {
-  music: number;
-  voice: number;
-  sfx: number;
-  master: number;
-}
-
-interface Video {
-  url: string;
-  name: string;
-  size: string;
-  quality: string;
-  format: string;
-}
-
 export default function App() {
-  const [page, setPage] = useState<number>(1);
-  const [audioLevels, setAudioLevels] = useState<AudioLevels>({
-    music: 75,
-    voice: 50,
-    sfx: 65,
-    master: 80,
-  });
-  const [savingPreset, setSavingPreset] = useState<boolean>(false);
-  const [currentVideo, setCurrentVideo] = useState<Video | null>(null);
+  const [page, setPage] = useState(1);
+  const [audioLevels, setAudioLevels] = useState({ music: 75, voice: 50, sfx: 65, master: 80 });
+  const [savingPreset, setSavingPreset] = useState(false);
+  const [currentVideo, setCurrentVideo] = useState<any>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
 
   const goTo = (p: number) => setPage(p);
 
-  // Page 1 storage partition fix
+  // Fix for storage partition warning
   useEffect(() => {
-    (async () => {
-      try {
-        if (navigator.storage?.persist) await navigator.storage.persist();
-      } catch {
-        console.warn("Persistent storage not available");
-      }
-    })();
+    if ('storage' in navigator && navigator.storage.persist) {
+      navigator.storage.persist().then(granted => {
+        console.log("Storage persist granted:", granted);
+      });
+    }
   }, []);
 
   const handleSavePreset = () => {
     setSavingPreset(true);
     setTimeout(() => {
       setSavingPreset(false);
-      addToast("Preset saved!", "success");
+      alert("Preset saved!");
     }, 1000);
   };
 
   const handleRender = (videoUrl: string, videoName: string) => {
-    const renderedVideo: Video = {
+    setCurrentVideo({
       url: videoUrl,
       name: videoName,
       size: "150MB",
       quality: "1080p",
       format: "MP4",
-    };
-    setCurrentVideo(renderedVideo);
-    addToast("🎬 Video rendered successfully!", "success");
-    setPage(16);
+    });
+    alert("🎬 Video rendered successfully!");
+    setPage(2); // go to public player
   };
 
-  const handleShare = () => addToast("🔗 Public link copied!", "success");
+  const handleShare = () => {
+    alert("🔗 Public link copied!");
+  };
 
   return (
     <div className="App bg-black text-white min-h-screen">
       <main>
-        {/* Page 1 */}
+        {/* Page 1 – Audio Mixer */}
         {page === 1 && (
-          <div className="flex flex-col items-center justify-center min-h-screen p-8 fade-up">
-            <h1 className="text-5xl font-black text-[#7c3aed] mb-6 text-center uppercase">
-              Welcome to MandaStrong Studio
-            </h1>
-            <p className="text-zinc-400 text-center mb-12">
-              Start creating your professional tutorial videos now.
-            </p>
-            <button
-              onClick={() => goTo(14)}
-              className="px-12 py-4 bg-[#7c3aed] text-white rounded-xl font-black uppercase hover:bg-[#6d28d9] transition"
-            >
-              GET STARTED
-            </button>
-          </div>
-        )}
-
-        {/* Page 14 – Audio Mixer */}
-        {page === 14 && (
-          <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
+          <div className="p-8 pt-20 pb-40 fade-up">
             <h1 className="text-5xl font-black text-[#7c3aed] mb-12 text-center uppercase">
               PROFESSIONAL AUDIO MIXER
             </h1>
@@ -110,38 +66,32 @@ export default function App() {
                   }`}
                 >
                   <ch.icon size={36} className="text-[#7c3aed] mb-3" />
-                  <div className="font-black text-base mb-6 text-white">{ch.label}</div>
+                  <div className="font-black text-base mb-6">{ch.label}</div>
                   <div className="relative h-64 w-24 bg-gradient-to-b from-zinc-800 to-zinc-900 rounded-3xl mb-6 overflow-hidden">
                     <div
                       className="absolute bottom-0 w-full rounded-3xl bg-gradient-to-b from-[#a78bfa] to-[#7c3aed] transition-all duration-150"
-                      style={{ height: `${audioLevels[ch.key as keyof AudioLevels]}%` }}
+                      style={{ height: `${audioLevels[ch.key as keyof typeof audioLevels]}%` }}
                     />
                   </div>
                   <input
                     type="range"
-                    min={0}
-                    max={100}
-                    value={audioLevels[ch.key as keyof AudioLevels]}
+                    min="0"
+                    max="100"
+                    value={audioLevels[ch.key as keyof typeof audioLevels]}
                     onChange={(e) =>
-                      setAudioLevels((prev) => ({
-                        ...prev,
-                        [ch.key]: Number(e.target.value),
-                      }))
+                      setAudioLevels((prev) => ({ ...prev, [ch.key]: Number(e.target.value) }))
                     }
                     className="w-full mb-4 cursor-pointer"
                   />
                   <div className="text-3xl font-black text-[#7c3aed]">
-                    {audioLevels[ch.key as keyof AudioLevels]}%
+                    {audioLevels[ch.key as keyof typeof audioLevels]}%
                   </div>
                 </div>
               ))}
             </div>
             <div className="max-w-6xl mx-auto mt-12 flex gap-4 justify-center">
               <button
-                onClick={() => {
-                  setAudioLevels({ music: 75, voice: 50, sfx: 65, master: 80 });
-                  addToast("Audio reset", "info");
-                }}
+                onClick={() => setAudioLevels({ music: 75, voice: 50, sfx: 65, master: 80 })}
                 className="px-12 py-4 bg-zinc-800 text-white rounded-xl font-black uppercase hover:bg-zinc-700 transition"
               >
                 RESET LEVELS
@@ -153,21 +103,26 @@ export default function App() {
               >
                 {savingPreset ? (
                   <>
-                    <Loader size={18} className="animate-spin" />SAVING...
+                    <Loader size={18} className="animate-spin" /> SAVING...
                   </>
                 ) : (
                   <>
-                    <Save size={18} />
-                    SAVE PRESET
+                    <Save size={18} /> SAVE PRESET
                   </>
                 )}
+              </button>
+              <button
+                onClick={() => handleRender("/tutorials/video.mp4", "Tutorial Video")}
+                className="px-12 py-4 bg-green-600 text-white rounded-xl font-black uppercase hover:bg-green-700 transition"
+              >
+                RENDER VIDEO
               </button>
             </div>
           </div>
         )}
 
-        {/* Page 16 – Public Video Player */}
-        {page === 16 && currentVideo && (
+        {/* Page 2 – Public Video Player */}
+        {page === 2 && currentVideo && (
           <div className="h-screen flex flex-col items-center justify-center bg-black p-6 fade-up">
             <h1 className="text-4xl font-black uppercase text-[#7c3aed] mb-6 text-center">
               🎬 YOUR VIDEO IS PUBLIC
@@ -185,12 +140,14 @@ export default function App() {
                 style={{ minHeight: "360px", background: "#000" }}
                 onCanPlay={() => {
                   if (previewVideoRef.current) {
-                    previewVideoRef.current.play().catch(() => {
-                      if (previewVideoRef.current) {
-                        previewVideoRef.current.muted = true;
-                        previewVideoRef.current.play();
-                      }
-                    });
+                    previewVideoRef.current
+                      .play()
+                      .catch(() => {
+                        if (previewVideoRef.current) {
+                          previewVideoRef.current.muted = true;
+                          previewVideoRef.current.play();
+                        }
+                      });
                   }
                 }}
               />
@@ -206,7 +163,7 @@ export default function App() {
                 <Share2 size={20} /> SHARE PUBLIC LINK
               </button>
               <button
-                onClick={() => goTo(14)}
+                onClick={() => goTo(1)}
                 className="bg-zinc-800 px-12 py-4 rounded-xl font-black uppercase hover:bg-zinc-700 transition"
               >
                 🔄 RE-RENDER
