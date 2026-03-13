@@ -1,1283 +1,1834 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
-  Menu, Sparkles, MessageCircle, ChevronLeft, ChevronRight,
-  CheckCircle, Play, Upload, Mic, Zap, Shield, Music, Sliders,
-  Database, FileVideo, BookOpen, Clock, ThumbsUp, Heart, HelpCircle,
-  Eye, X, Download, Save, Wand2, Share2, Search, AlertCircle, Loader, Clipboard
+  Menu, X, ChevronLeft, ChevronRight, Play, Upload, Film, Mic,
+  Zap, Shield, Music, Sliders, Database, FileVideo, Clock,
+  ThumbsUp, Heart, Plus, Eye, Download, Save, Wand2, Trash2,
+  Share2, Search, AlertCircle, Loader, CheckCircle, Sparkles,
+  MessageCircle, Send, User, Lock, CreditCard, LogOut, Settings,
+  Volume2, Layers, Scissors, BarChart2, Globe, Star, Award,
+  Camera, Monitor, HardDrive, Cpu, Activity, BookOpen
 } from 'lucide-react';
-import PasteImporter from './components/PasteImporter';
-import Page21 from './components/Page21';
-import TimelineEditor from './components/TimelineEditor';
 
+// ===================== VIDEOS =====================
+const OCEAN_VIDEO = "https://assets.mixkit.co/videos/preview/mixkit-ocean-waves-loop-1196-large.mp4";
+
+// ===================== TYPES =====================
+interface Asset {
+  id: number;
+  name: string;
+  type: string;
+  size: string;
+  url: string;
+  timestamp: string;
+  aiGenerated?: boolean;
+  enhanced?: boolean;
+}
+
+interface TimelineState {
+  video: Asset[];
+  audio: Asset[];
+  text: Asset[];
+}
+
+interface Toast {
+  id: number;
+  msg: string;
+  type: string;
+}
+
+// ===================== AI TOOLS DATA =====================
 const AI_TOOLS: Record<string, string[]> = {
   Writing: [
-    "Text to Video - Cinematic","Text to Video - Realistic","Text to Video - Animated","Script to Movie","Story to Video",
-    "Dialogue Writer","Plot Generator","Scene Writer","Story Outliner","Character Developer","Script Formatter",
-    "Three Act Builder","Backstory Generator","Theme Generator","Plot Twist Creator","Scene Analyzer","World Builder",
-    "Subplot Generator","Character Voice","Pacing Analyzer","Opening Hook","Climax Designer","Character Mapper",
-    "Flashback Creator","Foreshadowing Tool","Beat Sheet","Story Structure","Character Arc","Plot Device","Narrative Flow",
-    "Story Consultant","Character Interview","Scene Setting","Emotional Arc","Story Question","Character Flaw","Story Goal",
-    "Inciting Incident","Midpoint Tool","Dark Night","Growth Tracker","Tag Optimizer","Action Line","Scene Heading",
-    "Parenthetical","Script Timer","Format Checker","Name Generator","Location Database","Prop List","Costume Designer",
-    "Scene Number","Page Counter","Reading Timer","Coverage Writer","Logline Generator","Synopsis Writer","Treatment Format",
-    "Pitch Deck","Character Bio","World Bible","Magic System","Tech Inventor","Culture Creator","Language Builder",
-    "Religion Designer","Government Tool","Economy Builder","Geography Map","History Timeline","Mythology","Legend Writer",
-    "Prophecy","Quest Designer","MacGuffin","Plot Hole Detector","Continuity Check","Character Check","Timeline Validator",
-    "Research Helper","Fact Checker","Trope Finder","Cliche Detector","Originality Score","Genre Analyzer","Tone Checker",
-    "Voice Tool","POV Analyzer","Tense Checker","Grammar Polish","Spell Check","Readability","Engagement Meter",
-    "Pacing Visual","Story Arc Map","Network Graph","Word Counter","Goal Setter","Sprint Timer","Dashboard","Collab Hub",
-    "Version Control","Comment System","Revision Track"
+    "Script to Movie","Text to Script","Script to Screenplay","Prompt to Story","Story to Script",
+    "Text to Dialogue","Dialogue Generator","Scene Writer","Plot Generator","Story Outline",
+    "Script Formatter","Logline Generator","Synopsis Writer","Treatment Writer","Beat Sheet Builder",
+    "Character Bio Writer","Character Arc Builder","Subplot Generator","Plot Twist Generator",
+    "Opening Hook Creator","Climax Designer","Three Act Structure","Five Act Structure",
+    "Documentary Script","Short Film Script","Feature Film Script","TV Pilot Script",
+    "Commercial Script","Explainer Script","Narration Writer","Voiceover Script",
+    "Interview Script","Podcast Script","YouTube Script","Social Media Script",
+    "Action Line Writer","Scene Heading Tool","Parenthetical Generator","Dialogue Tightener",
+    "Script Timer","Word Counter","Page Counter","Reading Time Estimator","Format Checker",
+    "Grammar Polish","Spell Checker","Continuity Checker","Plot Hole Detector","Tone Checker",
+    "Genre Analyzer","Pacing Analyzer","Readability Meter","Engagement Scorer","Originality Scorer",
+    "Theme Generator","Conflict Builder","Backstory Generator","World Builder","Name Generator",
+    "Location Finder","Prop List Generator","Costume Designer","Research Helper","Fact Checker",
+    "Pitch Deck Builder","Coverage Writer","Version Control","Revision Tracker","Collab Hub",
+    "Story Outliner","Character Mapper","Emotional Arc Map","Story Arc Map","Flashback Creator",
+    "Foreshadowing Tool","MacGuffin Creator","Trope Finder","Cliche Detector","POV Analyzer",
+    "Tense Checker","Scene Analyzer","Mythology Builder","Quest Designer","Story Consultant",
+    "Inciting Incident Finder","Midpoint Architect","Character Interview","Scene Setting Engine",
+    "Prophecy Creator","History Timeline","Geography Mapper","Economy Builder","Culture Creator",
+    "Plot Tension Engine","Character Voice Lab","Sprint Timer","Pitch Writer","Tagline Generator"
   ],
   Voice: [
-    "Text to Speech - Natural","Voice Cloning - Instant","AI Voice Generator","Voice Narrator","Voice Actor Generator",
-    "Text to Speech - Multiple Voices","Voice Maker","Voice Cloner","Voice Creator","Voice Recorder","Speech Converter",
-    "Voice Builder","Voice Generator","Premium Voice","Emotion Voice","Natural Voice","Narrator Voice","Voice Imitator",
-    "Accent Generator","Pitch Controller","Tone Adjuster","Lip Sync AI","Voice Coach","Audiobook Creator","Commercial Voice",
-    "Trailer Voice","Documentary Voice","News Anchor Voice","Radio DJ Voice","Sports Cast Voice","Game Show Host",
-    "Meditation Voice","Hypnosis Voice","ASMR Creator","Whisper Generator","Shout Creator","Scream Generator",
-    "Laugh Creator","Cry Generator","Sigh Creator","Gasp Generator","Cough Creator","Throat Clear","Voice Warm-up",
-    "Range Finder","Pitch Training","Articulation","Diction Drill","Health Monitor","Strain Detector","Rest Reminder",
-    "Hydration Alert","Posture Guide","Breathing Coach","Vocal Workout","Range Expander","Stamina Builder","Endurance Train",
-    "Quality Enhance","Clarity Boost","Richness Amp","Warmth Add","Brightness Mix","Darkness Mix","Raspy Tool",
-    "Smooth Filter","Texture Design","Timbre Modifier","Resonance Tune","Projection Boost","Volume Expander","Dynamic Range",
-    "Compression","EQ Voice","De-esser","Pop Filter","Noise Gate","Reverb Voice","Echo Voice","Delay Voice","Chorus FX",
-    "Flanger FX","Phaser FX","Distortion FX","Bitcrush","Lo-fi Voice","Radio Effect","Phone Effect","Megaphone",
-    "Robot Voice","Alien Voice","Monster Voice","Demon Voice","Angel Voice","Chipmunk Voice","Deep Voice","High Voice",
-    "Child Voice","Elderly Voice","Speed Modifier","Volume Normal"
+    "Upload Own Voice","Record My Voice","Clone My Voice","Text to Speech","Text to Voice","Text to Narration","Text to Audiobook","Text to Voiceover",
+    "Voice Cloning","Voice to Voice","AI Voice Actor","Neural Voice Generator","Emotion Voice Synth",
+    "Trailer Voice Generator","Documentary Voice","Commercial Voice","News Anchor Voice",
+    "Character Voice Creator","Accent Generator","Multi Language Voice","Voice Translator",
+    "Lip Sync AI","Dialogue Synth","Audiobook Creator","Podcast Voice","Radio DJ Voice",
+    "Sports Commentary Voice","Meditation Voice","ASMR Creator","Whisper Generator",
+    "Deep Voice Generator","Robot Voice","Alien Voice","Monster Voice","Child Voice",
+    "Elderly Voice","Male to Female Voice","Female to Male Voice","Speed Controller",
+    "Pitch Controller","Tone Adjuster","Volume Normalizer","Clarity Booster",
+    "Voice Denoiser","Echo Remover","Reverb Remover","Background Noise Remover",
+    "Voice EQ Studio","De-Esser","Pop Filter Sim","Noise Gate","Compression Tool",
+    "Reverb Voice FX","Echo Voice FX","Chorus FX","Phone Effect","Radio Effect",
+    "Megaphone Effect","Lo-Fi Voice","Distortion FX","Warmth Adder","Brightness Mixer",
+    "Richness Amplifier","Resonance Tuner","Dynamic Range Engine","Vocal Enhancer",
+    "Voice Consistency Checker","Narrator Optimizer","Breathing Remover","Room Tone Match",
+    "Studio Grade Clarity","Voice Recorder","Voice Timer","Voice Health Monitor",
+    "Multi Voice Generator","Voice Mixer","Voice Layering","Choir Generator","Crowd Voice",
+    "Baby Voice","Singing Voice","Rap Voice Generator","Spoken Word Generator",
+    "Voice to Text","Voice Transcriber","Subtitle from Voice","Caption Generator",
+    "Voice Style Transfer","Celebrity Voice Match","Smooth Voice Filter","Texture Designer",
+    "Projection Booster","Volume Expander","Timbre Modifier","Voice Warm-up","Posture Guide"
   ],
   Image: [
-    "Image to Video - Motion","Photo to Animation","AI Image Animator","Image Generator","Asset Architect","Texture Mapper",
-    "VFX Synthesis","Matte Logic","Color Palette","Background Generator","Character Design","Lighting Designer",
-    "Scene Composite","Photo Enhance","Image Upscale","Style Transfer","Text to Image","Color Grading","Tone Mapper",
-    "Film Grain","Bokeh Generator","Sky Replace","Cloud Generator","Prop Creator","Depth Map","Normal Map","Albedo Map",
-    "Roughness Map","Metallic Map","Emission Map","Ambient Occlude","Shadow Generator","Highlight","Rim Light","Fill Light",
-    "Key Light","3-Point Light","Studio Light","Natural Light","Golden Hour","Blue Hour","Night Scene","Day Scene",
-    "Sunrise FX","Sunset FX","Moonlight","Starlight","Fire Light","Candle Light","Neon Light","LED Effect","LUT Creator",
-    "Contrast Adjust","Brightness","Saturation","Hue Shift","Temperature","Tint Control","Exposure Fix","HDR Merge",
-    "Panorama Stitch","360 Image","Fisheye Fix","Lens Distort","Chromatic Aberr","Vignette","Noise Add","Scratch Add",
-    "Dust Particles","Light Leaks","Depth Field","Motion Blur","Radial Blur","Zoom Blur","Gaussian Blur","Smart Blur",
-    "Sharpen","Edge Enhance","Detail Boost","Clarity","Structure","Dehaze","Weather FX","Rain Creator","Snow Effect",
-    "Fog Generator","Mist Tool","Haze Creator","Smoke FX","Steam Generator","Fire Creator","Explosion","Spark Generator",
-    "Lightning","Aurora FX","Rainbow","Lens Flare","God Rays","Volumetric","Caustics"
+    "Text to Image","Prompt to Image","Image to Image","Image Upscaler","Image Generator",
+    "AI Art Generator","Photo to Painting","Sketch to Image","Wireframe to Image",
+    "Background Generator","Background Remover","Sky Replacer","Object Remover",
+    "Face Generator","Character Design","Portrait Generator","Avatar Creator",
+    "Product Image Generator","Architecture Visualizer","Interior Design Generator",
+    "Landscape Generator","Abstract Art Generator","Logo Generator","Icon Creator",
+    "Texture Generator","Pattern Maker","Color Palette Generator","Style Transfer",
+    "Photo Enhancer","Photo Restorer","Old Photo Colorizer","Black & White to Color",
+    "Image Denoiser","Sharpness Enhancer","Clarity Booster","Detail Enhancer",
+    "HDR Image Creator","Exposure Fixer","White Balance AI","Color Grading Studio",
+    "LUT Creator","Tone Mapper","Contrast Adjuster","Brightness Tool","Saturation Engine",
+    "Hue Shift","Temperature Control","Vignette Tool","Bokeh Generator","Depth of Field",
+    "Film Grain Synth","Light Leaks","Lens Flare","God Rays","Volumetric Light",
+    "Golden Hour FX","Blue Hour FX","Sunset FX","Sunrise FX","Moonlight FX","Neon Light",
+    "Fire Light","Candle Light","Studio Light","3 Point Light","Rim Light",
+    "Shadow Generator","Highlight Creator","Ambient Occlusion","Global Illumination",
+    "Panorama Stitcher","360 Image Creator","Fisheye Corrector","Lens Distorter",
+    "Chromatic Aberration","Motion Blur","Radial Blur","Zoom Blur","Gaussian Blur",
+    "Weather FX","Rain Effect","Snow Effect","Fog Generator","Smoke FX","Fire Creator",
+    "Explosion FX","Lightning FX","Aurora Effect","Rainbow Creator","Caustics Engine",
+    "Prop Creator","Scene Compositor","Lighting Designer","Cloud Generator","Dehaze Engine"
   ],
   Video: [
-    "Video Upscaler to 4K","Video Upscaler to 8K","Frame Rate Booster","60FPS Converter","Slow Motion Generator",
-    "Video Extender","Scene Generator","Motion Video Maker","Video Creator","Avatar Generator","Video Synthesizer",
-    "Video Studio","Image to Motion","Dynamic Pan","Tilt Shot","Tracking Shot","Crane Movement","Steadycam",
-    "Shot Transition","Close-up","Wide Shot","POV Shot","Zoom In","Dolly In","Time Lapse","Slow Motion","Speed Ramp",
-    "Flow Generator","Video Craft","Style Tool","Temporal Flow","Frame Blend","Track Shot","Crane Move","Handheld FX",
-    "Shot Transit","Establish Shot","Medium Shot","Over Shoulder","Dutch Angle","Whip Pan","Swish Pan","Zoom Out",
-    "Dolly Out","Truck Left","Truck Right","Pedestal Up","Pedestal Down","Arc Shot","Orbit Shot","Boom Up","Boom Down",
-    "Jib Shot","Drone Shot","Aerial View","Birds Eye","Ground Level","Low Angle","High Angle","Eye Level","Worms Eye",
-    "Canted Frame","Symmetry","Rule Thirds","Golden Ratio","Leading Lines","Frame Frame","Negative Space","Depth Layers",
-    "Video Stabilizer","Color Grading Pro","Background Remover","Old Film Restorer","Black & White Colorizer"
+    "Text to Video","Prompt to Video","Image to Video","Script to Video","Story to Video",
+    "AI Movie Creator","AI Film Maker","AI Video Generator","Scene Generator","Shot Generator",
+    "Video Upscaler 4K","Video Upscaler 8K","Frame Rate Booster","60FPS Converter",
+    "Slow Motion Generator","Time Lapse Creator","Speed Ramp Engine","Video Extender",
+    "Video Stabilizer","Background Remover","Green Screen Replacer","Sky Replacer Video",
+    "Object Remover Video","Watermark Remover","Video Denoiser","Video Sharpener",
+    "Color Grading Pro","Film Look Generator","Cinematic LUT","Black & White Film",
+    "Film Restorer","Old Film Effect","VHS Effect","Glitch Effect","Hologram Effect",
+    "Drone Shot Generator","Aerial View Creator","Tracking Shot","Dolly Zoom",
+    "Whip Pan","Time Freeze","Bullet Time Effect","Matrix Effect","Clone Effect",
+    "Face Swap Video","Deepfake Detector","Age Progression Video","De-Aging Video",
+    "Talking Head Generator","Avatar Video Creator","Virtual Presenter","AI News Anchor",
+    "Lip Sync Video","Mouth Animation","Eye Contact Correction","Head Pose Correction",
+    "Video Translator","Subtitle Generator","Caption Burner","Auto Subtitles",
+    "Video Loop Creator","Boomerang Effect","Reverse Video","Mirror Effect",
+    "Split Screen Creator","Picture in Picture","Video Collage","Slideshow Maker",
+    "Transition Generator","Intro Maker","Outro Maker","Lower Third Generator",
+    "Title Card Creator","End Screen Maker","Thumbnail Generator","Cover Frame Selector",
+    "Video Compressor","Format Converter","Resolution Changer","Crop & Resize",
+    "Video Trimmer","Scene Cutter","Auto Edit","Jump Cut Generator","Beat Sync Editor",
+    "Highlight Reel Maker","Recap Generator","Trailer Maker","Teaser Creator","Sizzle Reel"
   ],
   Motion: [
-    "Particle Effect Generator","VFX Generator - All Types","Style Transfer - Any Style","Motion Tracker","Mocap Logic",
-    "Physics Engine","Cloth Dynamics","Skeleton Animator","Facial Rigging","Body Movement","Camera Tracker",
-    "Particle System","Fluid Dynamics","Spring System","Keyframe Tool","Graph Editor","Timeline Editor","Ease In",
-    "Ease Out","Bounce Effect","Elastic Motion","Anticipation","Follow Through","Tracker Pro","Object Physics",
-    "Gravity Sim","Collision Detect","Soft Body","Rigid Body","Fluid Dynamic","Smoke Sim","Fire Dynamic","Water Physics",
-    "Wind Effect","Force Field","Turbulence","Vortex","Attraction","Repulsion","Gravity Well","Rope Physics",
-    "Chain Dynamic","Hair Sim","Fur Dynamic","Cloth Drape","Flag Wave","Curtain Motion","Dress Physics","Cape Sim",
-    "Muscle System","Skin Deform","Explosion Effect","Fire Effect","Smoke Effect","Water Effect","Lightning Effect",
-    "Magic Effect","Energy Beam","Glitch Effect","Hologram Effect","Portal Effect","Teleportation","Invisibility",
-    "Laser Effect","Plasma Effect","Shockwave","Dust Effect"
+    "Text to Animation","Prompt to Motion","Image to Animation","2D to 3D Animation",
+    "Character Animation","Facial Animation","Body Motion Capture","Hand Animation",
+    "Lip Sync Animation","Eye Blink Animation","Crowd Animation","Animal Animation",
+    "VFX Generator","Particle Effect Generator","Explosion Generator","Fire Animation",
+    "Smoke Animation","Water Simulation","Rain Animation","Snow Animation","Lightning FX",
+    "Magic Effect","Energy Beam","Portal Effect","Teleportation FX","Force Field",
+    "Shockwave Creator","Laser Effect","Plasma Effect","Hologram Animation","Glitch FX",
+    "Invisibility Effect","Morphing Effect","Liquid Metal","Shape Shifting","Disintegration FX",
+    "Physics Simulator","Gravity Simulator","Cloth Dynamics","Hair Simulator","Fur Dynamics",
+    "Rigid Body Physics","Soft Body Physics","Fluid Dynamics","Rope Physics","Chain Dynamic",
+    "Destruction Simulator","Fracture System","Debris Generator","Dust Effect","Spark Generator",
+    "Motion Tracker","Camera Tracker","Object Tracker","Face Tracker","Stabilizer",
+    "Speed Lines","Zoom Blur Motion","Motion Trail","Echo Effect","Ghost Effect",
+    "Freeze Frame","Slow Motion FX","Hyperspeed Effect","Time Warp","Strobe Effect",
+    "Keyframe Animator","Ease In / Ease Out","Bounce Effect","Elastic Motion","Spring System",
+    "Path Animator","Orbit Animation","Rotation Loop","Float Animation","Pendulum Motion",
+    "Screen Shake","Camera Shake","Handheld Camera FX","Cinematic Push In","Ken Burns Effect",
+    "Parallax Effect","3D Camera Move","Dolly In Animation","Crane Move","Tilt Shift Animation",
+    "Cartoon Animation","Stop Motion Style","Claymation Effect","Puppet Rig","IK Rig Builder",
+    "Skeleton Animator","Mocap Solver","Facial Rigging","Muscle System","Skin Deformer"
   ],
   Enhancement: [
-    "AI 8K Upscaling","Video Denoiser","Audio Enhancer","Noise Cancellation","Face Enhancement","Cinematic Grain",
-    "Motion Stabilization","Deep HDR Boost","Face Retouch Pro","Neural Noise Reduction","Auto Color Balance",
-    "Dynamic Range Expansion","Lens Flare Synth","Shadow Recovery","Highlight Rolloff","Skin Tone Uniformity",
-    "Optical Flow Smooth","Atmospheric Haze","Sharpen Intelligence","De-Banding Pro","Moire Removal",
-    "Color Space Transform","Anamorphic Stretch","Flicker Reduction","Low Light Clarity","Texture Enhancement",
-    "Micro-Contrast Adjust","Vignette Pro","Film Stock Emulation","Glow Synthesis","Edge Refinement","Smart Saturation",
-    "Tone Mapping Pro","Gamma Correction","Black Point Calibration","White Balance AI","Color Match Pro",
-    "Temporal Denoise","Digital Intermediate","Chromatic Correction","Film Grain Advanced","Halation Effect",
-    "Bloom Control","Light Wrap","Contrast Enhancer","Brightness Optimizer","Saturation Booster","HDR Video Creator",
-    "Night Video Enhancer","Quality Optimizer","Resolution Multiplier","Detail Enhancer","Clarity Booster",
-    "Sharpness Enhancer","Blur Remover","Artifact Remover","Scratch Remover","Flicker Fixer","Sky Replacement",
-    "Background Replacer","Object Remover","Watermark Remover","Echo Remover","Reverb Remover","Hum Remover",
-    "Pop Remover","Click Remover","Breath Remover","Room Tone Remover"
+    "AI 8K Upscaling","AI 4K Upscaling","Video Super Resolution","Frame Interpolation",
+    "Video Denoiser","Noise Reduction","Grain Remover","Artifact Remover","Scratch Remover",
+    "Video Sharpener","Clarity Booster","Detail Enhancer","Edge Enhancement","Texture Boost",
+    "Color Correction","Auto Color Balance","White Balance AI","Color Match Pro","Color Grading AI",
+    "Cinematic Color Grade","Film Stock Emulation","LUT Generator","Tone Mapping Pro",
+    "HDR Enhancement","Deep HDR Boost","Dynamic Range Expansion","Shadow Recovery",
+    "Highlight Recovery","Highlight Rolloff","Black Point Calibration","Gamma Correction",
+    "Contrast Enhancer","Brightness Optimizer","Saturation Booster","Smart Saturation",
+    "Skin Tone Enhancer","Face Enhancement","Face Retouch","Eye Enhancer","Teeth Whitener",
+    "Background Enhancer","Sky Enhancer","Landscape Enhancer","Night Video Enhancer",
+    "Low Light Clarity","Motion Stabilization","Shake Remover","Rolling Shutter Fix",
+    "Flicker Reduction","Flicker Fixer","Lens Distortion Fix","Vignette Remover",
+    "Chromatic Aberration Fix","Moire Remover","De-Banding Pro","Anamorphic Correction",
+    "Audio Enhancer","Voice Clarity Booster","Dialogue Enhancer","Background Noise Remover",
+    "Echo Remover","Reverb Remover","Hum Remover","Wind Noise Remover","Breath Remover",
+    "Click & Pop Remover","Room Tone Match","Audio Normalization","Loudness Optimizer",
+    "Cinematic Grain","Film Grain Advanced","Halation Effect","Glow Synthesis","Bloom Control",
+    "Lens Flare Enhancer","Atmospheric Haze","Light Wrap","Depth of Field Enhancement",
+    "Bokeh Enhancer","Focus Puller","Optical Flow Smooth","Temporal Denoise","Motion Blur Add",
+    "Sky Replacement","Background Replacement","Object Removal","Watermark Remover",
+    "Subtitles Enhancer","Burned Caption Fix","Frame Rate Fix","Sync Fix","Audio Drift Fix",
+    "Quality Optimizer","File Size Optimizer","Codec Converter","Format Enhancer","Master Exporter"
   ]
 };
 
-const ENHANCEMENT_TOOLS = [
-  "AI 8K Upscaling","Cinematic Grain","Motion Stabilization","Deep HDR Boost","Face Retouch Pro",
-  "Neural Noise Reduction","Auto Color Balance","Dynamic Range Expansion","Lens Flare Synth","Shadow Recovery",
-  "Highlight Rolloff","Skin Tone Uniformity","Optical Flow Smooth","Atmospheric Haze","Sharpen Intelligence",
-  "De-Banding Pro","Moire Removal","Color Space Transform","Anamorphic Stretch","Flicker Reduction",
-  "Low Light Clarity","Texture Enhancement","Micro-Contrast Adjust","Vignette Pro","Film Stock Emulation",
-  "Glow Synthesis","Edge Refinement","Smart Saturation","Tone Mapping Pro","Gamma Correction",
-  "Black Point Calibration","White Balance AI","Color Match Pro","Temporal Denoise","Digital Intermediate",
-  "Chromatic Correction","Film Grain Advanced","Halation Effect","Bloom Control","Light Wrap"
+// ===================== PRICING PLANS =====================
+const PLANS = [
+  {
+    name: 'Creator',
+    price: 20,
+    features: ['HD Export 1080p', '100 AI Tools', '10GB Storage', 'Email Support', 'Basic Timeline'],
+    stripe: 'https://buy.stripe.com/4gM5kFaVYfjN7EX0vMafS00',
+    color: '#374151'
+  },
+  {
+    name: 'Pro',
+    price: 30,
+    features: ['4K Export', '300 AI Tools', '100GB Storage', 'Priority Support', 'Full Timeline', 'Commercial License'],
+    stripe: 'https://buy.stripe.com/14A00l8NQ0oTbVd3HYafS01',
+    color: '#4C1D95',
+    popular: true
+  },
+  {
+    name: 'Studio',
+    price: 50,
+    features: ['8K Export', '600+ AI Tools', '1TB Storage', '24/7 Support', 'Full Rights', 'API Access', 'Collaboration'],
+    stripe: 'https://buy.stripe.com/fZubJ35BE3B53oHdiyafS02',
+    color: '#1F2937'
+  }
 ];
 
-function Toast({ toasts, removeToast }: { toasts: any[]; removeToast: (id: number) => void }) {
+// ===================== TOAST =====================
+function Toast({ toasts, removeToast }: { toasts: Toast[]; removeToast: (id: number) => void }) {
   return (
-    <div className="fixed top-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none">
-      {toasts.map((t: any) => (
-        <div key={t.id} className={`flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl border pointer-events-auto min-w-72 max-w-sm
-          ${t.type === 'success' ? 'bg-zinc-950 border-green-500 text-green-400' :
-            t.type === 'error'   ? 'bg-zinc-950 border-red-500 text-red-400' :
-            t.type === 'warning' ? 'bg-zinc-950 border-[#7c3aed] text-[#a78bfa]' :
-                                   'bg-zinc-950 border-[#7c3aed] text-white'}`}>
-          <span className="text-lg flex-shrink-0">
-            {t.type === 'success' ? '✅' : t.type === 'error' ? '❌' : t.type === 'warning' ? '⚠️' : 'ℹ️'}
-          </span>
-          <span className="text-sm font-bold flex-1">{t.msg}</span>
-          <button onClick={() => removeToast(t.id)} className="text-zinc-500 hover:text-white ml-2">✕</button>
+    <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
+      {toasts.map(t => (
+        <div key={t.id} className={`flex items-center gap-3 px-4 py-3 rounded border pointer-events-auto min-w-64 max-w-sm
+          ${t.type === 'success' ? 'bg-[#0a0a0a] border-[#16a34a] text-[#4ade80]' :
+            t.type === 'error' ? 'bg-[#0a0a0a] border-[#dc2626] text-[#f87171]' :
+            t.type === 'warning' ? 'bg-[#0a0a0a] border-[#ca8a04] text-[#facc15]' :
+            'bg-[#0a0a0a] border-[#6B21A8] text-[#c084fc]'}`}
+          style={{ animation: 'slideInRight 0.2s ease' }}>
+          <span className="text-sm font-mono flex-1 tracking-wide">{t.msg}</span>
+          <button onClick={() => removeToast(t.id)} className="text-zinc-600 hover:text-white ml-1 text-xs">✕</button>
         </div>
       ))}
     </div>
   );
 }
 
-function ConfirmModal({ modal, onConfirm, onCancel }: { modal: any; onConfirm: () => void; onCancel: () => void }) {
-  if (!modal) return null;
-  return (
-    <div className="fixed inset-0 z-[150] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6">
-      <div className="bg-zinc-950 border-2 border-[#7c3aed] rounded-3xl p-10 max-w-md w-full shadow-2xl">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-14 h-14 rounded-full bg-[#7c3aed]/20 flex items-center justify-center">
-            <AlertCircle size={28} className="text-[#7c3aed]" />
-          </div>
-          <h3 className="text-2xl font-black text-white">{modal.title}</h3>
-        </div>
-        <p className="text-zinc-400 mb-8 leading-relaxed">{modal.body}</p>
-        <div className="flex gap-4">
-          <button onClick={onCancel} className="flex-1 py-4 bg-zinc-800 text-white rounded-xl font-black uppercase hover:bg-zinc-700 transition">Cancel</button>
-          <button onClick={onConfirm} className="flex-1 py-4 bg-[#7c3aed] text-white rounded-xl font-black uppercase hover:bg-[#6d28d9] transition">
-            {modal.confirmLabel || 'Confirm'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
-function ProgressOverlay({ progress, label, subLabel }: { progress: number; label: string; subLabel: string }) {
-  const done = progress >= 100;
-  return (
-    <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center">
-      <div className="text-center max-w-xl w-full px-8">
-        <div className="w-40 h-40 rounded-full bg-[#7c3aed]/20 flex items-center justify-center mx-auto mb-10 relative">
-          {!done && <div className="absolute inset-0 rounded-full border-8 border-[#7c3aed] border-t-transparent animate-spin" />}
-          {done
-            ? <CheckCircle size={60} className="text-green-500 animate-pulse" />
-            : <Sparkles size={60} className="text-[#7c3aed] animate-pulse" />}
-        </div>
-        <h2 className="text-5xl font-black text-white uppercase mb-2">{label}</h2>
-        <p className="text-zinc-400 mb-8 font-bold text-lg">{subLabel}</p>
-        <div className="w-full bg-zinc-800 h-6 rounded-full overflow-hidden mb-4 border-2 border-zinc-700">
-          <div
-            className={`h-full rounded-full transition-all duration-300 ${done ? 'bg-gradient-to-r from-green-500 to-emerald-500' : 'bg-gradient-to-r from-[#7c3aed] to-[#a78bfa]'}`}
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-base text-zinc-400 font-bold">{done ? '✅ Complete!' : '⚙️ Processing...'}</span>
-          <span className={`text-3xl font-black ${done ? 'text-green-500' : 'text-[#7c3aed]'}`}>{progress}%</span>
-        </div>
-      </div>
-    </div>
-  );
-}
+// ===================== STOCK VOICES =====================
+const STOCK_VOICES = [
+  { name: "Aurora", style: "Warm Female", accent: "British", url: "https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" },
+  { name: "Marcus", style: "Deep Male", accent: "American", url: "https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" },
+  { name: "Sage", style: "Neutral", accent: "Australian", url: "https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3" },
+  { name: "Nova", style: "Energetic Female", accent: "American", url: "https://assets.mixkit.co/active_storage/sfx/2569/2569-preview.mp3" },
+  { name: "Caspian", style: "Cinematic Male", accent: "British", url: "https://assets.mixkit.co/active_storage/sfx/2570/2570-preview.mp3" },
+  { name: "Iris", style: "Soft Female", accent: "Irish", url: "https://assets.mixkit.co/active_storage/sfx/2573/2573-preview.mp3" },
+];
 
+// ===================== MAIN APP =====================
 export default function App() {
   const [page, setPage] = useState(1);
   const [menuOpen, setMenuOpen] = useState(false);
   const [duration, setDuration] = useState(90);
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
+  const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
+  const [playingVoice, setPlayingVoice] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('Writing');
   const [selectedEnhancement, setSelectedEnhancement] = useState<string | null>(null);
-  const [mediaLibrary, setMediaLibrary] = useState<any[]>([]);
-  const [timeline] = useState<{ video: any[]; audio: any[]; text: any[] }>({ video: [], audio: [], text: [] });
-  const [currentVideo, setCurrentVideo] = useState<any>(null);
-  const [aiPrompt, setAiPrompt] = useState('');
+  const [mediaLibrary, setMediaLibrary] = useState<Asset[]>([]);
+  const [timeline, setTimeline] = useState<TimelineState>({ video: [], audio: [], text: [] });
+  const [draggedItem, setDraggedItem] = useState<Asset | null>(null);
+  const [currentVideo, setCurrentVideo] = useState<Asset | null>(null);
+  const [aiPrompt, setAiPrompt] = useState(() => { try { return localStorage.getItem('ms_draft') || ''; } catch { return ''; } });
   const [generating, setGenerating] = useState(false);
   const [rendering, setRendering] = useState(false);
   const [renderProgress, setRenderProgress] = useState(0);
-  const [audioLevels, setAudioLevels] = useState({ music: 75, voice: 50, sfx: 65, master: 80 });
-  const [enhancementSettings, setEnhancementSettings] = useState({ intensity: 75, clarity: 75, color: 75, brightness: 75 });
+  const [audioLevels, setAudioLevels] = useState({ music: 75, voice: 60, sfx: 50, master: 85 });
+  const [enhancementSettings, setEnhancementSettings] = useState({ intensity: 75, clarity: 80, color: 70, brightness: 65 });
   const [exportSettings, setExportSettings] = useState({ quality: '8K', format: 'MP4' });
-  const [communityPosts, setCommunityPosts] = useState([
-    { id: 1, title: 'Epic Action Movie',   user: 'Sarah J.',  emoji: '🎬', likes: 2847, loves: 1923, comments: [] as any[] },
-    { id: 2, title: 'Family Vacation',     user: 'Mike Chen', emoji: '✈️', likes: 1256, loves: 892,  comments: [] as any[] },
-    { id: 3, title: 'First Documentary',   user: 'Emily R.',  emoji: '📹', likes: 3421, loves: 2156, comments: [] as any[] },
-    { id: 4, title: 'Music Video',         user: 'Alex T.',   emoji: '🎵', likes: 5234, loves: 4012, comments: [] as any[] },
-  ]);
-  const [newComment, setNewComment] = useState<Record<number, string>>({});
+  const [toasts, setToasts] = useState<Toast[]>([]);
   const [toolSearch, setToolSearch] = useState('');
-  const [userPlan] = useState('Studio • Admin');
-  const [toasts, setToasts] = useState<any[]>([]);
-  const [modal, setModal] = useState<any>(null);
-  const [applyingEnhancement, setApplyingEnhancement] = useState(false);
-  const [savingPreset, setSavingPreset] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const [showPasteImporter, setShowPasteImporter] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState('idle');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [registerName, setRegisterName] = useState('');
-  const [registerEmail, setRegisterEmail] = useState('');
+  const [grokMessage, setGrokMessage] = useState('');
+  const [grokChat, setGrokChat] = useState([
+    { role: 'agent', text: "I'm Agent Grok — your 24/7 production assistant. Ask me anything about uploads, AI generation, timeline editing, enhancements, audio mixing, rendering, or exports." }
+  ]);
+  const [communityPosts] = useState([
+    { id: 1, title: 'Epic Action Feature', user: 'Sarah J.', emoji: '🎬', likes: 2847, loves: 1923 },
+    { id: 2, title: 'Family Documentary', user: 'Mike Chen', emoji: '📹', likes: 1256, loves: 892 },
+    { id: 3, title: 'Short Film Entry', user: 'Emily R.', emoji: '🏆', likes: 3421, loves: 2156 },
+    { id: 4, title: 'Music Video Cut', user: 'Alex T.', emoji: '🎵', likes: 5234, loves: 4012 }
+  ]);
+  const [newComment, setNewComment] = useState<Record<number, string>>({});
+  const [importUrl, setImportUrl] = useState('');
+  const [showUrlImport, setShowUrlImport] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  // Examples page state
+  const [exIsAdmin, setExIsAdmin] = useState(() => { try { return localStorage.getItem('ms_admin') === '1'; } catch { return false; } });
+  const [exShowLogin, setExShowLogin] = useState(false);
+  const [exEmail, setExEmail] = useState('');
+  const [exPassword, setExPassword] = useState('');
+  const [exError, setExError] = useState('');
+  const [exActiveVideo, setExActiveVideo] = useState<number | null>(null);
+  const [exVideos, setExVideos] = useState([
+    { id: 0, url: null as string | null, name: '', title: 'Humanity of AI', desc: 'A documentary film — MandaStrong Studio x Doxy' },
+    { id: 1, url: null as string | null, name: '', title: 'AI For Dummies', desc: 'A plain-English guide to artificial intelligence' },
+    { id: 2, url: null as string | null, name: '', title: 'Humanity of AI — Feature Cut', desc: 'Full 90-minute documentary — MandaStrong Studio' },
+  ]);
+  const exRef0 = useRef<HTMLInputElement>(null);
+  const exRef1 = useRef<HTMLInputElement>(null);
+  const exRef2 = useRef<HTMLInputElement>(null);
+  const exRefs = [exRef0, exRef1, exRef2];
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const oceanRef = useRef<HTMLVideoElement>(null);
+  const autoSaveRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fileInputRef     = useRef<HTMLInputElement>(null);
-  const autoSaveTimerRef = useRef<any>(null);
-  const previewVideoRef  = useRef<HTMLVideoElement>(null);
-
-  /* ─── TOASTS ─── */
   const addToast = useCallback((msg: string, type = 'info') => {
     const id = Date.now() + Math.random();
     setToasts(prev => [...prev, { id, msg, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4500);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
   }, []);
+
   const removeToast = useCallback((id: number) => setToasts(prev => prev.filter(t => t.id !== id)), []);
 
-  /* ─── NAVIGATION ─── */
-  const goTo = useCallback((p: number) => { setPage(p); setMenuOpen(false); }, []);
+  const goTo = useCallback((p: number) => { setPage(p); setMenuOpen(false); window.scrollTo(0, 0); }, []);
 
-  /* ─── FILE UPLOAD ─── */
+  const startScreenRecord = useCallback(async () => {
+    try {
+      const stream = await (navigator.mediaDevices as any).getDisplayMedia({ video: true, audio: true });
+      const recorder = new MediaRecorder(stream);
+      recordedChunksRef.current = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) recordedChunksRef.current.push(e.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const asset: Asset = { id: Date.now(), name: `Screen_Recording_${Date.now()}.webm`, type: 'video', size: (blob.size / 1024 / 1024).toFixed(2) + 'MB', url, timestamp: new Date().toISOString() };
+        setMediaLibrary(prev => [...prev, asset]);
+        addToast('Screen recording saved to library!', 'success');
+        stream.getTracks().forEach((t: MediaStreamTrack) => t.stop());
+        setIsRecording(false);
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+      addToast('Recording screen... Click Stop when done.', 'info');
+    } catch (err) {
+      addToast('Screen recording cancelled or not supported', 'warning');
+    }
+  }, [addToast]);
+
+  const stopScreenRecord = useCallback(() => {
+    mediaRecorderRef.current?.stop();
+  }, []);
+
+  const handleImportUrl = useCallback(() => {
+    if (!importUrl.trim()) return;
+    const url = importUrl.trim();
+    const name = url.split('/').pop() || `imported_${Date.now()}.mp4`;
+    const asset: Asset = { id: Date.now(), name, type: 'video', size: 'External', url, timestamp: new Date().toISOString() };
+    setMediaLibrary(prev => [...prev, asset]);
+    setImportUrl('');
+    setShowUrlImport(false);
+    addToast('URL imported to media library!', 'success');
+  }, [importUrl, addToast]);
+
+  // Auto-save
+  useEffect(() => {
+    if (page >= 5) {
+      autoSaveRef.current = setInterval(() => {
+        setAutoSaveStatus('saving');
+        try {
+          localStorage.setItem('ms_save', JSON.stringify({ mediaLibrary, timeline, audioLevels, duration, exportSettings }));
+          setAutoSaveStatus('saved');
+          setLastSaved(new Date());
+          setTimeout(() => setAutoSaveStatus('idle'), 2000);
+        } catch { setAutoSaveStatus('error'); }
+      }, 15000);
+      return () => { if (autoSaveRef.current) clearInterval(autoSaveRef.current); };
+    }
+  }, [page, mediaLibrary, timeline, audioLevels, duration, exportSettings]);
+
+  // Ocean video autoplay on pages 1-2
+  useEffect(() => {
+    if (oceanRef.current && (page === 1 || page === 2)) {
+      oceanRef.current.muted = true;
+      oceanRef.current.play().catch(() => {});
+    }
+  }, [page]);
+
+  // Load saved
+  useEffect(() => {
+    const saved = localStorage.getItem('ms_save');
+    if (saved) {
+      try {
+        const d = JSON.parse(saved);
+        setMediaLibrary(d.mediaLibrary || []);
+        setTimeline(d.timeline || { video: [], audio: [], text: [] });
+        setAudioLevels(d.audioLevels || { music: 75, voice: 60, sfx: 50, master: 85 });
+        setDuration(d.duration || 90);
+        setExportSettings(d.exportSettings || { quality: '8K', format: 'MP4' });
+      } catch {}
+    }
+  }, []);
+
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     setUploadProgress(0);
-    addToast(`Uploading ${files.length} file(s)...`, 'info');
     let completed = 0;
     files.forEach(file => {
       const reader = new FileReader();
       reader.onload = (ev) => {
         completed++;
-        setMediaLibrary(prev => [...prev, {
-          id: Date.now() + Math.random(), name: file.name,
+        const asset: Asset = {
+          id: Date.now() + Math.random(),
+          name: file.name,
           type: file.type.startsWith('video') ? 'video' : file.type.startsWith('audio') ? 'audio' : 'image',
           size: (file.size / 1024 / 1024).toFixed(2) + 'MB',
           url: ev.target?.result as string,
-          timestamp: new Date().toISOString(),
-        }]);
+          timestamp: new Date().toISOString()
+        };
+        setMediaLibrary(prev => [...prev, asset]);
         setUploadProgress(Math.round((completed / files.length) * 100));
-        if (completed === files.length)
-          setTimeout(() => { setUploadProgress(null); addToast(`✅ ${files.length} file(s) uploaded!`, 'success'); }, 500);
+        if (completed === files.length) {
+          setTimeout(() => { setUploadProgress(null); addToast(`${files.length} file(s) uploaded`, 'success'); }, 600);
+        }
       };
       reader.readAsDataURL(file);
     });
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, [addToast]);
 
-  /* ─── PASTE IMPORT ─── */
-  const handlePasteImport = useCallback((content: any) => {
-    if (content.type === 'url') {
-      const urls: string[] = content.data.match(/(https?:\/\/[^\s]+)/g) || [];
-      urls.forEach((url, idx) => {
-        setMediaLibrary(prev => [...prev, {
-          id: Date.now() + Math.random() + idx, name: `Imported Video ${idx + 1}`,
-          type: 'video', size: 'URL', url, timestamp: new Date().toISOString(),
-        }]);
-      });
-      addToast(`✅ Imported ${urls.length} URL(s)!`, 'success');
-    } else {
-      setMediaLibrary(prev => [...prev, {
-        id: Date.now() + Math.random(), name: content.name,
-        type: 'text', size: `${content.data.length} chars`, url: content.data,
-        timestamp: new Date().toISOString(),
-      }]);
-      addToast(`✅ "${content.name}" imported!`, 'success');
-    }
-    setShowPasteImporter(false);
-    goTo(12);
-  }, [addToast, goTo]);
-
-  /* ─── AUTO SAVE ─── */
-  const saveProject = useCallback(() => {
-    try {
-      localStorage.setItem('mandastrong_autosave', JSON.stringify({
-        mediaLibrary, timeline, audioLevels, enhancementSettings, exportSettings, duration,
-        timestamp: new Date().toISOString(),
-      }));
-      setAutoSaveStatus('saved');
-      setLastSaved(new Date());
-      setTimeout(() => setAutoSaveStatus('idle'), 2000);
-    } catch {
-      setAutoSaveStatus('error');
-      setTimeout(() => setAutoSaveStatus('idle'), 3000);
-    }
-  }, [mediaLibrary, timeline, audioLevels, enhancementSettings, exportSettings, duration]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('mandastrong_autosave');
-    if (saved) {
-      try {
-        const d = JSON.parse(saved);
-        setMediaLibrary(d.mediaLibrary || []);
-        setAudioLevels(d.audioLevels || { music: 75, voice: 50, sfx: 65, master: 80 });
-        setEnhancementSettings(d.enhancementSettings || { intensity: 75, clarity: 75, color: 75, brightness: 75 });
-        setExportSettings(d.exportSettings || { quality: '8K', format: 'MP4' });
-        setDuration(d.duration || 90);
-        setLastSaved(new Date(d.timestamp));
-      } catch { /* ignore */ }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (page >= 4) {
-      if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current);
-      autoSaveTimerRef.current = setInterval(() => { setAutoSaveStatus('saving'); saveProject(); }, 10000);
-      return () => { if (autoSaveTimerRef.current) clearInterval(autoSaveTimerRef.current); };
-    }
-  }, [page, mediaLibrary, timeline, saveProject]);
-
-  /* ─── AI GENERATE ─── */
   const handleAIGenerate = useCallback(() => {
     if (!aiPrompt.trim() || !selectedTool) return;
     setGenerating(true);
-    addToast(`🎬 Generating "${selectedTool}"...`, 'info');
+    addToast(`Generating: ${selectedTool}...`, 'info');
     setTimeout(() => {
-      setMediaLibrary(prev => [...prev, {
+      const asset: Asset = {
         id: Date.now(),
-        name: `AI-${selectedTool.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}.mp4`,
-        type: 'video', size: (Math.random() * 500 + 100).toFixed(2) + 'MB',
-        url: '',
-        aiGenerated: true, prompt: aiPrompt, timestamp: new Date().toISOString(),
-      }]);
-      setGenerating(false); setAiPrompt(''); setSelectedTool(null);
-      addToast(`✅ "${selectedTool}" generated & saved!`, 'success');
+        name: `AI_${selectedTool.replace(/\s+/g, '_')}_${Date.now()}.mp4`,
+        type: 'video',
+        size: (Math.random() * 500 + 100).toFixed(2) + 'MB',
+        url: OCEAN_VIDEO,
+        aiGenerated: true,
+        timestamp: new Date().toISOString()
+      };
+      setMediaLibrary(prev => [...prev, asset]);
+      setGenerating(false);
+      setAiPrompt('');
+      setSelectedTool(null);
+      addToast(`Generated: ${selectedTool}`, 'success');
     }, 2500);
+    try { localStorage.removeItem('ms_draft'); } catch {}
   }, [aiPrompt, selectedTool, addToast]);
 
-  /* ─── ENHANCEMENT ─── */
-  const applyEnhancement = useCallback(() => {
-    if (!selectedEnhancement) return;
-    setApplyingEnhancement(true);
-    addToast(`Applying "${selectedEnhancement}"...`, 'info');
-    setTimeout(() => {
-      setMediaLibrary(prev => [...prev, {
-        id: Date.now(),
-        name: `enhanced-${selectedEnhancement.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}.mp4`,
-        type: 'video', size: (Math.random() * 500 + 100).toFixed(2) + 'MB',
-        url: '',
-        enhanced: true, enhancement: selectedEnhancement, timestamp: new Date().toISOString(),
-      }]);
-      setApplyingEnhancement(false); setSelectedEnhancement(null);
-      addToast(`✅ "${selectedEnhancement}" applied!`, 'success');
-    }, 2000);
-  }, [selectedEnhancement, addToast]);
-
-  /* ─── RENDER — always fires, no timeline guard ─── */
   const handleRender = useCallback(() => {
-    setModal({
-      title: 'Start Final Render?',
-      body: `Render your ${duration}-min ${exportSettings.quality} ${exportSettings.format} film now?`,
-      confirmLabel: '🎬 Render Now',
-      onConfirm: () => {
-        setModal(null); setRendering(true); setRenderProgress(0);
-        addToast('🎬 Render started!', 'info');
-        const interval = setInterval(() => {
-          setRenderProgress(prev => {
-            if (prev >= 100) {
-              clearInterval(interval);
-              setTimeout(() => {
-                const rendered = {
-                  id: Date.now(),
-                  name: `final-render-${Date.now()}.${exportSettings.format.toLowerCase()}`,
-                  type: 'video',
-                  size: (Math.random() * 1000 + 500).toFixed(2) + 'MB',
-                  url: '',
-                  rendered: true,
-                  quality: exportSettings.quality,
-                  format: exportSettings.format,
-                  duration,
-                  timestamp: new Date().toISOString(),
-                };
-                setMediaLibrary(prev => [...prev, rendered]);
-                setCurrentVideo(rendered);
-                setRendering(false);
-                setRenderProgress(0);
-                addToast('✅ Your movie is ready!', 'success');
-                setTimeout(() => setPage(16), 800);
-              }, 600);
-              return 100;
-            }
-            return prev + 4;
-          });
-        }, 120);
-      },
-    });
-  }, [duration, exportSettings, addToast]);
+    if (!timeline.video.length && !timeline.audio.length) {
+      addToast('Add clips to timeline first', 'error'); return;
+    }
+    setRendering(true);
+    setRenderProgress(0);
+    addToast('Render started...', 'info');
+    let prog = 0;
+    const iv = setInterval(() => {
+      prog += 2;
+      setRenderProgress(prog);
+      if (prog >= 100) {
+        clearInterval(iv);
+        const rendered: Asset = {
+          id: Date.now(),
+          name: `render_${Date.now()}.${exportSettings.format.toLowerCase()}`,
+          type: 'video',
+          size: (Math.random() * 1000 + 500).toFixed(2) + 'MB',
+          url: OCEAN_VIDEO,
+          timestamp: new Date().toISOString()
+        };
+        setMediaLibrary(prev => [...prev, rendered]);
+        setCurrentVideo(rendered);
+        setRendering(false);
+        setRenderProgress(100);
+        addToast('Render complete! Opening preview...', 'success');
+        setTimeout(() => goTo(17), 1000);
+      }
+    }, 100);
+  }, [timeline, exportSettings, addToast, goTo]);
 
-  /* ─── DOWNLOAD ─── */
-  const handleDownload = useCallback((asset: any) => {
-    addToast('⬇️ Download starting...', 'info');
-    const a = document.createElement('a'); a.href = asset.url; a.download = asset.name; a.click();
-    setTimeout(() => addToast('✅ Download complete!', 'success'), 1500);
-  }, [addToast]);
+  const sendGrokMessage = useCallback(() => {
+    if (!grokMessage.trim()) return;
+    const userMsg = grokMessage;
+    setGrokChat(prev => [...prev, { role: 'user', text: userMsg }]);
+    setGrokMessage('');
+    setTimeout(() => {
+      const responses: Record<string, string> = {
+        upload: "Go to Page 11 — Upload Media. Click Browse Files to upload from your device, Record Screen to capture live, or Import URL to load a direct video link. Supports MP4, MOV, AVI, WebM, MP3, WAV, JPG, PNG.",
+        tool: "Pages 5–10 are the AI Tool Boards — Writing, Voice, Image, Video, Motion, and Enhancement. Use the search bar to filter all 600+ tools. Click any tool card to open the generation panel with upload and AI prompt options.",
+        timeline: "Page 13 — Timeline Editor. Drag assets from the Media Pool on the left onto the Video, Audio, or Text tracks. Drag from library and drop onto the track bar. Hit → RENDER to go to the render page.",
+        render: "Page 16 — Render Film. Choose your quality (8K, 4K, 1080p, 720p) and format (MP4, MOV, AVI, WebM), then click START RENDER. Your finished film automatically saves to your media library and opens in Preview.",
+        audio: "Page 15 — Audio Mixer. Four channels: Music, Voice, SFX, and Master. Drag the vertical sliders to adjust each level. The VU meter shows your live levels. Click Save Preset to keep your mix.",
+        export: "Page 18 — Export. After rendering, choose Download to Device to save the file, Save Project File to export a JSON backup, or Share to Community Hub to post it for others to see.",
+        enhance: "Page 14 — Enhancement Studio. Browse 90+ tools organized by type. Click any tool to open its control panel with Intensity, Clarity, Color, and Brightness sliders. Click Apply Enhancement to process.",
+        subscribe: "Page 4 — Login & Subscribe. Three plans: Creator $20/mo (HD), Pro $30/mo (4K), Studio $50/mo (8K + 600 tools). New Studio subscribers get a 7-Day Free Trial. All plans include a 30-day money-back guarantee.",
+        price: "Plans start at $20/month. Creator: HD export, 100 tools. Pro: 4K, 300 tools. Studio: 8K, all 600+ tools, 1TB storage. New Studio subscribers receive a 7-Day Free Trial.",
+        login: "Go to Page 4 — Login & Subscribe. Click Sign In for existing accounts or Create Account to register. You can also explore as a guest with no login required.",
+        example: "Page 3 — Examples. Admin-uploaded films showcase what MandaStrong Studio can create. Films will appear here once uploaded by the studio team.",
+        community: "Page 22 — Community Hub. View films uploaded by other creators, like or love posts, and leave comments. Click Upload Your Movie to share your own creation.",
+      };
+      const key = Object.keys(responses).find(k => userMsg.toLowerCase().includes(k));
+      const reply = key ? responses[key] : "I'm here to help with any part of MandaStrong Studio. Ask me about: uploading media, AI tools, the timeline editor, audio mixing, enhancement studio, rendering, exporting, subscriptions, or the community hub.";
+      setGrokChat(prev => [...prev, { role: 'agent', text: reply }]);
+    }, 1000);
+  }, [grokMessage]);
 
-  /* ─── SAVE PRESET ─── */
-  const handleSavePreset = useCallback(() => {
-    setSavingPreset(true); addToast('Saving preset...', 'info');
-    setTimeout(() => { setSavingPreset(false); addToast('✅ Preset saved!', 'success'); }, 1200);
-  }, [addToast]);
+  // ==================== STYLES ====================
+  const css = `
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Barlow:ital,wght@0,300;0,400;0,700;1,300;1,700&display=swap');
+    
+    :root {
+      --void: #060608;
+      --deep: #0c0c10;
+      --panel: #111116;
+      --border: rgba(255,255,255,0.06);
+      --border-active: rgba(139,92,246,0.5);
+      --purple: #6B21A8;
+      --purple-mid: #7C3AED;
+      --purple-bright: #A78BFA;
+      --silver: #94A3B8;
+      --silver-bright: #CBD5E1;
+      --text: #E2E8F0;
+      --text-dim: #64748B;
+      --purple-alt: #A78BFA;
+      --red: #EF4444;
+    }
 
-  /* ─── COMMUNITY ─── */
-  const handleLike    = useCallback((id: number) => setCommunityPosts(prev => prev.map(p => p.id === id ? { ...p, likes: p.likes + 1 } : p)), []);
-  const handleLove    = useCallback((id: number) => setCommunityPosts(prev => prev.map(p => p.id === id ? { ...p, loves: p.loves + 1 } : p)), []);
-  const handleComment = useCallback((postId: number) => {
-    const c = newComment[postId];
-    if (!c?.trim()) return;
-    setCommunityPosts(prev => prev.map(p => p.id === postId
-      ? { ...p, comments: [...p.comments, { id: Date.now(), text: c, user: 'You', timestamp: new Date().toISOString() }] } : p));
-    setNewComment(prev => ({ ...prev, [postId]: '' }));
-    addToast('✅ Comment posted!', 'success');
-  }, [newComment, addToast]);
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    html, body { 
+      background: var(--void); 
+      color: var(--text); 
+      font-family: 'Barlow', sans-serif;
+      overflow-x: hidden;
+    }
 
-  const handleShare = useCallback(() => {
-    if (!currentVideo) { addToast('Render your movie first!', 'warning'); return; }
-    addToast('✅ Shared to Community Hub!', 'success'); setPage(21);
-  }, [currentVideo, addToast]);
+    /* Film grain overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9998;
+      opacity: 0.4;
+    }
 
-  /* ══════════════════════════════════════════════
-     RENDER
-  ════════════════════════════════════════════════ */
+    .font-display { font-family: 'Bebas Neue', sans-serif; }
+    .font-mono { font-family: 'DM Mono', monospace; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--void); }
+    ::-webkit-scrollbar-thumb { background: var(--purple); border-radius: 2px; }
+
+    /* Animations */
+    @keyframes slideInRight { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes fadeUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes scanline {
+      0% { top: -10%; }
+      100% { top: 110%; }
+    }
+    @keyframes flicker { 0%,100%{opacity:1} 50%{opacity:0.97} 75%{opacity:0.99} }
+
+    .fade-up { animation: fadeUp 0.5s ease both; }
+    .animate-pulse { animation: pulse 2s ease-in-out infinite; }
+    .animate-spin { animation: spin 1s linear infinite; }
+    .animate-flicker { animation: flicker 4s ease-in-out infinite; }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      background: rgba(255,255,255,0.05);
+      border-radius: 2px;
+      height: 3px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--purple-mid);
+      border: 2px solid var(--purple-bright);
+      cursor: pointer;
+    }
+
+    /* Panel style */
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+    }
+    .panel-active {
+      border-color: var(--border-active);
+    }
+
+    /* Btn primary */
+    .btn-primary {
+      background: var(--purple);
+      color: white;
+      border: 1px solid rgba(139,92,246,0.3);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0.6rem 1.5rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-primary:hover { background: var(--purple-mid); }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0.6rem 1.5rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-secondary:hover { border-color: var(--purple-bright); color: var(--text); }
+
+    /* Tool card */
+    .tool-card {
+      background: var(--deep);
+      border: 1px solid var(--border);
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: left;
+    }
+    .tool-card:hover {
+      border-color: rgba(139,92,246,0.4);
+      background: rgba(107,33,168,0.1);
+    }
+
+    /* Scanline effect */
+    .scanline::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(to right, transparent, rgba(139,92,246,0.15), transparent);
+      animation: scanline 6s linear infinite;
+      pointer-events: none;
+    }
+
+    /* Track */
+    .track-bar {
+      height: 28px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Clip on timeline */
+    .timeline-clip {
+      position: absolute;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      padding: 0 0.5rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      color: white;
+      overflow: hidden;
+    }
+  `;
+
+  // ==================== NAV MENU ====================
+  const NAV_ITEMS = [
+    { label: '01 — Home', p: 1 },
+    { label: '02 — About', p: 2 },
+    { label: '03 — Examples', p: 3 },
+    { label: '04 — Login & Access', p: 4 },
+    { label: '05 — Writing Tools', p: 5 },
+    { label: '06 — Voice Tools', p: 6 },
+    { label: '07 — Image Tools', p: 7 },
+    { label: '08 — Video Tools', p: 8 },
+    { label: '09 — Motion Tools', p: 9 },
+    { label: '10 — Enhancement', p: 10 },
+    { label: '11 — Upload Media', p: 11 },
+    { label: '12 — Editor Suite', p: 12 },
+    { label: '13 — Timeline', p: 13 },
+    { label: '14 — Enhancements', p: 14 },
+    { label: '15 — Audio Mixer', p: 15 },
+    { label: '16 — Render', p: 16 },
+    { label: '17 — Preview', p: 17 },
+    { label: '18 — Export', p: 18 },
+    { label: '19 — Tutorials', p: 19 },
+    { label: '20 — Terms', p: 20 },
+    { label: '21 — Agent Grok', p: 21 },
+    { label: '22 — Community', p: 22 },
+    { label: '23 — Thank You', p: 23 },
+  ];
+
+  const toolCategories = ['Writing', 'Voice', 'Image', 'Video', 'Motion', 'Enhancement'];
+
   return (
-    <div className="min-h-screen bg-black text-white relative">
-      <style>{`
-        [data-bolt-badge],[class*="bolt-badge"],[id*="bolt-badge"],footer[class*="bolt"]{display:none!important;}
-        .scrollbar::-webkit-scrollbar{width:6px;}
-        .scrollbar::-webkit-scrollbar-track{background:#000;}
-        .scrollbar::-webkit-scrollbar-thumb{background:#7c3aed;border-radius:10px;}
-      `}</style>
+    <div style={{ minHeight: '100vh', background: 'var(--void)', color: 'var(--text)', position: 'relative' }}>
+      <style>{css}</style>
+      <input ref={fileInputRef} type="file" multiple accept="video/*,audio/*,image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
 
-      {/* HIDDEN FILE INPUT */}
-      <input ref={fileInputRef} type="file" multiple accept="video/*,audio/*,image/*" onChange={handleFileUpload} className="hidden" />
-
-      {/* GLOBAL OVERLAYS */}
+      {/* TOAST */}
       <Toast toasts={toasts} removeToast={removeToast} />
-      <ConfirmModal modal={modal} onConfirm={() => modal?.onConfirm?.()} onCancel={() => setModal(null)} />
-      {showPasteImporter && <PasteImporter onImport={handlePasteImport} onClose={() => setShowPasteImporter(false)} />}
-      {uploadProgress !== null && <ProgressOverlay progress={uploadProgress} label="Uploading"  subLabel="Adding files to your Media Library..." />}
-      {rendering            && <ProgressOverlay progress={renderProgress}  label="Rendering"  subLabel={`Processing ${duration} min of ${exportSettings.quality} video...`} />}
-      {applyingEnhancement  && <ProgressOverlay progress={75}              label="Enhancing"  subLabel={`Applying "${selectedEnhancement}"...`} />}
 
-      {/* AUTO-SAVE BADGE */}
-      {page >= 4 && (
-        <div className="fixed top-6 right-6 z-50">
-          <div className={`bg-zinc-950 border-2 px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 transition-all
-            ${autoSaveStatus==='saving'?'border-yellow-500':autoSaveStatus==='saved'?'border-green-500':autoSaveStatus==='error'?'border-red-500':'border-[#7c3aed]/50'}`}>
-            {autoSaveStatus==='saving' && <><Loader size={16} className="text-yellow-500 animate-spin"/><span className="text-xs font-bold text-yellow-500">SAVING...</span></>}
-            {autoSaveStatus==='saved'  && <><CheckCircle size={16} className="text-green-500"/><span className="text-xs font-bold text-green-500">SAVED</span></>}
-            {autoSaveStatus==='error'  && <><AlertCircle size={16} className="text-red-500"/><span className="text-xs font-bold text-red-500">SAVE ERROR</span></>}
-            {autoSaveStatus==='idle' && lastSaved && <><Clock size={16} className="text-zinc-500"/><span className="text-xs font-bold text-zinc-400">{Math.floor((Date.now()-lastSaved.getTime())/1000)}s ago</span></>}
+      {/* AUTO-SAVE */}
+      {page >= 5 && (
+        <div style={{ position: 'fixed', bottom: '4rem', right: '1rem', zIndex: 100 }}>
+          <div className="panel font-mono" style={{ padding: '0.3rem 0.75rem', fontSize: '0.9rem', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            {autoSaveStatus === 'saving' && <><Loader size={10} className="animate-spin" style={{ color: '#facc15' }} /><span style={{ color: '#facc15' }}>SAVING</span></>}
+            {autoSaveStatus === 'saved' && <><CheckCircle size={10} style={{ color: 'var(--purple-bright)' }} /><span style={{ color: 'var(--purple-bright)' }}>SAVED</span></>}
+            {autoSaveStatus === 'idle' && lastSaved && <><span style={{ color: 'var(--text-dim)' }}>AUTOSAVE ON</span></>}
           </div>
         </div>
       )}
 
-      {/* HAMBURGER MENU */}
-      {page > 0 && (
-        <div className="fixed top-6 left-6 z-50">
-          <button onClick={() => setMenuOpen(!menuOpen)} className="bg-[#7c3aed] p-4 rounded-full shadow-2xl hover:scale-110 transition">
-            <Menu size={28} />
-          </button>
-          {menuOpen && (
-            <div className="absolute top-20 left-0 bg-zinc-950 border-2 border-[#7c3aed] p-6 rounded-2xl w-72 shadow-2xl max-h-[80vh] overflow-y-auto scrollbar">
-              <div className="bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] p-4 rounded-xl mb-6 text-center">
-                <div className="text-xs font-bold text-white/70 mb-1">CURRENT PLAN</div>
-                <div className="text-2xl font-black text-white">{userPlan}</div>
-                <div className="text-xs text-white/90 mt-1">8K Export • 600 AI Tools • 1TB Storage</div>
-              </div>
-              <div className="space-y-2">
-                {[
-                  {label:'🏠 Home',p:1},{label:'🔐 Login / Pricing',p:3},
-                  {label:'✍️ Writing Tools',p:4},{label:'🎙 Voice Tools',p:5},
-                  {label:'🖼 Image Tools',p:6},{label:'🎬 Video Tools',p:7},
-                  {label:'🌀 Motion Tools',p:8},{label:'✨ Enhancement Tools',p:9},
-                  {label:'📂 Upload Media',p:10},{label:'🎛 Editor Suite',p:11},
-                  {label:'🗂 Timeline Editor',p:12},{label:'💎 Enhancements',p:13},
-                  {label:'🔊 Audio Mixer',p:14},{label:'🎬 Render Film',p:15},
-                  {label:'👁 Preview Film',p:16},{label:'⬇️ Export',p:17},
-                  {label:'🎓 Tutorials',p:18},{label:'📋 Terms',p:19},
-                  {label:'🤖 Agent Grok',p:20},{label:'👥 Community Hub',p:21},
-                  {label:'🙏 Thank You',p:22},
-                ].map(item => (
-                  <button key={item.p} onClick={() => goTo(item.p)}
-                    className={`w-full text-left px-4 py-3 rounded-xl font-bold text-sm transition
-                      ${page===item.p?'bg-[#7c3aed] text-white':'text-zinc-300 hover:bg-[#7c3aed]/20 hover:text-white'}`}>
-                    {item.label}
-                  </button>
-                ))}
-              </div>
+      {/* MENU BUTTON */}
+      <div style={{ position: 'fixed', top: '1.25rem', left: '1.25rem', zIndex: 1000 }}>
+        <button onClick={() => setMenuOpen(!menuOpen)} className="btn-primary" style={{ padding: '0.5rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {menuOpen ? <X size={16} /> : <Menu size={16} />}
+        </button>
+
+        {menuOpen && (
+          <div className="panel" style={{ position: 'absolute', top: '3rem', left: 0, width: '240px', maxHeight: '80vh', overflowY: 'auto', padding: '1rem 0' }}>
+            <div style={{ padding: '0.5rem 1rem 1rem', borderBottom: '1px solid var(--border)', marginBottom: '0.5rem' }}>
+              <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.2em', color: 'var(--text-dim)', marginBottom: '0.25rem' }}>STUDIO PLAN — ADMIN</div>
+              <div className="font-display" style={{ fontSize: '1rem', color: 'var(--purple-bright)' }}>MANDASTRONG</div>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* TOOL SEARCH (pages 4-9) */}
-      {page >= 4 && page <= 9 && (
-        <div className="fixed top-6 left-24 z-50">
-          <div className="relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7c3aed]" />
-            <input type="text" value={toolSearch} onChange={e => setToolSearch(e.target.value)}
-              placeholder="Search 600+ AI Tools..."
-              className="bg-zinc-950 border-2 border-[#7c3aed] pl-11 pr-10 py-3 rounded-full text-white placeholder-zinc-500 outline-none w-80 font-bold text-sm" />
-            {toolSearch && <button onClick={() => setToolSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"><X size={16}/></button>}
+            {NAV_ITEMS.map(item => (
+              <button key={item.p} onClick={() => goTo(item.p)}
+                className="font-mono"
+                style={{
+                  display: 'block', width: '100%', padding: '0.5rem 1rem', textAlign: 'left',
+                  fontSize: '0.95rem', letterSpacing: '0.1em', background: page === item.p ? 'rgba(107,33,168,0.2)' : 'transparent',
+                  color: page === item.p ? 'var(--purple-bright)' : 'var(--text-dim)',
+                  border: 'none', cursor: 'pointer', borderLeft: page === item.p ? '2px solid var(--purple-bright)' : '2px solid transparent',
+                  transition: 'all 0.1s'
+                }}>
+                {item.label}
+              </button>
+            ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* AGENT GROK FLOATING BUTTON */}
-      {page !== 20 && (
-        <button onClick={() => goTo(20)}
-          className="fixed bottom-20 right-6 z-50 bg-[#7c3aed] w-16 h-16 rounded-full flex items-center justify-center text-3xl font-black shadow-2xl hover:scale-110 transition border-2 border-[#a78bfa]">
-          G
+      {/* GROK BUTTON */}
+      {page !== 21 && (
+        <button onClick={() => goTo(21)}
+          style={{ position: 'fixed', bottom: '4rem', left: '1.25rem', zIndex: 100, background: 'var(--purple)', border: '1px solid rgba(139,92,246,0.3)', color: 'white', width: '2.5rem', height: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <span className="font-display" style={{ fontSize: '1rem' }}>G</span>
         </button>
       )}
 
       {/* FOOTER */}
-      {page >= 3 && (
-        <div className="fixed bottom-0 left-0 w-full bg-black/95 py-2 text-center z-40 border-t border-[#7c3aed]/20">
-          <p className="text-xs uppercase font-black text-white/60 tracking-widest">MandaStrong Studio 2026 • MandaStrong1.Etsy.com</p>
+      {page >= 2 && (
+        <div style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', zIndex: 50, borderTop: '1px solid var(--border)', background: 'rgba(6,6,8,0.95)', padding: '0.4rem', textAlign: 'center' }}>
+          <span className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.2em', color: 'var(--text-dim)' }}>
+            MANDASTRONG STUDIO 2026 &nbsp;•&nbsp; PROFESSIONAL CINEMA SYNTHESIS &nbsp;•&nbsp; MandaStrong1.Etsy.com
+          </span>
         </div>
       )}
 
-      {/* BACK / NEXT */}
-      {page > 1 && page < 22 && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-40 flex gap-4">
-          <button onClick={() => goTo(page-1)}
-            className="bg-zinc-950 border-2 border-[#7c3aed] px-8 py-2.5 rounded-full font-black uppercase text-[#7c3aed] hover:bg-[#7c3aed] hover:text-white transition text-xs flex items-center gap-2">
-            <ChevronLeft size={14}/> BACK
+      {/* NAV ARROWS */}
+      {page > 1 && page < 23 && (
+        <div style={{ position: 'fixed', bottom: '2.5rem', left: '50%', transform: 'translateX(-50%)', zIndex: 100, display: 'flex', gap: '0.5rem' }}>
+          <button onClick={() => goTo(page - 1)} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            <ChevronLeft size={12} /> BACK
           </button>
-          <button onClick={() => goTo(page+1)}
-            className="bg-[#7c3aed] px-8 py-2.5 rounded-full font-black uppercase text-white hover:bg-[#6d28d9] transition text-xs flex items-center gap-2">
-            NEXT <ChevronRight size={14}/>
+          <button onClick={() => goTo(page + 1)} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+            NEXT <ChevronRight size={12} />
           </button>
         </div>
       )}
 
-      <main className="min-h-screen pb-32">
+      {/* ======================== PAGES ======================== */}
+      <main style={{ minHeight: '100vh', paddingBottom: '5rem' }}>
 
-        {/* ── PAGE 1  HOME — clean gradient, NO video overlay ── */}
+        {/* PAGE 1 — LANDING */}
         {page === 1 && (
-          <div className="h-screen flex flex-col justify-center items-center text-center px-6 fade-up bg-gradient-to-br from-black via-[#1a0533] to-black">
-            <Sparkles size={72} className="text-[#7c3aed] mb-8 animate-pulse mx-auto" />
-            <h1 className="text-7xl md:text-9xl font-black text-[#7c3aed] uppercase mb-6 leading-none">
-              MANDASTRONG<br/>STUDIO
+          <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem', position: 'relative', overflow: 'hidden' }}>
+            {/* Ocean video background */}
+            <video ref={oceanRef} autoPlay loop muted playsInline
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.18, pointerEvents: 'none' }}>
+              <source src={OCEAN_VIDEO} type="video/mp4" />
+            </video>
+            {/* Dark overlay */}
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(6,6,8,0.6), rgba(6,6,8,0.75))', pointerEvents: 'none' }} />
+            {/* Grid lines */}
+            <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(139,92,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.04) 1px,transparent 1px)', backgroundSize: '80px 80px', pointerEvents: 'none' }} />
+
+            <div className="font-mono fade-up" style={{ position: 'relative', fontSize: '0.95rem', letterSpacing: '0.4em', color: 'var(--purple-bright)', marginBottom: '2rem', opacity: 0.85 }}>
+              CINEMA INTELLIGENCE PLATFORM — EST. 2026
+            </div>
+
+            <h1 className="font-display animate-flicker" style={{ position: 'relative', fontSize: 'clamp(5rem,16vw,13rem)', lineHeight: 0.85, letterSpacing: '-0.02em', color: 'white', marginBottom: '1rem', textShadow: '0 0 80px rgba(139,92,246,0.5)' }}>
+              MANDA<br />STRONG<br />STUDIO
             </h1>
-            <p className="text-xl font-bold text-zinc-300 max-w-2xl mb-4">The All-In-One AI Movie Creation Platform</p>
-            <p className="text-sm text-zinc-500 mb-12 uppercase tracking-widest">600+ AI Tools • 8K Export • Unlimited Creativity</p>
-            <button onClick={() => goTo(2)}
-              className="bg-[#7c3aed] text-white px-16 py-5 rounded-full font-black uppercase text-xl hover:scale-105 transition shadow-2xl hover:bg-[#6d28d9]">
-              START CREATING
-            </button>
+
+            <div style={{ position: 'relative', width: '100%', maxWidth: '600px', height: '1px', background: 'linear-gradient(90deg,transparent,rgba(139,92,246,0.6),transparent)', margin: '2rem 0' }} />
+
+            <p className="font-mono fade-up" style={{ position: 'relative', fontSize: '0.9rem', letterSpacing: '0.2em', color: 'var(--silver)', marginBottom: '0.5rem' }}>
+              600+ AI TOOLS &nbsp;•&nbsp; 8K EXPORT &nbsp;•&nbsp; UP TO 3-HOUR FILMS
+            </p>
+            <p style={{ position: 'relative', fontSize: '1.1rem', fontWeight: 300, fontStyle: 'italic', color: 'var(--text-dim)', marginBottom: '0.75rem' }}>
+              The All-In-One Professional AI Movie Creation Platform
+            </p>
+            <p style={{ position: 'relative', fontSize: '0.9rem', fontWeight: 600, color: 'var(--purple-bright)', marginBottom: '3rem', letterSpacing: '0.05em' }}>
+              🎬 Special Offer: New Studio Plan Subscribers Receive 7-Day Free Trial
+            </p>
+
+            <div style={{ position: 'relative', display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button onClick={() => goTo(2)} className="btn-primary" style={{ fontSize: '0.95rem', padding: '0.85rem 2.5rem' }}>
+                START CREATING
+              </button>
+              <button onClick={() => goTo(4)} className="btn-secondary" style={{ fontSize: '0.95rem', padding: '0.85rem 2.5rem' }}>
+                LOGIN / REGISTER
+              </button>
+            </div>
+
+            {/* Corner marker */}
+            <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem' }}>
+              <div className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.2em', color: 'var(--text-dim)', textAlign: 'right' }}>
+                <div style={{ color: 'var(--purple-bright)', marginBottom: '0.2rem' }}>● SYSTEM ONLINE</div>
+                <div>BUILD 2026.03.05</div>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* ── PAGE 2  WELCOME ── */}
+        {/* PAGE 2 — ABOUT */}
         {page === 2 && (
-          <div className="h-screen flex flex-col justify-center items-center text-center px-6 fade-up">
-            <Sparkles size={64} className="text-[#7c3aed] mb-6 animate-pulse" />
-            <h1 className="text-5xl md:text-8xl font-black text-[#7c3aed] uppercase mb-8 leading-none">MANDASTRONG<br/>STUDIO</h1>
-            <p className="text-2xl md:text-4xl font-bold text-[#7c3aed] italic uppercase max-w-5xl leading-tight">
-              WELCOME! MAKE AWESOME FAMILY MOVIES<br/>OR TURN YOUR DREAMS INTO REALITY. ENJOY!
+          <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6rem 2rem 8rem', position: 'relative', overflow: 'hidden' }}>
+            {/* Ocean video background */}
+            <video ref={oceanRef} autoPlay loop muted playsInline
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.12, pointerEvents: 'none' }}>
+              <source src={OCEAN_VIDEO} type="video/mp4" />
+            </video>
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(6,6,8,0.7), rgba(6,6,8,0.85))', pointerEvents: 'none' }} />
+            <div style={{ maxWidth: '900px', width: '100%', position: 'relative' }}>
+              <div className="font-mono fade-up" style={{ fontSize: '0.9rem', letterSpacing: '0.3em', color: 'var(--purple-bright)', marginBottom: '1.5rem' }}>ABOUT THE PLATFORM</div>
+              <h1 className="font-display fade-up" style={{ fontSize: 'clamp(3rem,10vw,8rem)', lineHeight: 0.85, marginBottom: '1.5rem' }}>
+                MAKE AWESOME<br /><span style={{ color: 'var(--purple-bright)' }}>FAMILY MOVIES</span><br />OR TURN YOUR<br />DREAMS INTO REALITY
+              </h1>
+              <p style={{ fontSize: '1rem', fontWeight: 300, color: 'var(--silver)', lineHeight: 1.7, marginBottom: '3rem', maxWidth: '680px' }}>
+                MandaStrong Studio combines the power of 600+ professional AI tools with an intuitive cinematic workspace — so anyone can create stunning short films, family videos, or feature-length productions up to 3 hours long. No film school required.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: '1px', background: 'var(--border)', marginTop: '1rem' }}>
+                {[
+                  { icon: Zap, label: '600+', sub: 'AI Tools Across 6 Categories' },
+                  { icon: Monitor, label: '8K', sub: 'Cinema-Grade Export Quality' },
+                  { icon: Clock, label: '3 Hours', sub: 'Maximum Film Duration' },
+                  { icon: HardDrive, label: '1TB', sub: 'Cloud Storage on Studio Plan' },
+                ].map(({ icon: Icon, label, sub }) => (
+                  <div key={label} className="panel" style={{ padding: '2rem', textAlign: 'center' }}>
+                    <Icon size={24} style={{ color: 'var(--purple-bright)', marginBottom: '1rem' }} />
+                    <div className="font-display" style={{ fontSize: '2.5rem', color: 'white', lineHeight: 1 }}>{label}</div>
+                    <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.1em', color: 'var(--text-dim)', marginTop: '0.5rem' }}>{sub}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: '1px', background: 'var(--border)' }}>
+                <div className="panel" style={{ padding: '1.5rem 2rem', borderLeft: 0, borderRight: 0 }}>
+                  <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {['Writing & Script AI', 'Voice Synthesis', 'Image Generation', 'Video Production', 'Motion & VFX', 'AI Enhancement'].map(cat => (
+                      <span key={cat} className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--purple-bright)', letterSpacing: '0.1em' }}>✦ {cat}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PAGE 3 — EXAMPLES */}
+        {page === 3 && (
+          <div style={{ minHeight: '100vh', padding: '5rem 2rem 8rem', maxWidth: '1400px', margin: '0 auto' }}>
+            {/* Hidden file inputs — admin only */}
+            <input ref={exRef0} type="file" accept="video/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (!f) return; const u = URL.createObjectURL(f); setExVideos(prev => prev.map((v,i) => i===0 ? {...v, url:u, name:f.name} : v)); }} />
+            <input ref={exRef1} type="file" accept="video/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (!f) return; const u = URL.createObjectURL(f); setExVideos(prev => prev.map((v,i) => i===1 ? {...v, url:u, name:f.name} : v)); }} />
+            <input ref={exRef2} type="file" accept="video/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (!f) return; const u = URL.createObjectURL(f); setExVideos(prev => prev.map((v,i) => i===2 ? {...v, url:u, name:f.name} : v)); }} />
+
+            {/* Admin login modal */}
+            {exShowLogin && (
+              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.95)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                <div className="panel" style={{ maxWidth: '380px', width: '100%', padding: '2.5rem', border: '1px solid rgba(139,92,246,0.4)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
+                    <Shield size={18} style={{ color: 'var(--purple-bright)' }} />
+                    <div>
+                      <div className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.2em', color: 'var(--text-dim)' }}>RESTRICTED ACCESS</div>
+                      <div className="font-display" style={{ fontSize: '1.5rem' }}>ADMIN LOGIN</div>
+                    </div>
+                    <button onClick={() => { setExShowLogin(false); setExError(''); }} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer' }}><X size={16} /></button>
+                  </div>
+                  <input type="email" value={exEmail} onChange={e => setExEmail(e.target.value)} placeholder="Admin email" style={{ display: 'block', width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.75rem 1rem', fontFamily: 'DM Mono', fontSize: '1rem', marginBottom: '0.75rem', outline: 'none' }} />
+                  <input type="password" value={exPassword} onChange={e => setExPassword(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { if (exEmail === 'woolleya129@gmail.com' && exPassword === 'Mangler1970!!') { setExIsAdmin(true); setExShowLogin(false); setExError(''); setExEmail(''); setExPassword(''); addToast('Admin access granted', 'success'); } else { setExError('Invalid credentials'); } } }} placeholder="Admin password" style={{ display: 'block', width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.75rem 1rem', fontFamily: 'DM Mono', fontSize: '1rem', marginBottom: '0.5rem', outline: 'none' }} />
+                  {exError && <div className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--red)', marginBottom: '0.5rem' }}>✕ {exError}</div>}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem' }}>
+                    <button onClick={() => { setExShowLogin(false); setExError(''); }} className="btn-secondary" style={{ flex: 1 }}>CANCEL</button>
+                    <button onClick={() => { if (exEmail === 'woolleya129@gmail.com' && exPassword === 'Mangler1970!!') { setExIsAdmin(true); setExShowLogin(false); setExError(''); setExEmail(''); setExPassword(''); addToast('Admin access granted', 'success'); } else { setExError('Invalid credentials'); } }} className="btn-primary" style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                      <Lock size={12} /> ENTER ADMIN
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
+              <div>
+                <div className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.4em', color: 'var(--purple-bright)', marginBottom: '0.5rem' }}>SHOWCASE</div>
+                <h1 className="font-display" style={{ fontSize: 'clamp(3rem,8vw,7rem)', lineHeight: 0.85 }}>EXAMPLES MADE BY<br /><span style={{ color: 'var(--purple-bright)' }}>MANDASTRONG STUDIO</span></h1>
+              </div>
+              {exIsAdmin ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'DM Mono', fontSize: '0.9rem', color: 'var(--purple-bright)', letterSpacing: '0.1em' }}>
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--purple-bright)' }} className="animate-pulse" /> ADMIN ACTIVE
+                  <button onClick={() => setExIsAdmin(false)} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', marginLeft: '0.25rem' }}><X size={12} /></button>
+                </div>
+              ) : (
+                <button onClick={() => setExShowLogin(true)} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem' }}>
+                  <Lock size={10} /> ADMIN
+                </button>
+              )}
+            </div>
+
+            <div style={{ width: '100%', height: '1px', background: 'linear-gradient(90deg,transparent,rgba(139,92,246,0.3),transparent)', marginBottom: '2rem' }} />
+
+            {/* TOP ROW — 2 viewers side by side */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'rgba(255,255,255,0.04)', marginBottom: '1px' }}>
+              {[0, 1].map(i => (
+                <div key={i} style={{ position: 'relative', aspectRatio: '16/9', background: '#000', border: `1px solid ${exActiveVideo === i ? 'rgba(139,92,246,0.7)' : 'rgba(255,255,255,0.06)'}`, overflow: 'hidden', cursor: 'pointer', transition: 'border-color 0.15s' }} onClick={() => setExActiveVideo(exActiveVideo === i ? null : i)}>
+                  <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', zIndex: 10, background: 'rgba(0,0,0,0.7)', padding: '0.3rem 0.75rem' }}>
+                    <div className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.2em', color: exActiveVideo === i ? 'var(--purple-bright)' : 'rgba(255,255,255,0.4)' }}>VIEWER {String(i+1).padStart(2,'0')} — {exVideos[i].title.toUpperCase()}</div>
+                    <div className="font-mono" style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', marginTop: '0.1rem' }}>{exVideos[i].desc}</div>
+                  </div>
+                  {exVideos[i].url ? (
+                    <>
+                      <video src={exVideos[i].url!} controls={exActiveVideo === i} autoPlay={exActiveVideo === i} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      {exIsAdmin && <button onClick={e => { e.stopPropagation(); exRefs[i].current?.click(); }} className="btn-primary" style={{ position: 'absolute', bottom: '0.75rem', right: '0.75rem', zIndex: 20, padding: '0.2rem 0.6rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Upload size={10} /> REPLACE</button>}
+                    </>
+                  ) : (
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', background: 'linear-gradient(135deg,rgba(107,33,168,0.08),#000)' }}>
+                      <Film size={28} style={{ color: 'rgba(139,92,246,0.3)' }} />
+                      <div className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.25)' }}>FILM UPLOADING SOON</div>
+                      {exIsAdmin && <button onClick={e => { e.stopPropagation(); exRefs[i].current?.click(); }} className="btn-primary" style={{ fontSize: '0.9rem', padding: '0.4rem 1rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Upload size={10} /> UPLOAD</button>}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* BOTTOM ROW — 1 full-width viewer */}
+            <div style={{ position: 'relative', height: '480px', background: '#000', border: `1px solid ${exActiveVideo === 2 ? 'rgba(139,92,246,0.7)' : 'rgba(255,255,255,0.06)'}`, overflow: 'hidden', cursor: 'pointer', transition: 'border-color 0.15s', marginBottom: '2rem' }} onClick={() => setExActiveVideo(exActiveVideo === 2 ? null : 2)}>
+              <div className="font-mono" style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', zIndex: 10, background: 'rgba(0,0,0,0.7)', padding: '0.2rem 0.6rem', fontSize: '1rem', letterSpacing: '0.2em', color: exActiveVideo === 2 ? 'var(--purple-bright)' : 'rgba(255,255,255,0.4)' }}>
+                VIEWER 03 — FEATURE SHOWCASE — {exVideos[2].title.toUpperCase()}
+              </div>
+              {exVideos[2].url ? (
+                <>
+                  <video src={exVideos[2].url!} controls={exActiveVideo === 2} autoPlay={exActiveVideo === 2} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  {exIsAdmin && <button onClick={e => { e.stopPropagation(); exRefs[2].current?.click(); }} className="btn-primary" style={{ position: 'absolute', bottom: '0.75rem', left: '0.75rem', zIndex: 20, padding: '0.3rem 0.75rem', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}><Upload size={10} /> REPLACE FEATURE</button>}
+                </>
+              ) : (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem', background: 'linear-gradient(135deg,rgba(107,33,168,0.05),#000)', backgroundImage: 'linear-gradient(rgba(139,92,246,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.03) 1px,transparent 1px)', backgroundSize: '40px 40px' }}>
+                  <Film size={48} style={{ color: 'rgba(139,92,246,0.2)' }} />
+                  <div className="font-display" style={{ fontSize: '2rem', color: 'rgba(255,255,255,0.08)', letterSpacing: '0.1em' }}>FEATURE SHOWCASE</div>
+                  {exIsAdmin ? <button onClick={e => { e.stopPropagation(); exRefs[2].current?.click(); }} className="btn-primary" style={{ fontSize: '1rem', padding: '0.6rem 2rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Upload size={14} /> UPLOAD FEATURE FILM</button> : <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Film size={12} /> FEATURE FILM UPLOADING SOON</div>}
+                </div>
+              )}
+            </div>
+
+            {/* CTA */}
+            <div className="panel" style={{ padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <div className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.2em', color: 'var(--text-dim)', marginBottom: '0.25rem' }}>READY TO CREATE YOUR OWN?</div>
+                <div className="font-display" style={{ fontSize: '1.5rem' }}>START WITH 600+ AI TOOLS TODAY</div>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button onClick={() => goTo(4)} className="btn-primary" style={{ padding: '0.65rem 1.5rem' }}>LOGIN / REGISTER</button>
+                <button onClick={() => goTo(5)} className="btn-secondary" style={{ padding: '0.65rem 1.5rem' }}>BROWSE TOOLS →</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PAGE 4 — ACCESS / LOGIN / PRICING */}
+        {page === 4 && (
+          <div style={{ minHeight: '100vh', padding: '5rem 1.5rem 8rem', maxWidth: '1100px', margin: '0 auto' }}>
+
+            {/* SPECIAL OFFER BANNER */}
+            <div style={{ background: 'linear-gradient(90deg, rgba(107,33,168,0.3), rgba(139,92,246,0.15), rgba(107,33,168,0.3))', border: '1px solid rgba(139,92,246,0.5)', padding: '1rem 1.5rem', marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center', textAlign: 'center' }}>
+              <span style={{ fontSize: '1.2rem' }}>🎬</span>
+              <div>
+                <span className="font-display" style={{ fontSize: '1.25rem', color: 'white', letterSpacing: '0.05em' }}>SPECIAL OFFER</span>
+                <span style={{ color: 'var(--text-dim)', margin: '0 0.5rem' }}>—</span>
+                <span style={{ fontSize: '0.95rem', color: 'var(--purple-bright)', fontWeight: 600 }}>All New Studio Plan Subscribers Receive a 7-Day Free Trial</span>
+              </div>
+              <span className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--text-dim)', letterSpacing: '0.1em' }}>NO CREDIT CARD REQUIRED TO START</span>
+            </div>
+
+            <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.3em', color: 'var(--purple-bright)', marginBottom: '1rem' }}>ACCESS PORTAL</div>
+            <h1 className="font-display" style={{ fontSize: 'clamp(3rem,8vw,6rem)', marginBottom: '3rem' }}>LOGIN & SUBSCRIBE</h1>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: '1px', background: 'var(--border)', marginBottom: '4rem' }}>
+              {/* Login */}
+              <div className="panel" style={{ padding: '2rem' }}>
+                <div className="font-mono" style={{ fontSize: '0.95rem', letterSpacing: '0.2em', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>EXISTING USER</div>
+                <h3 className="font-display" style={{ fontSize: '2rem', marginBottom: '1.5rem' }}>SIGN IN</h3>
+                <label className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.1em', color: 'var(--text-dim)', display: 'block', marginBottom: '0.35rem' }}>EMAIL ADDRESS</label>
+                <input type="email" placeholder="your@email.com"
+                  style={{ display: 'block', width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.75rem 1rem', fontFamily: 'DM Mono', fontSize: '0.9rem', marginBottom: '1rem', outline: 'none', transition: 'border-color 0.2s' }}
+                  onFocus={e => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.06)'} />
+                <label className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.1em', color: 'var(--text-dim)', display: 'block', marginBottom: '0.35rem' }}>PASSWORD</label>
+                <input type="password" placeholder="Enter your password"
+                  style={{ display: 'block', width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.75rem 1rem', fontFamily: 'DM Mono', fontSize: '0.9rem', marginBottom: '0.5rem', outline: 'none', transition: 'border-color 0.2s' }}
+                  onFocus={e => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.06)'} />
+                <div style={{ textAlign: 'right', marginBottom: '1.5rem' }}>
+                  <button style={{ background: 'none', border: 'none', color: 'var(--purple-bright)', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '0.9rem' }}>Forgot password?</button>
+                </div>
+                <button onClick={(e) => { const form = (e.target as HTMLElement).closest('.panel'); const emailInput = form?.querySelector('input[type="email"]') as HTMLInputElement; const passInput = form?.querySelector('input[type="password"]') as HTMLInputElement; const isAmanda = emailInput?.value === 'woolleya129@gmail.com' && passInput?.value === 'Mangler1970!!'; try { localStorage.setItem('ms_loggedin','1'); if (isAmanda) localStorage.setItem('ms_admin','1'); } catch {} if (isAmanda) setExIsAdmin(true); addToast(isAmanda ? 'Welcome Amanda — Admin access granted!' : 'Welcome back!', 'success'); setTimeout(() => goTo(5), 800); }} className="btn-primary" style={{ width: '100%', padding: '0.85rem' }}>
+                  SIGN IN TO STUDIO
+                </button>
+                <p style={{ textAlign: 'center', fontSize: '1rem', color: 'var(--text-dim)', marginTop: '1rem', fontStyle: 'italic' }}>
+                  Secured with 256-bit encryption
+                </p>
+              </div>
+
+              {/* Register */}
+              <div className="panel" style={{ padding: '2rem', borderTop: '2px solid var(--purple-bright)', position: 'relative' }}>
+                <div style={{ position: 'absolute', top: '-0.75rem', left: '1.5rem', background: 'var(--purple)', padding: '0.15rem 0.75rem' }}>
+                  <span className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.2em', color: 'white' }}>7-DAY FREE TRIAL</span>
+                </div>
+                <div className="font-mono" style={{ fontSize: '0.95rem', letterSpacing: '0.2em', color: 'var(--text-dim)', marginBottom: '0.5rem', marginTop: '0.5rem' }}>NEW CREATOR</div>
+                <h3 className="font-display" style={{ fontSize: '2rem', marginBottom: '1.5rem' }}>CREATE ACCOUNT</h3>
+                <label className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.1em', color: 'var(--text-dim)', display: 'block', marginBottom: '0.35rem' }}>YOUR NAME</label>
+                <input type="text" placeholder="Director / Creator Name"
+                  style={{ display: 'block', width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.75rem 1rem', fontFamily: 'DM Mono', fontSize: '0.9rem', marginBottom: '1rem', outline: 'none', transition: 'border-color 0.2s' }}
+                  onFocus={e => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.06)'} />
+                <label className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.1em', color: 'var(--text-dim)', display: 'block', marginBottom: '0.35rem' }}>EMAIL ADDRESS</label>
+                <input type="email" placeholder="your@email.com"
+                  style={{ display: 'block', width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.75rem 1rem', fontFamily: 'DM Mono', fontSize: '0.9rem', marginBottom: '1rem', outline: 'none', transition: 'border-color 0.2s' }}
+                  onFocus={e => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.06)'} />
+                <label className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.1em', color: 'var(--text-dim)', display: 'block', marginBottom: '0.35rem' }}>CREATE PASSWORD</label>
+                <input type="password" placeholder="Minimum 8 characters"
+                  style={{ display: 'block', width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.75rem 1rem', fontFamily: 'DM Mono', fontSize: '0.9rem', marginBottom: '1.5rem', outline: 'none', transition: 'border-color 0.2s' }}
+                  onFocus={e => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}
+                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.06)'} />
+                <button onClick={() => { try { localStorage.setItem('ms_loggedin','1'); } catch {} addToast('Account created! Your 7-Day Free Trial begins now.', 'success'); setTimeout(() => goTo(5), 800); }} className="btn-primary" style={{ width: '100%', padding: '0.85rem' }}>
+                  START FREE TRIAL
+                </button>
+                <p style={{ textAlign: 'center', fontSize: '1rem', color: 'var(--text-dim)', marginTop: '1rem', fontStyle: 'italic' }}>
+                  No credit card needed · Cancel anytime
+                </p>
+              </div>
+
+              {/* Guest */}
+              <div className="panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+                <Eye size={32} style={{ color: 'var(--text-dim)', marginBottom: '1rem' }} />
+                <div className="font-display" style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>EXPLORE FIRST</div>
+                <p style={{ fontSize: '1rem', color: 'var(--text-dim)', marginBottom: '0.75rem', lineHeight: 1.6 }}>Browse all 600+ AI tools and see the full platform before committing.</p>
+                <p style={{ fontSize: '0.9rem', color: 'var(--purple-bright)', marginBottom: '1.5rem', fontStyle: 'italic' }}>No account required</p>
+                <button onClick={() => { try { localStorage.setItem('ms_loggedin','1'); } catch {} goTo(5); }} className="btn-secondary" style={{ width: '100%', padding: '0.85rem' }}>
+                  BROWSE AS GUEST
+                </button>
+              </div>
+            </div>
+
+            {/* Pricing */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.5rem' }}>
+              <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.3em', color: 'var(--text-dim)' }}>SUBSCRIPTION PLANS</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--purple-bright)', background: 'rgba(107,33,168,0.15)', border: '1px solid rgba(139,92,246,0.3)', padding: '0.2rem 0.6rem' }}>
+                  🎬 Studio Plan: 7-Day Free Trial Included
+                </span>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: '1px', background: 'var(--border)' }}>
+              {PLANS.map(plan => (
+                <div key={plan.name} className="panel" style={{ padding: '2rem', position: 'relative', borderTop: plan.popular ? '2px solid var(--purple-bright)' : plan.name === 'Studio' ? '2px solid rgba(167,139,250,0.5)' : '2px solid transparent' }}>
+                  {plan.popular && <div className="font-mono" style={{ position: 'absolute', top: '-0.75rem', left: '50%', transform: 'translateX(-50%)', background: 'var(--purple)', padding: '0.15rem 0.75rem', fontSize: '1rem', letterSpacing: '0.2em', color: 'white', whiteSpace: 'nowrap' }}>MOST POPULAR</div>}
+                  {plan.name === 'Studio' && <div className="font-mono" style={{ position: 'absolute', top: '-0.75rem', left: '50%', transform: 'translateX(-50%)', background: 'rgba(107,33,168,0.8)', padding: '0.15rem 0.75rem', fontSize: '1rem', letterSpacing: '0.15em', color: 'white', whiteSpace: 'nowrap' }}>7-DAY FREE TRIAL</div>}
+                  <div className="font-mono" style={{ fontSize: '0.95rem', letterSpacing: '0.2em', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>{plan.name.toUpperCase()} PLAN</div>
+                  <div className="font-display" style={{ fontSize: '3rem', lineHeight: 1 }}>${plan.price}<span style={{ fontSize: '1rem', color: 'var(--text-dim)' }}>/mo</span></div>
+                  <p style={{ fontSize: '1rem', color: 'var(--text-dim)', margin: '0.5rem 0 1.5rem', fontStyle: 'italic' }}>
+                    {plan.name === 'Creator' ? 'Perfect for hobbyists & family films' : plan.name === 'Pro' ? 'For serious independent filmmakers' : 'Full professional production suite'}
+                  </p>
+                  <div style={{ margin: '0 0 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {plan.features.map(f => (
+                      <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem', color: 'var(--text-dim)' }}>
+                        <CheckCircle size={12} style={{ color: 'var(--purple-bright)', flexShrink: 0 }} /> {f}
+                      </div>
+                    ))}
+                    {plan.name === 'Studio' && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.95rem', color: 'var(--purple-bright)', fontWeight: 600 }}>
+                        <Zap size={12} style={{ flexShrink: 0 }} /> 7-Day Free Trial Included
+                      </div>
+                    )}
+                  </div>
+                  <a href={plan.stripe} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', padding: '0.85rem' }}>
+                    {plan.name === 'Studio' ? 'START FREE TRIAL' : 'SUBSCRIBE NOW'}
+                  </a>
+                </div>
+              ))}
+            </div>
+            <p style={{ textAlign: 'center', fontSize: '1rem', color: 'var(--text-dim)', marginTop: '1.5rem', fontStyle: 'italic' }}>
+              All plans include a 30-day money-back guarantee · Secure checkout via Stripe
             </p>
           </div>
         )}
 
-        {/* ── PAGE 3  LOGIN / PRICING ── */}
-        {page === 3 && (
-          <div className="p-6 pt-4 pb-40 max-w-7xl mx-auto overflow-y-auto scrollbar fade-up">
-            {/* Free trial banner */}
-            <div className="bg-gradient-to-r from-green-600 via-[#7c3aed] to-green-600 rounded-3xl p-6 mb-8 text-center border-4 border-green-400 shadow-2xl">
-              <div className="text-4xl mb-2">🎉</div>
-              <h2 className="text-3xl font-black text-white uppercase mb-1">FREE 7-DAY TRIAL</h2>
-              <p className="text-xl font-bold text-white/90 mb-1">Studio Plan — Normally <span className="line-through opacity-60">$50/mo</span></p>
-              <p className="text-5xl font-black text-green-300 mb-2">$0 <span className="text-xl font-bold text-white/80">for 7 days</span></p>
-              <p className="text-sm text-white/80 font-bold uppercase tracking-widest">New Registrations Only • 8K Export • 600 AI Tools • 1TB Storage • No Credit Card Required</p>
-            </div>
-            <div className="text-center mb-12">
-              <button onClick={() => goTo(4)}
-                className="bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] text-white px-12 py-4 rounded-full font-black uppercase text-lg hover:scale-105 transition shadow-2xl border-2 border-[#a78bfa]">
-                Browse First — Explore Tools
-              </button>
-            </div>
-            {/* Login / Register */}
-            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-16">
-              <div className="bg-zinc-950 border-2 border-[#7c3aed] p-10 rounded-3xl">
-                <h3 className="text-3xl font-black uppercase mb-6 text-center text-white">Login</h3>
-                <input value={loginEmail} onChange={e => setLoginEmail(e.target.value)} type="email" placeholder="your@email.com"
-                  className="w-full bg-black border-2 border-[#7c3aed] p-4 rounded-xl text-white mb-4 outline-none font-bold" />
-                <input value={loginPassword} onChange={e => setLoginPassword(e.target.value)} type="password" placeholder="••••••••"
-                  className="w-full bg-black border-2 border-[#7c3aed] p-4 rounded-xl text-white mb-6 outline-none font-bold" />
-                <button onClick={() => { addToast('✅ Welcome back!','success'); setTimeout(() => goTo(4),800); }}
-                  className="w-full bg-[#7c3aed] py-4 rounded-xl font-black uppercase text-lg hover:bg-[#6d28d9] transition flex items-center justify-center gap-2">
-                  <Zap size={20}/> Login &amp; Start
-                </button>
-              </div>
-              <div className="bg-zinc-950 border-2 border-green-500 p-10 rounded-3xl relative">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-green-500 text-black px-6 py-1 rounded-full text-xs font-black uppercase">🎉 7-Day Free Trial</div>
-                <h3 className="text-3xl font-black uppercase mb-6 text-center text-white">Register</h3>
-                <input value={registerName} onChange={e => setRegisterName(e.target.value)} type="text" placeholder="Your Name"
-                  className="w-full bg-black border-2 border-[#7c3aed] p-4 rounded-xl text-white mb-4 outline-none font-bold" />
-                <input value={registerEmail} onChange={e => setRegisterEmail(e.target.value)} type="email" placeholder="your@email.com"
-                  className="w-full bg-black border-2 border-[#7c3aed] p-4 rounded-xl text-white mb-6 outline-none font-bold" />
-                <button onClick={() => { addToast('🎉 Welcome! Your 7-day free trial starts now!','success'); setTimeout(() => goTo(4),800); }}
-                  className="w-full bg-green-600 py-4 rounded-xl font-black uppercase text-lg hover:bg-green-700 transition flex items-center justify-center gap-2">
-                  <Sparkles size={20}/> Start Free Trial — $0
-                </button>
-                <p className="text-center text-xs text-zinc-400 mt-3 font-bold">Studio Plan Free for 7 Days • No Credit Card</p>
-              </div>
-            </div>
-            {/* Pricing */}
-            <div className="max-w-6xl mx-auto">
-              <h2 className="text-4xl font-black text-center mb-12 uppercase text-white">Choose Your Plan</h2>
-              <div className="grid md:grid-cols-3 gap-6">
-                {[
-                  {t:'Basic', p:'20', s:'https://buy.stripe.com/test_basic', f:['HD Export (1080p)','100 AI Tools','10GB Storage','Email Support']},
-                  {t:'Pro',   p:'30', s:'https://buy.stripe.com/test_pro',   f:['4K Export','300 AI Tools','100GB Storage','Priority Support','Commercial License']},
-                  {t:'Studio',p:'50', s:'https://buy.stripe.com/test_studio',f:['8K Export','600 AI Tools','1TB Storage','24/7 Support','Full Rights','API Access','7-Day Free Trial']},
-                ].map((plan,i) => (
-                  <div key={plan.t} className={`bg-zinc-950 rounded-3xl p-8 border-2 transition ${i===2?'border-[#7c3aed] relative':'border-zinc-800 hover:border-[#7c3aed]'}`}>
-                    {i===2 && <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#7c3aed] text-white px-6 py-1 rounded-full text-xs font-black uppercase">Most Popular</div>}
-                    <h3 className="text-2xl font-black uppercase mb-2 text-white">{plan.t}</h3>
-                    <div className="text-5xl font-black text-[#7c3aed] mb-8">${plan.p}<span className="text-sm opacity-50">/mo</span></div>
-                    <ul className="space-y-3 mb-10">
-                      {plan.f.map(f => <li key={f} className="text-sm font-semibold flex items-start gap-2 text-white"><CheckCircle size={16} className="text-[#7c3aed] flex-shrink-0 mt-0.5"/>{f}</li>)}
-                    </ul>
-                    <a href={plan.s} target="_blank" rel="noopener noreferrer"
-                      className="block w-full py-4 bg-[#7c3aed] text-center rounded-xl font-black uppercase hover:bg-[#6d28d9] transition">
-                      {i===2?'START FREE TRIAL':'SUBSCRIBE NOW'}
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── PAGES 4-9  AI TOOL BOARDS ── */}
-        {page >= 4 && page <= 9 && (() => {
-          const boards = ['Writing','Voice','Image','Video','Motion','Enhancement'];
-          const icons  = ['✍️','🎙','🖼','🎬','🌀','✨'];
-          const allTools = AI_TOOLS[boards[page-4]] || [];
-          const tools = toolSearch.trim() ? allTools.filter(t => t.toLowerCase().includes(toolSearch.toLowerCase())) : allTools;
+        {/* PAGES 5–10 — AI TOOL BOARDS */}
+        {page >= 5 && page <= 10 && (() => {
+          const cat = toolCategories[page - 5];
+          const allTools = AI_TOOLS[cat] || [];
+          const filtered = toolSearch.trim() ? allTools.filter(t => t.toLowerCase().includes(toolSearch.toLowerCase())) : allTools;
+          const catIcons: Record<string, any> = { Writing: BookOpen, Voice: Mic, Image: Camera, Video: Film, Motion: Activity, Enhancement: Sparkles };
+          const CatIcon = catIcons[cat] || Zap;
           return (
-            <div className="h-screen flex flex-col pt-20 pb-40 fade-up">
-              <div className="text-center mb-6 px-4">
-                <h2 className="text-5xl font-black uppercase text-[#7c3aed]">{icons[page-4]} AI TOOL BOARD</h2>
-                <p className="text-zinc-400 mt-1 font-bold">{boards[page-4]} • <span className="text-[#7c3aed]">{tools.length} Tools</span></p>
-              </div>
-              <div className="flex-1 overflow-y-auto px-8 scrollbar">
-                {tools.length === 0 ? (
-                  <div className="text-center py-20">
-                    <p className="text-zinc-500 text-xl font-bold">No tools found for "{toolSearch}"</p>
-                    <button onClick={() => setToolSearch('')} className="mt-4 text-[#7c3aed] underline font-bold">Clear Search</button>
+            <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', paddingTop: '4rem', paddingBottom: '6rem' }}>
+              {/* Header */}
+              <div className="panel" style={{ padding: '1.5rem 2rem', borderLeft: 0, borderRight: 0, borderTop: 0, marginBottom: '1px', display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <CatIcon size={20} style={{ color: 'var(--purple-bright)' }} />
+                  <div>
+                    <div className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.3em', color: 'var(--text-dim)' }}>AI WORKSTATION 0{page - 3}</div>
+                    <div className="font-display" style={{ fontSize: '1.8rem', lineHeight: 1 }}>{cat.toUpperCase()} TOOLS</div>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-8">
-                    {tools.map((tool,i) => (
-                      <button key={i} onClick={() => setSelectedTool(tool)}
-                        className="bg-black border-2 border-[#7c3aed]/40 p-5 rounded-2xl hover:bg-[#7c3aed]/10 hover:border-[#7c3aed] transition group text-left">
-                        <Sparkles size={18} className="text-[#7c3aed] mb-2 group-hover:animate-spin"/>
-                        <span className="text-base font-black uppercase text-white leading-tight">{tool}</span>
+                </div>
+
+                {/* Category tabs */}
+                <div style={{ display: 'flex', gap: '1px', background: 'var(--border)', marginLeft: 'auto', flexWrap: 'wrap' }}>
+                  {toolCategories.map((c, i) => (
+                    <button key={c} onClick={() => goTo(5 + i)}
+                      className="font-mono"
+                      style={{ padding: '0.4rem 0.75rem', fontSize: '0.9rem', letterSpacing: '0.1em', background: c === cat ? 'var(--purple)' : 'var(--panel)', color: c === cat ? 'white' : 'var(--text-dim)', border: 'none', cursor: 'pointer' }}>
+                      {c.slice(0, 3).toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Search */}
+                <div style={{ position: 'relative' }}>
+                  <Search size={12} style={{ position: 'absolute', left: '0.6rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+                  <input type="text" value={toolSearch} onChange={e => setToolSearch(e.target.value)}
+                    placeholder={`Search ${filtered.length} tools...`}
+                    className="font-mono"
+                    style={{ background: 'var(--deep)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.4rem 0.5rem 0.4rem 2rem', fontSize: '0.95rem', width: '200px', outline: 'none' }} />
+                </div>
+
+                <div className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--purple-bright)' }}>{filtered.length} TOOLS</div>
+              </div>
+
+              {/* Tools grid — 4 across, 120 per page */}
+              {(() => {
+                const pageSize = 120;
+                const [toolPage, setToolPage] = (window as any).__toolPageState || [0, (v: number) => { (window as any).__toolPageState = [v, (window as any).__toolPageState[1]]; }];
+                const start = 0;
+                const visible = filtered.slice(0, filtered.length);
+                return (
+                  <div style={{ flex: 1, overflowY: 'auto', padding: '1px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', background: 'var(--border)', alignContent: 'start' }}>
+                      {visible.map((tool, i) => (
+                        <div key={i} style={{ background: 'var(--deep)', border: '1px solid var(--border)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.6rem', minHeight: '130px', transition: 'border-color 0.15s' }}
+                          onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(139,92,246,0.5)')}
+                          onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
+                          <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.3, flex: 1 }}>{tool}</div>
+                          <div style={{ display: 'flex', gap: '0.3rem' }}>
+                            <button onClick={() => fileInputRef.current?.click()} style={{ flex: 1, background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)', color: '#E2E8F0', padding: '0.3rem 0.2rem', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '0.65rem', letterSpacing: '0.05em' }}>UPLOAD</button>
+                            <button onClick={() => { setSelectedTool(tool); setAiPrompt(''); }} style={{ flex: 1, background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)', color: '#E2E8F0', padding: '0.3rem 0.2rem', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '0.65rem', letterSpacing: '0.05em' }}>PASTE</button>
+                            <button onClick={() => { setSelectedTool(tool); }} style={{ flex: 1, background: 'var(--purple)', border: '1px solid rgba(139,92,246,0.5)', color: '#FFFFFF', padding: '0.3rem 0.2rem', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '0.65rem', letterSpacing: '0.05em' }}>AI ✦</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Tool Modal */}
+              {selectedTool && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                  <div className="panel" style={{ maxWidth: '600px', width: '100%', padding: '2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                      <div>
+                        <div className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.2em', color: 'var(--purple-bright)', marginBottom: '0.25rem' }}>{cat.toUpperCase()} TOOL</div>
+                        <h2 className="font-display" style={{ fontSize: '2rem' }}>{selectedTool}</h2>
+                      </div>
+                      <button onClick={() => { setSelectedTool(null); setAiPrompt(''); }} style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-dim)', padding: '0.3rem', cursor: 'pointer' }}>
+                        <X size={16} />
                       </button>
-                    ))}
+                    </div>
+
+                    {/* Upload */}
+                    <div style={{ marginBottom: '1rem' }}>
+                      <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.1em', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>UPLOAD SOURCE MEDIA</div>
+                      <button onClick={() => fileInputRef.current?.click()}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(139,92,246,0.3)', color: 'var(--text-dim)', padding: '1rem', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '0.95rem', letterSpacing: '0.1em' }}>
+                        + BROWSE FILES / UPLOAD OWN VOICE
+                      </button>
+                    </div>
+
+                    {/* Stock Voices — show on Voice page or Text to Speech tool */}
+                    {(cat === 'Voice' || selectedTool === 'Text to Speech') && (
+                      <div style={{ marginBottom: '1rem' }}>
+                        <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.1em', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>STOCK VOICES — SELECT & PREVIEW</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                          {STOCK_VOICES.map(v => (
+                            <div key={v.name} onClick={() => setSelectedVoice(v.name)}
+                              style={{ padding: '0.65rem 0.75rem', background: selectedVoice === v.name ? 'rgba(139,92,246,0.2)' : 'rgba(255,255,255,0.02)', border: `1px solid ${selectedVoice === v.name ? 'rgba(139,92,246,0.6)' : 'var(--border)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                              <div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)' }}>{v.name}</div>
+                                <div className="font-mono" style={{ fontSize: '0.5rem', color: 'var(--text-dim)' }}>{v.style} · {v.accent}</div>
+                              </div>
+                              <button onClick={e => { e.stopPropagation(); const a = new Audio(v.url); setPlayingVoice(v.name); a.play(); a.onended = () => setPlayingVoice(null); }}
+                                style={{ background: 'var(--purple)', border: 'none', color: 'white', padding: '0.3rem 0.5rem', cursor: 'pointer', fontSize: '0.9rem', fontFamily: 'DM Mono' }}>
+                                {playingVoice === v.name ? '■' : '▶'}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        {selectedVoice && (
+                          <div className="font-mono" style={{ fontSize: '1rem', color: 'var(--purple-bright)', marginTop: '0.4rem' }}>✓ {selectedVoice} selected as voice</div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Prompt */}
+                    <div style={{ marginBottom: '1rem' }}>
+                      <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.1em', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>AI GENERATION PROMPT</div>
+                      <textarea value={aiPrompt} onChange={e => { setAiPrompt(e.target.value); try { localStorage.setItem('ms_draft', e.target.value); } catch {} }}
+                        placeholder={`Describe what you want to generate with ${selectedTool}...`}
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.75rem 1rem', fontFamily: 'Barlow', fontSize: '1rem', height: '100px', resize: 'none', outline: 'none' }} />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button onClick={() => { setSelectedTool(null); setAiPrompt(''); }} className="btn-secondary" style={{ flex: 1, padding: '0.75rem' }}>CANCEL</button>
+                      <button onClick={handleAIGenerate} disabled={!aiPrompt.trim() || generating} className="btn-primary" style={{ flex: 2, padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', opacity: (!aiPrompt.trim() || generating) ? 0.4 : 1 }}>
+                        {generating ? <><Loader size={14} className="animate-spin" /> GENERATING...</> : <><Zap size={14} /> GENERATE & SAVE</>}
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           );
         })()}
 
-        {/* AI TOOL MODAL */}
-        {selectedTool && (
-          <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-8">
-            <div className="bg-zinc-950 border-2 border-[#7c3aed] rounded-3xl p-8 max-w-2xl w-full fade-up">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-black uppercase text-white flex items-center gap-3"><Sparkles className="text-[#7c3aed]" size={24}/>{selectedTool}</h2>
-                <button onClick={() => { setSelectedTool(null); setAiPrompt(''); }} className="text-zinc-400 hover:text-red-500"><X size={28}/></button>
-              </div>
-              <div className="space-y-5">
-                <div className="bg-black border border-[#7c3aed]/30 rounded-xl p-5">
-                  <h3 className="font-bold mb-3 text-white flex items-center gap-2"><Upload size={18} className="text-[#7c3aed]"/>Upload Existing Media</h3>
-                  <button onClick={() => fileInputRef.current?.click()}
-                    className="w-full bg-zinc-900 border-2 border-dashed border-[#7c3aed] p-4 rounded-xl text-white hover:bg-[#7c3aed]/10 transition font-bold">
-                    📁 BROWSE FILES
-                  </button>
-                </div>
-                <div className="bg-black border border-[#7c3aed]/30 rounded-xl p-5">
-                  <h3 className="font-bold mb-3 text-white flex items-center gap-2"><Clipboard size={18} className="text-[#7c3aed]"/>Paste Content</h3>
-                  <textarea placeholder="Paste text here..." className="w-full bg-zinc-900 border border-[#7c3aed]/50 p-3 rounded-xl text-white h-20 outline-none resize-none text-sm mb-2"/>
-                  <input type="url" placeholder="Or paste a URL..." className="w-full bg-zinc-900 border border-[#7c3aed]/50 p-3 rounded-xl text-white outline-none text-sm"/>
-                </div>
-                <div className="bg-black border border-[#7c3aed]/30 rounded-xl p-5">
-                  <h3 className="font-bold mb-3 text-white flex items-center gap-2"><Sparkles size={18} className="text-[#7c3aed]"/>Generate With AI</h3>
-                  <textarea value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} placeholder="Describe what you want to create..."
-                    className="w-full bg-zinc-900 border border-[#7c3aed]/50 p-3 rounded-xl text-white h-24 outline-none resize-none text-sm"/>
-                  <button onClick={handleAIGenerate} disabled={!aiPrompt.trim() || generating}
-                    className="w-full mt-3 bg-[#7c3aed] py-4 rounded-xl font-black uppercase text-lg hover:bg-[#6d28d9] transition disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-3">
-                    {generating
-                      ? <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"/><span>GENERATING...</span></>
-                      : <><Zap size={22}/>GENERATE &amp; SAVE</>}
-                  </button>
-                  <p className="text-xs text-center text-zinc-500 mt-2">Generated assets auto-save to Media Library</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── PAGE 10  UPLOAD MEDIA ── */}
-        {page === 10 && (
-          <div className="min-h-screen flex items-center justify-center p-8 fade-up">
-            <div className="text-center max-w-5xl w-full">
-              <h1 className="text-6xl font-black uppercase text-[#7c3aed] mb-4">UPLOAD MEDIA</h1>
-              <p className="text-zinc-400 mb-8 font-bold">{mediaLibrary.length} assets in your library</p>
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div onClick={() => fileInputRef.current?.click()}
-                  className="aspect-video bg-zinc-950 rounded-3xl border-4 border-dashed border-[#7c3aed] flex flex-col items-center justify-center cursor-pointer hover:bg-[#7c3aed]/10 transition group">
-                  <Upload size={60} className="text-[#7c3aed] mb-3 group-hover:scale-110 transition"/>
-                  <p className="text-xl font-bold text-white">Browse Files</p>
-                  <p className="text-zinc-400 mt-1 text-xs">Video • Audio • Images</p>
-                </div>
-                <div onClick={() => setShowPasteImporter(true)}
-                  className="aspect-video bg-zinc-950 rounded-3xl border-4 border-dashed border-[#7c3aed] flex flex-col items-center justify-center cursor-pointer hover:bg-[#7c3aed]/10 transition group">
-                  <Clipboard size={60} className="text-[#7c3aed] mb-3 group-hover:scale-110 transition"/>
-                  <p className="text-xl font-bold text-white">Paste Content</p>
-                  <p className="text-zinc-400 mt-1 text-xs">URLs • Scripts • Text</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                {[{icon:FileVideo,label:'Videos',formats:'MP4, MOV, AVI, MKV',info:'Up to 100GB per file'},
-                  {icon:Music,    label:'Audio', formats:'MP3, WAV, AAC, FLAC',info:'Lossless quality'},
-                  {icon:Eye,      label:'Images',formats:'JPG, PNG, GIF, RAW', info:'Up to 200MP'}
-                ].map(({icon:Icon,label,formats,info}) => (
-                  <div key={label} className="bg-zinc-950 border-2 border-[#7c3aed]/40 p-5 rounded-2xl hover:border-[#7c3aed] transition">
-                    <Icon size={32} className="text-[#7c3aed] mb-2"/>
-                    <p className="text-sm font-black text-white uppercase">{label}</p>
-                    <p className="text-xs text-zinc-400 mt-1">{formats}</p>
-                    <p className="text-xs text-[#7c3aed] mt-1 font-bold">{info}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                {[{icon:Database,label:'Cloud Storage',info:'1TB Included',       sub:'Auto-backup enabled'},
-                  {icon:Zap,     label:'Fast Upload',  info:'Multi-file support', sub:'Drag & drop ready'},
-                  {icon:Shield,  label:'Secure',       info:'256-bit Encryption', sub:'Your files are private'}
-                ].map(({icon:Icon,label,info,sub}) => (
-                  <div key={label} className="bg-zinc-950 border border-[#7c3aed]/20 p-4 rounded-2xl">
-                    <Icon size={24} className="text-[#7c3aed] mb-2"/>
-                    <p className="text-xs font-black text-white uppercase">{label}</p>
-                    <p className="text-xs text-[#7c3aed] font-bold mt-1">{info}</p>
-                    <p className="text-xs text-zinc-500 mt-0.5">{sub}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── PAGE 11  EDITOR SUITE ── */}
+        {/* PAGE 11 — UPLOAD MEDIA */}
         {page === 11 && (
-          <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
-            <h1 className="text-6xl font-black uppercase text-[#7c3aed] mb-12 text-center">EDITOR SUITE</h1>
-            {/* Duration slider */}
-            <div className="max-w-4xl mx-auto bg-gradient-to-r from-[#7c3aed] to-[#6d28d9] rounded-3xl p-12 mb-12 border-4 border-[#a78bfa]">
-              <div className="flex items-center gap-6 mb-6"><Clock size={48} className="text-white"/><h3 className="text-3xl font-black text-white uppercase">Movie Duration</h3></div>
-              <div className="text-center mb-6">
-                <div className="text-8xl font-black text-white">{duration}</div>
-                <div className="text-xl font-bold text-white/80 uppercase">Minutes</div>
-              </div>
-              <input type="range" min="0" max="180" value={duration} onChange={e => setDuration(Number(e.target.value))}
-                className="w-full h-4 bg-white/20 rounded-full mb-4 cursor-pointer" style={{accentColor:'white'}}/>
-              <div className="flex justify-between text-sm text-white/70 mb-8"><span>0 min</span><span>180 min</span></div>
-              <div className="grid grid-cols-4 gap-3">
-                {[30,60,90,120].map(m => (
-                  <button key={m} onClick={() => {setDuration(m); addToast(`Duration set to ${m} min`,'info');}}
-                    className={`py-4 rounded-xl font-bold text-lg transition ${duration===m?'bg-white text-[#7c3aed]':'bg-white/20 text-white hover:bg-white/30'}`}>
-                    {m} min
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-8">
-              {[{icon:Database,label:'Media Library', sub:`${mediaLibrary.length} assets ready`, p:12, info:'Drag to timeline'},
-                {icon:Wand2,   label:'Enhancements',  sub:`${ENHANCEMENT_TOOLS.length} pro tools`,p:13, info:'AI-powered filters'},
-                {icon:Sliders, label:'Audio Mixer',   sub:'4 channels',                            p:14, info:'Music • Voice • SFX • Master'}
-              ].map(({icon:Icon,label,sub,p,info}) => (
-                <button key={label} onClick={() => goTo(p)}
-                  className="bg-zinc-950 border-2 border-[#7c3aed]/40 p-8 rounded-3xl hover:bg-[#7c3aed]/10 hover:border-[#7c3aed] transition text-left group">
-                  <Icon size={48} className="text-[#7c3aed] mb-4 group-hover:scale-110 transition"/>
-                  <h3 className="text-xl font-black uppercase mb-1 text-white">{label}</h3>
-                  <p className="text-sm text-zinc-400">{sub}</p>
-                  <p className="text-xs text-[#7c3aed] mt-2 font-bold">{info}</p>
-                </button>
-              ))}
-            </div>
-            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {[{icon:FileVideo,label:'Render Film',  sub:'Start final render', p:15, info:'Up to 8K quality'},
-                {icon:Eye,      label:'Preview Film', sub:'Watch your movie',   p:16, info:'Full screen playback'},
-                {icon:Download, label:'Export & Share',sub:'Download or share', p:17, info:'MP4 • MOV • AVI'}
-              ].map(({icon:Icon,label,sub,p,info}) => (
-                <button key={label} onClick={() => goTo(p)}
-                  className="bg-zinc-950 border-2 border-[#7c3aed]/40 p-8 rounded-3xl hover:bg-[#7c3aed]/10 hover:border-[#7c3aed] transition text-left group">
-                  <Icon size={48} className="text-[#7c3aed] mb-4 group-hover:scale-110 transition"/>
-                  <h3 className="text-xl font-black uppercase mb-1 text-white">{label}</h3>
-                  <p className="text-sm text-zinc-400">{sub}</p>
-                  <p className="text-xs text-[#7c3aed] mt-2 font-bold">{info}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+          <div style={{ minHeight: '100vh', padding: '5rem 2rem 8rem', maxWidth: '1000px', margin: '0 auto' }}>
+            <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.3em', color: 'var(--purple-bright)', marginBottom: '0.75rem' }}>ASSET INGESTION</div>
+            <h1 className="font-display" style={{ fontSize: 'clamp(3rem,8vw,6rem)', marginBottom: '0.5rem' }}>UPLOAD MEDIA</h1>
+            <p className="font-mono" style={{ fontSize: '0.95rem', color: 'var(--text-dim)', marginBottom: '3rem', letterSpacing: '0.1em' }}>{mediaLibrary.length} ASSETS IN LIBRARY</p>
 
-        {/* ── PAGE 12  TIMELINE EDITOR ── */}
-        {page === 12 && (
-          <div className="h-screen pt-20 pb-16 fade-up">
-            <TimelineEditor mediaLibrary={mediaLibrary} />
-          </div>
-        )}
-
-        {/* ── PAGE 13  ENHANCEMENT STUDIO ── */}
-        {page === 13 && (
-          <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
-            <h1 className="text-5xl font-black uppercase text-[#7c3aed] mb-4 text-center">ENHANCEMENT STUDIO</h1>
-            <p className="text-center text-zinc-400 mb-10 font-bold">{ENHANCEMENT_TOOLS.length} Professional Tools</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-7xl mx-auto">
-              {ENHANCEMENT_TOOLS.map((tool,i) => (
-                <button key={i} onClick={() => setSelectedEnhancement(tool)}
-                  className="bg-zinc-950 border-2 border-[#7c3aed]/30 p-5 rounded-2xl hover:bg-[#7c3aed]/10 hover:border-[#7c3aed] transition group text-left">
-                  <Wand2 size={18} className="text-[#7c3aed] mb-2 group-hover:scale-110 transition"/>
-                  <span className="text-sm font-bold uppercase text-white">{tool}</span>
-                </button>
-              ))}
-            </div>
-            {selectedEnhancement && (
-              <div className="fixed inset-0 z-50 bg-black/95 p-8 flex flex-col fade-up">
-                <div className="flex justify-between items-center mb-8">
-                  <h3 className="text-4xl font-black text-[#7c3aed] uppercase flex items-center gap-3"><Wand2 size={36}/>{selectedEnhancement}</h3>
-                  <button onClick={() => setSelectedEnhancement(null)} className="text-white hover:text-red-500"><X size={36}/></button>
-                </div>
-                <div className="flex-1 flex gap-8">
-                  <div className="flex-1 bg-zinc-900 border-4 border-[#7c3aed] rounded-3xl flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-48 h-48 rounded-full bg-[#7c3aed]/20 flex items-center justify-center mb-6 mx-auto">
-                        <Sparkles size={80} className="text-[#7c3aed] animate-pulse"/>
-                      </div>
-                      <p className="text-white font-black text-2xl uppercase">Live Preview</p>
-                      <p className="text-zinc-400 text-sm mt-2">Intensity: {enhancementSettings.intensity}%</p>
-                    </div>
-                  </div>
-                  <div className="w-96 space-y-5 p-8 bg-zinc-950 border-2 border-[#7c3aed] rounded-3xl">
-                    {Object.entries(enhancementSettings).map(([key,value]) => (
-                      <div key={key}>
-                        <div className="flex justify-between text-sm font-black uppercase text-white mb-2">
-                          <span>{key}</span><span className="text-[#7c3aed]">{value}%</span>
-                        </div>
-                        <input type="range" min="0" max="100" value={value}
-                          onChange={e => setEnhancementSettings(prev => ({...prev,[key]:Number(e.target.value)}))}
-                          className="w-full h-2 bg-zinc-800 rounded-full cursor-pointer"/>
-                      </div>
-                    ))}
-                    <button onClick={() => setEnhancementSettings({intensity:75,clarity:75,color:75,brightness:75})}
-                      className="w-full py-3 bg-zinc-800 text-white rounded-xl font-bold hover:bg-zinc-700 transition">RESET TO DEFAULT</button>
-                  </div>
-                </div>
-                <div className="mt-8 flex gap-6 justify-center">
-                  <button onClick={() => setSelectedEnhancement(null)}
-                    className="px-14 py-4 bg-zinc-800 text-white rounded-xl font-black uppercase hover:bg-zinc-700 transition">CANCEL</button>
-                  <button onClick={applyEnhancement}
-                    className="px-14 py-4 bg-[#7c3aed] text-white rounded-xl font-black uppercase hover:bg-[#6d28d9] transition flex items-center gap-3">
-                    <CheckCircle size={22}/>APPLY &amp; SAVE
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ── PAGE 14  AUDIO MIXER ── */}
-        {page === 14 && (
-          <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
-            <h1 className="text-4xl font-black uppercase mb-12 text-white text-center">🔊 PROFESSIONAL AUDIO MIXER</h1>
-            <div className="grid grid-cols-4 gap-6 max-w-6xl mx-auto">
-              {[{key:'music',label:'MUSIC',icon:Music},{key:'voice',label:'VOICE',icon:Mic},
-                {key:'sfx',  label:'SFX',  icon:Zap}, {key:'master',label:'MASTER',icon:Sliders}
-              ].map((ch,i) => (
-                <div key={ch.key} className={`bg-zinc-950 border-4 rounded-3xl p-6 flex flex-col items-center ${i===3?'border-[#7c3aed]':'border-zinc-800'}`}>
-                  <ch.icon size={36} className="text-[#7c3aed] mb-3"/>
-                  <div className="font-black text-base mb-6 text-white">{ch.label}</div>
-                  <div className="relative h-64 w-24 bg-gradient-to-b from-zinc-800 to-zinc-900 rounded-3xl mb-6 overflow-hidden">
-                    <div className="absolute bottom-0 w-full rounded-3xl bg-gradient-to-b from-[#a78bfa] to-[#7c3aed] transition-all duration-150"
-                      style={{height:`${audioLevels[ch.key as keyof typeof audioLevels]}%`}}/>
-                  </div>
-                  <input type="range" min="0" max="100" value={audioLevels[ch.key as keyof typeof audioLevels]}
-                    onChange={e => setAudioLevels(prev => ({...prev,[ch.key]:Number(e.target.value)}))}
-                    className="w-full mb-4 cursor-pointer"/>
-                  <div className="text-3xl font-black text-[#7c3aed]">{audioLevels[ch.key as keyof typeof audioLevels]}%</div>
-                </div>
-              ))}
-            </div>
-            <div className="max-w-6xl mx-auto mt-12 flex gap-4 justify-center">
-              <button onClick={() => {setAudioLevels({music:75,voice:50,sfx:65,master:80}); addToast('Audio reset','info');}}
-                className="px-12 py-4 bg-zinc-800 text-white rounded-xl font-black uppercase hover:bg-zinc-700 transition">RESET LEVELS</button>
-              <button onClick={handleSavePreset} disabled={savingPreset}
-                className="px-12 py-4 bg-[#7c3aed] text-white rounded-xl font-black uppercase hover:bg-[#6d28d9] transition flex items-center gap-3 disabled:opacity-50">
-                {savingPreset?<><Loader size={18} className="animate-spin"/>SAVING...</>:<><Save size={18}/>SAVE PRESET</>}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── PAGE 15  RENDER FILM ── */}
-        {page === 15 && (
-          <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
-            <div className="max-w-4xl mx-auto">
-              <h1 className="text-5xl font-black text-[#7c3aed] mb-4 text-center uppercase">🎬 Render Your Film</h1>
-              <p className="text-center text-zinc-400 mb-10 font-bold">Set your duration then hit Render — no timeline required</p>
-              <div className="bg-zinc-950 border-4 border-[#7c3aed] rounded-3xl p-12 mb-8">
-                <div className="text-center mb-8">
-                  <Clock size={48} className="text-[#7c3aed] mx-auto mb-4"/>
-                  <div className="text-8xl font-black text-white">{duration}</div>
-                  <div className="text-xl font-bold text-white/80 uppercase mb-4">Minutes</div>
-                  <input type="range" min="0" max="180" value={duration} onChange={e => setDuration(Number(e.target.value))}
-                    className="w-full h-4 bg-zinc-800 rounded-full cursor-pointer mb-2"/>
-                  <div className="flex justify-between text-sm text-zinc-500 mb-4"><span>0 min</span><span>180 min</span></div>
-                  <div className="grid grid-cols-4 gap-3 mb-8">
-                    {[30,60,90,120].map(m => (
-                      <button key={m} onClick={() => {setDuration(m); addToast(`Duration set to ${m} min`,'info');}}
-                        className={`py-3 rounded-xl font-bold transition ${duration===m?'bg-[#7c3aed] text-white':'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}>
-                        {m} min
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-6 mb-10">
-                  <div className="bg-black border-2 border-[#7c3aed]/40 p-5 rounded-2xl">
-                    <h3 className="font-black mb-3 text-white uppercase text-sm">Quality</h3>
-                    <select value={exportSettings.quality} onChange={e => setExportSettings({...exportSettings,quality:e.target.value})}
-                      className="w-full bg-zinc-900 border border-[#7c3aed] p-3 rounded-xl text-white font-bold outline-none">
-                      <option value="8K">8K Ultra HD</option>
-                      <option value="4K">4K Ultra HD</option>
-                      <option value="1080p">1080p Full HD</option>
-                      <option value="720p">720p HD</option>
-                    </select>
-                  </div>
-                  <div className="bg-black border-2 border-[#7c3aed]/40 p-5 rounded-2xl">
-                    <h3 className="font-black mb-3 text-white uppercase text-sm">Format</h3>
-                    <select value={exportSettings.format} onChange={e => setExportSettings({...exportSettings,format:e.target.value})}
-                      className="w-full bg-zinc-900 border border-[#7c3aed] p-3 rounded-xl text-white font-bold outline-none">
-                      <option>MP4</option><option>MOV</option><option>AVI</option>
-                    </select>
-                  </div>
-                </div>
-                <button onClick={handleRender}
-                  className="w-full bg-gradient-to-r from-green-600 to-[#7c3aed] py-6 rounded-2xl font-black uppercase text-2xl hover:from-green-700 hover:to-[#6d28d9] transition flex items-center justify-center gap-3">
-                  <Zap size={28}/> START RENDER
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── PAGE 16  PREVIEW FILM ── */}
-        {page === 16 && (
-          <div className="h-screen flex flex-col items-center justify-center bg-black p-6 fade-up">
-            <h1 className="text-4xl font-black uppercase text-[#7c3aed] mb-6 text-center">🎬 YOUR MASTERPIECE IS READY</h1>
-            <div className="w-full max-w-5xl rounded-3xl overflow-hidden border-4 border-[#7c3aed] shadow-2xl mb-6 bg-black">
-              <video
-                ref={previewVideoRef}
-                key={currentVideo?.url ?? ""}
-                src={currentVideo?.url ?? ""}
-                autoPlay
-                controls
-                loop
-                playsInline
-                className="w-full"
-                style={{ minHeight: '360px', background: '#000' }}
-                onCanPlay={() => {
-                  previewVideoRef.current?.play().catch(() => {
-                    if (previewVideoRef.current) {
-                      previewVideoRef.current.muted = true;
-                      previewVideoRef.current.play();
-                    }
-                  });
-                }}
-              />
-            </div>
-            {currentVideo ? (
-              <p className="text-zinc-400 text-sm mb-6 font-bold text-center">
-                {currentVideo.name} • {currentVideo.size} • {currentVideo.quality} {currentVideo.format}
-              </p>
-            ) : (
-              <p className="text-zinc-400 text-sm mb-6 font-bold text-center">
-                Render your film on Page 15 to see your movie here
-              </p>
-            )}
-            <div className="flex gap-4 flex-wrap justify-center">
-              <button onClick={() => goTo(17)}
-                className="bg-[#7c3aed] px-12 py-4 rounded-xl font-black uppercase hover:bg-[#6d28d9] transition flex items-center gap-2">
-                <Download size={20}/> EXPORT
-              </button>
-              <button onClick={handleShare}
-                className="bg-blue-600 px-12 py-4 rounded-xl font-black uppercase hover:bg-blue-700 transition flex items-center gap-2">
-                <Share2 size={20}/> SHARE
-              </button>
-              <button onClick={() => goTo(15)}
-                className="bg-zinc-800 px-12 py-4 rounded-xl font-black uppercase hover:bg-zinc-700 transition">
-                🔄 RE-RENDER
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── PAGE 17  EXPORT ── */}
-        {page === 17 && (
-          <div className="h-screen flex items-center justify-center p-8 fade-up">
-            <div className="max-w-4xl w-full bg-zinc-950 border-4 border-[#7c3aed] rounded-3xl p-12">
-              <h2 className="text-4xl font-black text-white mb-2 text-center">⬇️ EXPORT YOUR MOVIE</h2>
-              <p className="text-zinc-400 text-lg text-center mb-8">Your film is ready to share with the world</p>
-              {currentVideo && (
-                <div className="bg-black border-2 border-green-500 rounded-2xl p-5 mb-8 flex items-center gap-4">
-                  <CheckCircle size={36} className="text-green-500 flex-shrink-0"/>
-                  <div>
-                    <p className="text-lg font-black text-white">{currentVideo.name}</p>
-                    <p className="text-sm text-zinc-400">{currentVideo.size} • {currentVideo.quality} • Ready!</p>
-                  </div>
-                </div>
-              )}
-              <div className="grid md:grid-cols-2 gap-6 mb-10">
-                <div className="bg-black border-2 border-[#7c3aed]/40 p-5 rounded-2xl">
-                  <h3 className="font-black mb-3 text-white uppercase text-sm">Export Quality</h3>
-                  <select value={exportSettings.quality} onChange={e => setExportSettings(p => ({...p,quality:e.target.value}))}
-                    className="w-full bg-zinc-900 border border-[#7c3aed] p-3 rounded-xl text-white outline-none font-bold">
-                    <option value="8K">8K (4320p)</option><option value="4K">4K (2160p)</option>
-                    <option value="HD">HD (1080p)</option><option value="SD">SD (720p)</option>
-                  </select>
-                </div>
-                <div className="bg-black border-2 border-[#7c3aed]/40 p-5 rounded-2xl">
-                  <h3 className="font-black mb-3 text-white uppercase text-sm">Format</h3>
-                  <select value={exportSettings.format} onChange={e => setExportSettings(p => ({...p,format:e.target.value}))}
-                    className="w-full bg-zinc-900 border border-[#7c3aed] p-3 rounded-xl text-white outline-none font-bold">
-                    <option>MP4</option><option>MOV</option><option>AVI</option><option>WebM</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 mb-5">
-                <button onClick={() => currentVideo && handleDownload(currentVideo)} disabled={!currentVideo}
-                  className="bg-[#7c3aed] py-5 rounded-xl font-black uppercase text-lg hover:bg-[#6d28d9] transition disabled:opacity-40 flex items-center justify-center gap-3">
-                  <Download size={22}/> DOWNLOAD
-                </button>
-                <button disabled={!currentVideo} onClick={() => addToast('☁️ Saving to cloud...','info')}
-                  className="bg-green-600 py-5 rounded-xl font-black uppercase text-lg hover:bg-green-700 transition disabled:opacity-40 flex items-center justify-center gap-3">
-                  <Save size={22}/> SAVE TO CLOUD
-                </button>
-              </div>
-              <button onClick={handleShare} disabled={!currentVideo}
-                className="w-full bg-blue-600 py-5 rounded-xl font-black uppercase text-lg hover:bg-blue-700 transition disabled:opacity-40 flex items-center justify-center gap-3">
-                <Share2 size={22}/> SHARE TO COMMUNITY HUB
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ── PAGE 18  TUTORIALS ── */}
-        {page === 18 && (
-          <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
-            <h1 className="text-4xl font-black uppercase mb-12 text-white text-center">🎓 TUTORIALS &amp; LEARNING CENTER</h1>
-            <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
-              <div className="bg-black rounded-3xl border-4 border-[#7c3aed] p-12 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-48 h-48 rounded-full bg-[#7c3aed]/20 flex items-center justify-center mb-6 mx-auto">
-                    <Play size={80} className="text-[#7c3aed]"/>
-                  </div>
-                  <h3 className="text-2xl font-bold text-white">Video Tutorial Player</h3>
-                  <p className="text-zinc-400 mt-2 text-sm">Click a tutorial to play</p>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <h3 className="text-2xl font-bold mb-6 text-white flex items-center gap-3"><BookOpen size={24} className="text-[#7c3aed]"/>Tutorial Library</h3>
-                {[
-                  {title:'Getting Started with MandaStrong', time:'5:30', level:'Beginner'},
-                  {title:'Multi-Track Timeline Editing',     time:'12:45',level:'Intermediate'},
-                  {title:'Professional Color Grading',       time:'18:20',level:'Advanced'},
-                  {title:'Audio Mixing Masterclass',         time:'15:10',level:'Intermediate'},
-                  {title:'Enhancement Studio Deep Dive',     time:'22:00',level:'Advanced'},
-                  {title:'Export & Optimization',            time:'8:15', level:'Beginner'},
-                ].map((tut,i) => (
-                  <button key={i} onClick={() => addToast(`▶️ Playing: ${tut.title}`,'info')}
-                    className="w-full bg-zinc-950 border-2 border-[#7c3aed]/30 p-5 rounded-2xl hover:bg-[#7c3aed]/10 hover:border-[#7c3aed] cursor-pointer transition text-left">
-                    <div className="flex items-center gap-3 mb-2">
-                      <FileVideo size={18} className="text-[#7c3aed]"/>
-                      <h4 className="font-bold flex-1 text-white">{tut.title}</h4>
-                    </div>
-                    <div className="flex gap-3 text-xs text-zinc-400">
-                      <span>⏱ {tut.time}</span><span>•</span>
-                      <span className="bg-[#7c3aed] px-2 py-0.5 rounded text-white font-bold">{tut.level}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── PAGE 19  TERMS ── */}
-        {page === 19 && (
-          <div className="min-h-screen p-8 pt-20 pb-40 max-w-5xl mx-auto fade-up">
-            <h1 className="text-5xl font-black uppercase text-[#7c3aed] mb-4 text-center flex items-center justify-center gap-4">
-              <Shield size={48}/>Terms of Service
-            </h1>
-            <p className="text-center text-zinc-400 mb-12 text-lg">Last Updated: February 2026</p>
-            <div className="space-y-6">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: '1px', background: 'var(--border)', marginBottom: '3rem' }}>
               {[
-                {title:'1. Acceptance of Terms',    body:'By accessing MandaStrong Studio you agree to these Terms. They form a legally binding agreement between you and MandaStrong Studio.'},
-                {title:'2. Service Description',    body:'MandaStrong Studio provides cloud-based video editing and AI content creation tools, provided "as is". We may modify or discontinue features with notice.'},
-                {title:'3. Accounts & Subscriptions',body:'Keep your credentials confidential. Plans bill monthly and auto-renew unless cancelled. Refunds within 30 days of initial purchase only.'},
-                {title:'4. Intellectual Property',  body:'Studio plan holders receive full commercial rights. Basic/Pro are personal use only. You retain ownership of uploaded content.'},
-                {title:'5. Acceptable Use',          body:'Do not create content that violates laws, infringes IP, contains malware, promotes hatred or violence, or harms minors.'},
-                {title:'6. Privacy & Data',          body:'We follow our Privacy Policy and applicable laws. Content is encrypted in transit and at rest. We do not sell personal data.'},
-                {title:'7. Limitation of Liability', body:'TO THE MAXIMUM EXTENT PERMITTED BY LAW, MANDASTRONG STUDIO IS NOT LIABLE FOR INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES.'},
-                {title:'8. Social Mission',          body:'We donate a portion of revenue to anti-bullying and veteran mental health causes.'},
-                {title:'9. Termination',             body:'Cancel anytime via account settings. Upon termination you have 30 days to export your content before permanent deletion.'},
-                {title:'10. Contact & Support',      body:'Questions? Visit MandaStrong1.Etsy.com or use Agent Grok (page 20) for 24/7 in-app support.'},
-              ].map(s => (
-                <div key={s.title} className="bg-zinc-950 border-2 border-[#7c3aed]/30 rounded-2xl p-6">
-                  <h3 className="text-lg font-black text-[#7c3aed] mb-2">{s.title}</h3>
-                  <p className="text-zinc-300 leading-relaxed text-sm">{s.body}</p>
+                { icon: Upload, label: 'BROWSE FILES', sub: 'Video • Audio • Images', action: () => fileInputRef.current?.click(), color: 'var(--purple-bright)' },
+                { icon: FileVideo, label: isRecording ? 'STOP RECORDING' : 'RECORD SCREEN', sub: isRecording ? 'Click to stop & save' : 'Capture your screen live', action: () => isRecording ? stopScreenRecord() : startScreenRecord(), color: isRecording ? '#EF4444' : 'var(--silver)' },
+                { icon: Globe, label: 'IMPORT FROM URL', sub: 'Direct video link', action: () => setShowUrlImport(true), color: 'var(--silver)' },
+              ].map(({ icon: Icon, label, sub, action, color }) => (
+                <div key={label} onClick={action}
+                  style={{ padding: '2.5rem', textAlign: 'center', cursor: 'pointer', background: 'var(--panel)', transition: 'all 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'rgba(107,33,168,0.1)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'var(--panel)')}>
+                  <Icon size={32} style={{ color, marginBottom: '1rem' }} />
+                  <div className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.15em', color: 'var(--text)', marginBottom: '0.3rem' }}>{label}</div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>{sub}</div>
                 </div>
               ))}
             </div>
-            <div className="mt-10 text-center">
-              <button onClick={() => { addToast('✅ Terms accepted!','success'); goTo(4); }}
-                className="bg-[#7c3aed] px-20 py-5 rounded-full font-black uppercase text-2xl hover:bg-[#6d28d9] transition">
-                ACCEPT &amp; CONTINUE
-              </button>
-            </div>
-          </div>
-        )}
 
-        {/* ── PAGE 20  AGENT GROK ── */}
-        {page === 20 && (
-          <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
-            <h1 className="text-5xl font-black uppercase mb-12 flex items-center gap-4 text-white">
-              <MessageCircle size={48} className="text-[#7c3aed]"/>AGENT GROK — 24/7 HELP
-            </h1>
-            <div className="grid md:grid-cols-2 gap-12 max-w-7xl mx-auto">
-              <div>
-                <div className="bg-gradient-to-br from-[#7c3aed] to-[#6d28d9] rounded-3xl p-8 mb-8 border-4 border-[#a78bfa]">
-                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-3xl font-black">G</div>
-                    <div>
-                      <h3 className="text-2xl font-black text-white">Agent Grok</h3>
-                      <p className="text-white/80 flex items-center gap-2 font-bold">
-                        <span className="w-2 h-2 rounded-full bg-green-400 inline-block animate-pulse"/>Online &amp; Ready
-                      </p>
-                    </div>
-                    <div className="ml-auto bg-yellow-500 text-black px-4 py-2 rounded-full text-xs font-black">⚡ INSTANT</div>
+            {/* URL Import Modal */}
+            {showUrlImport && (
+              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+                <div className="panel" style={{ maxWidth: '500px', width: '100%', padding: '2rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <div className="font-display" style={{ fontSize: '1.5rem' }}>IMPORT FROM URL</div>
+                    <button onClick={() => setShowUrlImport(false)} style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-dim)', padding: '0.3rem', cursor: 'pointer' }}><X size={14} /></button>
                   </div>
-                </div>
-                <div className="bg-zinc-950 border-2 border-[#7c3aed] rounded-3xl p-8 mb-8">
-                  <div className="bg-white text-black p-5 rounded-2xl rounded-tl-none">
-                    <p className="font-bold">Hello! I am Agent Grok. I can help with uploads, AI generation, timeline editing, enhancements, audio mixing, rendering, and exports. What do you need?</p>
-                  </div>
-                </div>
-                <div className="bg-zinc-950 border-2 border-[#7c3aed] rounded-3xl p-6">
-                  <input type="text" placeholder="Ask anything..." className="w-full bg-black border border-[#7c3aed] p-4 rounded-xl text-white outline-none mb-4 font-bold"/>
-                  <button onClick={() => addToast('📨 Message sent to Agent Grok!','success')}
-                    className="w-full bg-[#7c3aed] py-4 rounded-xl font-black uppercase hover:bg-[#6d28d9] transition">SEND MESSAGE</button>
-                </div>
-              </div>
-              <div className="space-y-8">
-                <div>
-                  <h3 className="text-2xl font-bold mb-6 flex items-center gap-3 text-white"><HelpCircle size={24} className="text-[#7c3aed]"/>Common Questions</h3>
-                  <div className="space-y-3">
-                    {['How do I upload files?','How does AI generation work?','How do I add clips to timeline?',
-                      'What enhancements are available?','How do I adjust audio levels?',
-                      'What export qualities can I use?','How do I download my video?','Can I share to community?'
-                    ].map(q => (
-                      <button key={q} onClick={() => addToast(`💬 "${q}" — Agent Grok is answering...`,'info')}
-                        className="w-full bg-zinc-950 border-2 border-zinc-800 p-4 rounded-xl text-left hover:bg-[#7c3aed]/10 hover:border-[#7c3aed] text-sm font-bold transition text-white">
-                        {q}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="bg-gradient-to-br from-[#7c3aed]/20 to-transparent border-2 border-[#7c3aed] rounded-3xl p-8">
-                  <h3 className="text-xl font-bold mb-4 text-white">System Status</h3>
-                  <div className="space-y-3">
-                    {['File Upload','AI Generation','Timeline Editor','Enhancement Tools','Audio Mixer','Render Engine'].map(s => (
-                      <div key={s} className="flex justify-between items-center bg-black/50 p-4 rounded-xl">
-                        <span className="font-bold text-white">{s}</span>
-                        <span className="text-green-400 flex items-center gap-2 font-bold text-sm">
-                          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block"/>Operational
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── PAGE 21  COMMUNITY HUB ── */}
-        {page === 21 && (
-          <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
-            <div className="flex justify-between items-center mb-12">
-              <h1 className="text-5xl font-black uppercase text-white">👥 COMMUNITY HUB</h1>
-              <button onClick={() => fileInputRef.current?.click()}
-                className="bg-[#7c3aed] px-8 py-4 rounded-xl font-bold flex items-center gap-3 hover:bg-[#6d28d9] transition">
-                <Upload size={20}/>UPLOAD YOUR MOVIE
-              </button>
-            </div>
-            <div className="grid md:grid-cols-2 gap-8 max-w-7xl mx-auto">
-              {communityPosts.map(post => (
-                <div key={post.id} className="bg-zinc-950 border-2 border-[#7c3aed]/30 rounded-3xl overflow-hidden hover:border-[#7c3aed] hover:scale-[1.01] transition">
-                  <div className="aspect-video bg-gradient-to-br from-[#7c3aed]/20 to-[#6d28d9]/20 flex items-center justify-center text-8xl border-b-2 border-[#7c3aed]/30">
-                    {post.emoji}
-                  </div>
-                  <div className="p-8">
-                    <h3 className="text-2xl font-black mb-4 text-white">{post.title}</h3>
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="w-10 h-10 rounded-full bg-[#7c3aed] flex items-center justify-center font-black">{post.user[0]}</div>
-                      <div>
-                        <div className="font-bold text-white">{post.user}</div>
-                        <div className="text-xs text-zinc-500">2 hours ago</div>
-                      </div>
-                    </div>
-                    <div className="flex gap-8 mb-6">
-                      <button onClick={() => handleLike(post.id)} className="flex items-center gap-2 text-white font-bold hover:text-blue-400 transition">
-                        <ThumbsUp className="text-blue-400" size={18}/> {post.likes.toLocaleString()}
-                      </button>
-                      <button onClick={() => handleLove(post.id)} className="flex items-center gap-2 text-white font-bold hover:text-red-400 transition">
-                        <Heart className="text-red-400" size={18}/> {post.loves.toLocaleString()}
-                      </button>
-                    </div>
-                    {post.comments?.length > 0 && (
-                      <div className="mb-4 space-y-2">
-                        {post.comments.map((c:any) => (
-                          <div key={c.id} className="bg-black/50 p-3 rounded-xl">
-                            <span className="font-bold text-sm text-[#7c3aed]">{c.user}</span>
-                            <p className="text-sm text-white mt-1">{c.text}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <textarea
-                      value={newComment[post.id]||''}
-                      onChange={e => setNewComment(prev => ({...prev,[post.id]:e.target.value}))}
-                      className="w-full p-4 bg-black border-2 border-[#7c3aed]/30 rounded-xl text-white text-sm mb-4 outline-none resize-none focus:border-[#7c3aed] transition"
-                      placeholder="Add a comment..." rows={2}
-                    />
-                    <button onClick={() => handleComment(post.id)}
-                      className="bg-[#7c3aed] px-8 py-3 rounded-xl font-black uppercase hover:bg-[#6d28d9] transition text-sm">
-                      POST COMMENT
+                  <div className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--text-dim)', marginBottom: '0.5rem', letterSpacing: '0.1em' }}>DIRECT VIDEO URL (MP4, WebM, MOV)</div>
+                  <input type="url" value={importUrl} onChange={e => setImportUrl(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleImportUrl()}
+                    placeholder="https://example.com/video.mp4"
+                    style={{ display: 'block', width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.75rem 1rem', fontFamily: 'DM Mono', fontSize: '0.9rem', marginBottom: '1.5rem', outline: 'none' }}
+                    onFocus={e => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}
+                    onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.06)'} />
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={() => setShowUrlImport(false)} className="btn-secondary" style={{ flex: 1 }}>CANCEL</button>
+                    <button onClick={handleImportUrl} className="btn-primary" style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                      <Globe size={14} /> IMPORT VIDEO
                     </button>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Upload progress */}
+            {uploadProgress !== null && (
+              <div className="panel" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span className="font-mono" style={{ fontSize: '0.95rem', color: 'var(--text-dim)' }}>UPLOADING...</span>
+                  <span className="font-mono" style={{ fontSize: '0.95rem', color: 'var(--purple-bright)' }}>{uploadProgress}%</span>
+                </div>
+                <div style={{ height: '2px', background: 'rgba(255,255,255,0.05)' }}>
+                  <div style={{ height: '100%', background: 'var(--purple-mid)', width: `${uploadProgress}%`, transition: 'width 0.3s' }} />
+                </div>
+              </div>
+            )}
+
+            {/* Media library */}
+            {mediaLibrary.length > 0 && (
+              <div>
+                <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.2em', color: 'var(--text-dim)', marginBottom: '1rem' }}>MEDIA LIBRARY</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border)' }}>
+                  {mediaLibrary.map(asset => (
+                    <div key={asset.id} className="panel" style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <FileVideo size={14} style={{ color: 'var(--purple-bright)', flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: '0.95rem', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{asset.name}</div>
+                        <div className="font-mono" style={{ fontSize: '1rem', color: 'var(--text-dim)', letterSpacing: '0.1em' }}>{asset.type.toUpperCase()} • {asset.size}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button onClick={() => {
+                          setTimeline(prev => ({ ...prev, video: [...prev.video, asset] }));
+                          addToast('Added to timeline', 'success');
+                        }} className="btn-secondary" style={{ padding: '0.2rem 0.5rem', fontSize: '1rem' }}>+ TIMELINE</button>
+                        <button onClick={() => setMediaLibrary(prev => prev.filter(a => a.id !== asset.id))}
+                          style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-dim)', padding: '0.2rem 0.4rem', cursor: 'pointer' }}>
+                          <Trash2 size={10} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* PAGE 12 — EDITOR SUITE */}
+        {page === 12 && (
+          <div style={{ minHeight: '100vh', padding: '5rem 2rem 8rem', maxWidth: '1000px', margin: '0 auto' }}>
+            <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.3em', color: 'var(--purple-bright)', marginBottom: '0.75rem' }}>PRODUCTION HUB</div>
+            <h1 className="font-display" style={{ fontSize: 'clamp(3rem,8vw,6rem)', marginBottom: '3rem' }}>EDITOR SUITE</h1>
+
+            {/* Duration */}
+            <div className="panel" style={{ padding: '2rem', marginBottom: '1px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.2em', color: 'var(--text-dim)' }}>MOVIE DURATION</div>
+                <div className="font-display" style={{ fontSize: '3rem', color: 'var(--purple-bright)', lineHeight: 1 }}>{duration} <span style={{ fontSize: '1rem', color: 'var(--text-dim)' }}>MIN</span></div>
+              </div>
+              <input type="range" min="0" max="180" value={duration} onChange={e => setDuration(Number(e.target.value))} style={{ width: '100%', marginBottom: '0.75rem' }} />
+              <div style={{ display: 'flex', gap: '1px', background: 'var(--border)' }}>
+                {[30, 60, 90, 120, 180].map(m => (
+                  <button key={m} onClick={() => setDuration(m)} className="font-mono"
+                    style={{ flex: 1, padding: '0.4rem', fontSize: '0.9rem', background: duration === m ? 'var(--purple)' : 'var(--deep)', color: duration === m ? 'white' : 'var(--text-dim)', border: 'none', cursor: 'pointer' }}>
+                    {m}m
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Suite links */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: '1px', background: 'var(--border)' }}>
+              {[
+                { icon: Database, label: 'MEDIA LIBRARY', sub: `${mediaLibrary.length} assets`, p: 11 },
+                { icon: Layers, label: 'TIMELINE EDITOR', sub: 'Multi-track editing', p: 13 },
+                { icon: Wand2, label: 'ENHANCEMENT STUDIO', sub: '60+ tools', p: 14 },
+                { icon: Volume2, label: 'AUDIO MIXER', sub: '4-channel mixing', p: 15 },
+                { icon: Zap, label: 'RENDER ENGINE', sub: 'Up to 8K output', p: 16 },
+                { icon: Eye, label: 'PREVIEW PLAYER', sub: 'Full-screen playback', p: 17 },
+              ].map(({ icon: Icon, label, sub, p }) => (
+                <button key={label} onClick={() => goTo(p)} className="panel"
+                  style={{ padding: '1.5rem', textAlign: 'left', border: '1px solid var(--border)', cursor: 'pointer', background: 'var(--panel)', transition: 'all 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(139,92,246,0.4)')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
+                  <Icon size={20} style={{ color: 'var(--purple-bright)', marginBottom: '0.75rem' }} />
+                  <div className="font-mono" style={{ fontSize: '0.95rem', letterSpacing: '0.1em', color: 'var(--text)', marginBottom: '0.2rem' }}>{label}</div>
+                  <div style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>{sub}</div>
+                </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* ── PAGE 22  THANK YOU ── */}
-        {page === 22 && <Page21 onNavigate={goTo} />}
+        {/* PAGE 13 — TIMELINE */}
+        {page === 13 && (
+          <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', paddingTop: '4rem', paddingBottom: '5rem' }}>
+            <div className="panel" style={{ padding: '1rem 1.5rem', borderLeft: 0, borderRight: 0, borderTop: 0, display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div className="font-display" style={{ fontSize: '1.5rem' }}>TIMELINE EDITOR</div>
+              <div className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--text-dim)', marginLeft: 'auto' }}>{duration} MIN PROJECT</div>
+            </div>
+
+            <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+              {/* Media panel */}
+              <div className="panel" style={{ width: '200px', flexShrink: 0, overflowY: 'auto', borderTop: 0, borderBottom: 0, padding: '1rem' }}>
+                <div className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.15em', color: 'var(--text-dim)', marginBottom: '0.75rem' }}>MEDIA POOL</div>
+                {mediaLibrary.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '1rem' }}>
+                    <Film size={16} style={{ color: 'var(--text-dim)', marginBottom: '0.4rem' }} />
+                    <div style={{ fontSize: '0.95rem', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>Upload media first</div>
+                    <button onClick={() => goTo(11)} className="btn-secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '1rem' }}>UPLOAD</button>
+                  </div>
+                ) : mediaLibrary.map(asset => (
+                  <div key={asset.id} draggable onDragStart={() => setDraggedItem(asset)}
+                    style={{ padding: '0.5rem', marginBottom: '1px', background: 'var(--deep)', border: '1px solid var(--border)', cursor: 'grab', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <FileVideo size={10} style={{ color: 'var(--purple-bright)', flexShrink: 0 }} />
+                    <div style={{ fontSize: '0.9rem', color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{asset.name}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Timeline tracks */}
+              <div style={{ flex: 1, overflowX: 'auto', padding: '1rem' }}>
+                {(['video', 'audio', 'text'] as const).map(track => (
+                  <div key={track} style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div className="font-mono" style={{ width: '50px', fontSize: '1rem', letterSpacing: '0.1em', color: 'var(--text-dim)', flexShrink: 0 }}>{track.toUpperCase()}</div>
+                    <div className="track-bar" style={{ flex: 1 }}
+                      onDragOver={e => e.preventDefault()}
+                      onDrop={() => {
+                        if (draggedItem) {
+                          setTimeline(prev => ({ ...prev, [track]: [...prev[track], { ...draggedItem }] }));
+                          setDraggedItem(null);
+                          addToast(`Added to ${track} track`, 'success');
+                        }
+                      }}>
+                      {timeline[track].map((clip, i) => (
+                        <div key={i} className="timeline-clip"
+                          style={{ left: `${i * 12}%`, width: '100px', background: track === 'video' ? 'rgba(107,33,168,0.6)' : track === 'audio' ? 'rgba(16,185,129,0.6)' : 'rgba(245,158,11,0.6)', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
+                          {clip.name.slice(0, 12)}
+                        </div>
+                      ))}
+                      {timeline[track].length === 0 && (
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span className="font-mono" style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.1)', letterSpacing: '0.2em' }}>DROP CLIPS HERE</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                <div style={{ marginTop: '2rem' }}>
+                  <button onClick={() => { goTo(16); setTimeout(() => handleRender(), 300); }} className="btn-primary" style={{ marginRight: '0.5rem' }}>
+                    → RENDER
+                  </button>
+                  <button onClick={() => { setTimeline({ video: [], audio: [], text: [] }); addToast('Timeline cleared', 'warning'); }} className="btn-secondary">
+                    CLEAR ALL
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PAGE 14 — ENHANCEMENT STUDIO */}
+        {page === 14 && (
+          <div style={{ minHeight: '100vh', padding: '5rem 2rem 8rem', maxWidth: '1200px', margin: '0 auto' }}>
+            <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.3em', color: 'var(--purple-bright)', marginBottom: '0.75rem' }}>NEURAL OPTIMIZATION</div>
+            <h1 className="font-display" style={{ fontSize: 'clamp(3rem,8vw,6rem)', marginBottom: '0.5rem' }}>ENHANCEMENT STUDIO</h1>
+            <p className="font-mono" style={{ fontSize: '0.95rem', color: 'var(--text-dim)', marginBottom: '2.5rem', letterSpacing: '0.1em' }}>{AI_TOOLS.Enhancement.length} PROFESSIONAL TOOLS</p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: '1px', background: 'var(--border)', marginBottom: '2rem' }}>
+              {AI_TOOLS.Enhancement.map((tool, i) => (
+                <button key={i} onClick={() => setSelectedEnhancement(tool)} className="tool-card" style={{ minHeight: '60px' }}>
+                  <Wand2 size={10} style={{ color: 'var(--purple-bright)', marginBottom: '0.3rem' }} />
+                  <div style={{ fontSize: '1rem', color: 'var(--text)', lineHeight: 1.2 }}>{tool}</div>
+                </button>
+              ))}
+            </div>
+
+            {selectedEnhancement && (
+              <div className="panel panel-active" style={{ padding: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                  <div className="font-display" style={{ fontSize: '1.5rem', color: 'var(--purple-bright)' }}>{selectedEnhancement}</div>
+                  <button onClick={() => setSelectedEnhancement(null)} style={{ background: 'none', border: '1px solid var(--border)', color: 'var(--text-dim)', padding: '0.25rem 0.5rem', cursor: 'pointer' }}>
+                    <X size={14} />
+                  </button>
+                </div>
+                {Object.entries(enhancementSettings).map(([key, value]) => (
+                  <div key={key} style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
+                      <span className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.1em', color: 'var(--text-dim)', textTransform: 'uppercase' }}>{key}</span>
+                      <span className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--purple-bright)' }}>{value}%</span>
+                    </div>
+                    <input type="range" min="0" max="100" value={value}
+                      onChange={e => setEnhancementSettings(prev => ({ ...prev, [key]: Number(e.target.value) }))}
+                      style={{ width: '100%' }} />
+                  </div>
+                ))}
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
+                  <button onClick={() => { addToast(`Applying ${selectedEnhancement}...`, 'info'); setTimeout(() => { setSelectedEnhancement(null); addToast('Enhancement applied!', 'success'); }, 2000); }}
+                    className="btn-primary" style={{ flex: 2, padding: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    <CheckCircle size={14} /> APPLY ENHANCEMENT
+                  </button>
+                  <button onClick={() => setEnhancementSettings({ intensity: 75, clarity: 80, color: 70, brightness: 65 })} className="btn-secondary" style={{ flex: 1, padding: '0.75rem' }}>RESET</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* PAGE 15 — AUDIO MIXER */}
+        {page === 15 && (
+          <div style={{ minHeight: '100vh', padding: '5rem 2rem 8rem', maxWidth: '900px', margin: '0 auto' }}>
+            <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.3em', color: 'var(--purple-bright)', marginBottom: '0.75rem' }}>MIXING CONSOLE</div>
+            <h1 className="font-display" style={{ fontSize: 'clamp(3rem,8vw,6rem)', marginBottom: '3rem' }}>AUDIO MIXER</h1>
+
+            <div className="panel" style={{ padding: '2.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '1.5rem' }}>
+                {[
+                  { key: 'music', label: 'MUSIC', color: '#8B5CF6' },
+                  { key: 'voice', label: 'VOICE', color: '#A78BFA' },
+                  { key: 'sfx', label: 'SFX', color: '#F59E0B' },
+                  { key: 'master', label: 'MASTER', color: '#EF4444' },
+                ].map(ch => (
+                  <div key={ch.key} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+                    <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.15em', color: 'var(--text-dim)' }}>{ch.label}</div>
+                    {/* VU Meter */}
+                    <div style={{ width: '24px', height: '140px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                      <div style={{ width: '100%', background: `linear-gradient(to top, ${ch.color}, ${ch.color}aa)`, height: `${audioLevels[ch.key as keyof typeof audioLevels]}%`, transition: 'height 0.1s' }} />
+                    </div>
+                    <input type="range" min="0" max="100" value={audioLevels[ch.key as keyof typeof audioLevels]}
+                      onChange={e => setAudioLevels(prev => ({ ...prev, [ch.key]: Number(e.target.value) }))}
+                      style={{ writingMode: 'vertical-lr', direction: 'rtl', width: '30px', height: '120px', cursor: 'pointer' }} />
+                    <div className="font-display" style={{ fontSize: '1.5rem', color: ch.color }}>{audioLevels[ch.key as keyof typeof audioLevels]}</div>
+                    <div className="font-mono" style={{ fontSize: '1rem', color: 'var(--text-dim)' }}>%</div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1.5rem' }}>
+                <button onClick={() => { setAudioLevels({ music: 75, voice: 60, sfx: 50, master: 85 }); addToast('Levels reset', 'info'); }} className="btn-secondary" style={{ flex: 1, padding: '0.65rem' }}>RESET LEVELS</button>
+                <button onClick={() => addToast('Audio preset saved!', 'success')} className="btn-primary" style={{ flex: 1, padding: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                  <Save size={12} /> SAVE PRESET
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PAGE 16 — RENDER */}
+        {page === 16 && (
+          <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 2rem' }}>
+            <div style={{ maxWidth: '700px', width: '100%' }}>
+              <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.3em', color: 'var(--purple-bright)', marginBottom: '0.75rem' }}>FINAL OUTPUT</div>
+              <h1 className="font-display" style={{ fontSize: 'clamp(3rem,8vw,6rem)', marginBottom: '2rem' }}>RENDER FILM</h1>
+
+              <div className="panel" style={{ padding: '2.5rem', marginBottom: '1px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '2rem' }}>
+                  <div>
+                    <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.1em', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>EXPORT QUALITY</div>
+                    <select value={exportSettings.quality} onChange={e => setExportSettings(p => ({ ...p, quality: e.target.value }))}
+                      style={{ width: '100%', background: 'var(--deep)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.6rem 0.75rem', fontFamily: 'DM Mono', fontSize: '1rem', outline: 'none' }}>
+                      <option value="8K">8K — 4320p</option>
+                      <option value="4K">4K — 2160p</option>
+                      <option value="1080p">HD — 1080p</option>
+                      <option value="720p">SD — 720p</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.1em', color: 'var(--text-dim)', marginBottom: '0.5rem' }}>FORMAT</div>
+                    <select value={exportSettings.format} onChange={e => setExportSettings(p => ({ ...p, format: e.target.value }))}
+                      style={{ width: '100%', background: 'var(--deep)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.6rem 0.75rem', fontFamily: 'DM Mono', fontSize: '1rem', outline: 'none' }}>
+                      <option>MP4</option><option>MOV</option><option>AVI</option><option>WebM</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1px', background: 'var(--border)', marginBottom: '2rem' }}>
+                  {[
+                    { label: 'DURATION', value: `${duration} MIN` },
+                    { label: 'VIDEO CLIPS', value: timeline.video.length },
+                    { label: 'AUDIO TRACKS', value: timeline.audio.length },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="panel" style={{ padding: '1rem', textAlign: 'center' }}>
+                      <div className="font-mono" style={{ fontSize: '1rem', color: 'var(--text-dim)', letterSpacing: '0.1em', marginBottom: '0.3rem' }}>{label}</div>
+                      <div className="font-display" style={{ fontSize: '1.8rem', color: 'var(--purple-bright)' }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {rendering ? (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <span className="font-mono" style={{ fontSize: '0.95rem', color: 'var(--text-dim)' }}>RENDERING {exportSettings.quality} {exportSettings.format}...</span>
+                      <span className="font-mono" style={{ fontSize: '0.95rem', color: 'var(--purple-bright)' }}>{renderProgress}%</span>
+                    </div>
+                    <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', marginBottom: '0.5rem' }}>
+                      <div style={{ height: '100%', background: 'linear-gradient(90deg,var(--purple),var(--purple-bright))', width: `${renderProgress}%`, transition: 'width 0.3s', boxShadow: '0 0 10px var(--purple)' }} />
+                    </div>
+                    <div className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--text-dim)', textAlign: 'center' }}>Processing {duration} minutes of cinema...</div>
+                  </div>
+                ) : (
+                  <button onClick={handleRender} className="btn-primary" style={{ width: '100%', padding: '1rem', fontSize: '0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    <Zap size={16} /> START RENDER — {exportSettings.quality} {exportSettings.format}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PAGE 17 — PREVIEW */}
+        {page === 17 && (
+          <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', paddingTop: '4rem', paddingBottom: '5rem' }}>
+            <div className="panel" style={{ padding: '1rem 1.5rem', borderLeft: 0, borderRight: 0, borderTop: 0, display: 'flex', gap: '1rem', alignItems: 'center' }}>
+              <div className="font-display" style={{ fontSize: '1.5rem' }}>PREVIEW PLAYER</div>
+              {currentVideo && <div className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--purple-bright)' }}>● {currentVideo.name}</div>}
+            </div>
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', position: 'relative' }}>
+              {currentVideo ? (
+                <video controls style={{ maxWidth: '100%', maxHeight: '100%' }} src={currentVideo.url} />
+              ) : (
+                <div style={{ textAlign: 'center' }}>
+                  <Play size={48} style={{ color: 'rgba(139,92,246,0.3)', marginBottom: '1rem' }} />
+                  <div className="font-mono" style={{ fontSize: '1rem', color: 'var(--text-dim)', letterSpacing: '0.2em' }}>NO RENDER AVAILABLE</div>
+                  <button onClick={() => goTo(16)} className="btn-primary" style={{ marginTop: '1.5rem' }}>GO TO RENDER</button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* PAGE 18 — EXPORT */}
+        {page === 18 && (
+          <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5rem 2rem' }}>
+            <div style={{ maxWidth: '700px', width: '100%' }}>
+              <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.3em', color: 'var(--purple-bright)', marginBottom: '0.75rem' }}>DISTRIBUTION</div>
+              <h1 className="font-display" style={{ fontSize: 'clamp(3rem,8vw,6rem)', marginBottom: '2rem' }}>EXPORT</h1>
+
+              {currentVideo ? (
+                <div className="panel" style={{ padding: '2rem', marginBottom: '1rem', borderColor: 'rgba(16,185,129,0.3)' }}>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <CheckCircle size={24} style={{ color: 'var(--purple-bright)', flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontWeight: 700, marginBottom: '0.2rem' }}>{currentVideo.name}</div>
+                      <div className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--text-dim)' }}>{currentVideo.size} • {exportSettings.quality} • {exportSettings.format} • READY</div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                  <div className="panel" style={{ padding: '1.5rem', marginBottom: '1rem', textAlign: 'center' }}>
+                    <div className="font-mono" style={{ fontSize: '0.95rem', color: 'var(--text-dim)' }}>No film rendered yet —&nbsp;
+                      <button onClick={() => goTo(16)} style={{ background: 'none', border: 'none', color: 'var(--purple-bright)', cursor: 'pointer', fontFamily: 'DM Mono', fontSize: '0.95rem' }}>
+                        go to Render Engine →
+                      </button>
+                    </div>
+                  </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border)' }}>
+                {[
+                  { icon: Download, label: 'DOWNLOAD TO DEVICE', color: 'var(--purple)', action: () => { if (currentVideo) { const a = document.createElement('a'); a.href = currentVideo.url; a.download = currentVideo.name; a.click(); } else addToast('No render available', 'error'); } },
+                  { icon: Save, label: 'SAVE PROJECT FILE', color: '#A78BFA', action: () => {
+                    const projectData = { mediaLibrary, timeline, audioLevels, duration, exportSettings, savedAt: new Date().toISOString() };
+                    const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+                    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `MandaStrong_Project_${Date.now()}.json`; a.click();
+                    addToast('Project file downloaded!', 'success');
+                  }},
+                  { icon: Share2, label: 'SHARE TO COMMUNITY HUB', color: '#3B82F6', action: () => { addToast('Shared to Community!', 'success'); setTimeout(() => goTo(22), 800); } },
+                ].map(({ icon: Icon, label, color, action }) => (
+                  <button key={label} onClick={action}
+                    className="panel"
+                    style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', border: '1px solid var(--border)', cursor: 'pointer', background: 'var(--panel)', transition: 'all 0.15s', opacity: currentVideo ? 1 : 0.4 }}>
+                    <Icon size={18} style={{ color }} />
+                    <span className="font-mono" style={{ fontSize: '1rem', letterSpacing: '0.1em' }}>{label}</span>
+                    <ChevronRight size={14} style={{ color: 'var(--text-dim)', marginLeft: 'auto' }} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PAGE 19 — TUTORIALS */}
+        {page === 19 && (
+          <div style={{ minHeight: '100vh', padding: '5rem 2rem 8rem', maxWidth: '900px', margin: '0 auto' }}>
+            <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.3em', color: 'var(--purple-bright)', marginBottom: '0.75rem' }}>LEARNING CENTER</div>
+            <h1 className="font-display" style={{ fontSize: 'clamp(3rem,8vw,6rem)', marginBottom: '3rem' }}>TUTORIALS</h1>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border)' }}>
+              {[
+                { title: 'Getting Started — Platform Overview', time: '5:30', level: 'BEGINNER', url: 'https://www.youtube.com/results?search_query=video+editing+getting+started+beginners' },
+                { title: 'Importing & Managing Media Assets', time: '8:15', level: 'BEGINNER', url: 'https://www.youtube.com/results?search_query=how+to+import+media+video+editor' },
+                { title: 'Multi-Track Timeline Editing', time: '12:45', level: 'INTERMEDIATE', url: 'https://www.youtube.com/results?search_query=multi+track+timeline+video+editing+tutorial' },
+                { title: 'AI Tools — 600+ Features Explained', time: '18:20', level: 'INTERMEDIATE', url: 'https://www.youtube.com/results?search_query=AI+video+editing+tools+tutorial+2024' },
+                { title: 'Professional Color Grading with AI', time: '22:00', level: 'ADVANCED', url: 'https://www.youtube.com/results?search_query=professional+color+grading+tutorial+AI' },
+                { title: 'Audio Mixing & Sound Design', time: '15:10', level: 'INTERMEDIATE', url: 'https://www.youtube.com/results?search_query=audio+mixing+tutorial+video+production' },
+                { title: 'AI Enhancement Studio Deep Dive', time: '20:30', level: 'ADVANCED', url: 'https://www.youtube.com/results?search_query=AI+video+enhancement+upscaling+tutorial' },
+                { title: 'Render Settings & Export Optimization', time: '8:15', level: 'BEGINNER', url: 'https://www.youtube.com/results?search_query=video+export+render+settings+tutorial' },
+              ].map((tut, i) => (
+                <a key={i} href={tut.url} target="_blank" rel="noopener noreferrer"
+                  className="panel"
+                  style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1.5rem', border: '1px solid var(--border)', cursor: 'pointer', background: 'var(--panel)', textAlign: 'left', transition: 'all 0.15s', textDecoration: 'none', color: 'inherit' }}>
+                  <Play size={16} style={{ color: 'var(--purple-bright)', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, marginBottom: '0.2rem' }}>{tut.title}</div>
+                    <div className="font-mono" style={{ fontSize: '1rem', color: 'var(--text-dim)' }}>TUTORIAL {String(i+1).padStart(2,'0')} &nbsp;•&nbsp; {tut.time} &nbsp;•&nbsp; Opens on YouTube</div>
+                  </div>
+                  <div className="font-mono" style={{ fontSize: '1rem', padding: '0.2rem 0.5rem', background: tut.level === 'ADVANCED' ? 'rgba(239,68,68,0.15)' : tut.level === 'INTERMEDIATE' ? 'rgba(245,158,11,0.15)' : 'rgba(167,139,250,0.15)', color: tut.level === 'ADVANCED' ? '#EF4444' : tut.level === 'INTERMEDIATE' ? '#F59E0B' : 'var(--purple-bright)', letterSpacing: '0.1em' }}>{tut.level}</div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* PAGE 20 — TERMS */}
+        {page === 20 && (
+          <div style={{ minHeight: '100vh', padding: '5rem 2rem 8rem', maxWidth: '800px', margin: '0 auto' }}>
+            <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.3em', color: 'var(--purple-bright)', marginBottom: '0.75rem' }}>LEGAL</div>
+            <h1 className="font-display" style={{ fontSize: 'clamp(3rem,8vw,5rem)', marginBottom: '0.5rem' }}>TERMS OF SERVICE</h1>
+            <p className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--text-dim)', marginBottom: '3rem' }}>LAST UPDATED: FEBRUARY 2026</p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--border)', marginBottom: '2rem' }}>
+              {[
+                { t: 'Acceptance of Terms', b: 'By accessing MandaStrong Studio, you agree to be bound by these Terms of Service. These constitute a legally binding agreement between you and MandaStrong Studio.' },
+                { t: 'Service Description', b: 'MandaStrong Studio provides cloud-based AI video editing and content creation tools. The service is provided as-is and we reserve the right to modify any aspect with reasonable notice.' },
+                { t: 'User Accounts & Subscriptions', b: 'You are responsible for maintaining confidentiality of your account. Subscriptions bill monthly and auto-renew unless cancelled. Refunds within 30 days of initial purchase only.' },
+                { t: 'Intellectual Property & Content Rights', b: 'Studio plan subscribers receive full commercial rights. Basic and Pro plans receive personal use licenses. You retain ownership of content you upload.' },
+                { t: 'Acceptable Use Policy', b: 'You agree not to create or distribute content that violates laws, infringes IP rights, contains malicious code, promotes hate speech, or violates rights of minors.' },
+                { t: 'Privacy & Data Protection', b: 'We collect and process data per our Privacy Policy and applicable laws. Content is encrypted at rest and in transit. We do not sell personal data.' },
+                { t: 'Limitation of Liability', b: 'TO THE MAXIMUM EXTENT PERMITTED BY LAW, MANDASTRONG STUDIO SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES.' },
+                { t: 'Social Mission', b: 'MandaStrong Studio supports anti-bullying education and veterans mental health services. A portion of revenue is donated to these causes.' },
+                { t: 'Contact & Support', b: 'For questions contact us via MandaStrong1.Etsy.com or use Agent Grok (Page 21) available 24/7 within the application. For billing issues contact your Stripe receipt directly.' },
+              ].map(s => (
+                <div key={s.t} className="panel" style={{ padding: '1.5rem' }}>
+                  <div className="font-mono" style={{ fontSize: '0.95rem', letterSpacing: '0.1em', color: 'var(--purple-bright)', marginBottom: '0.5rem' }}>{s.t.toUpperCase()}</div>
+                  <p style={{ fontSize: '1rem', color: 'var(--text-dim)', lineHeight: 1.6 }}>{s.b}</p>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={() => { addToast('Terms accepted', 'success'); goTo(5); }} className="btn-primary" style={{ padding: '0.85rem 3rem' }}>
+              ACCEPT TERMS & ENTER
+            </button>
+          </div>
+        )}
+
+        {/* PAGE 21 — AGENT GROK */}
+        {page === 21 && (
+          <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', paddingTop: '4rem', paddingBottom: '5rem' }}>
+            <div className="panel" style={{ padding: '1rem 1.5rem', borderLeft: 0, borderRight: 0, borderTop: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--purple-bright)' }} className="animate-pulse" />
+              <div className="font-display" style={{ fontSize: '1.5rem' }}>AGENT GROK</div>
+              <span className="font-mono" style={{ fontSize: '1rem', color: 'var(--text-dim)' }}>24/7 PRODUCTION SUPPORT</span>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {grokChat.map((msg, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                  <div style={{
+                    maxWidth: '70%', padding: '0.75rem 1rem',
+                    background: msg.role === 'user' ? 'var(--purple)' : 'var(--panel)',
+                    border: `1px solid ${msg.role === 'user' ? 'rgba(139,92,246,0.3)' : 'var(--border)'}`,
+                    fontSize: '1rem', lineHeight: 1.5
+                  }}>
+                    {msg.role === 'agent' && <div className="font-mono" style={{ fontSize: '1rem', color: 'var(--purple-bright)', marginBottom: '0.3rem', letterSpacing: '0.1em' }}>AGENT GROK</div>}
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="panel" style={{ padding: '1rem', borderLeft: 0, borderRight: 0, borderBottom: 0, display: 'flex', gap: '0.5rem' }}>
+              <input type="text" value={grokMessage} onChange={e => setGrokMessage(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && sendGrokMessage()}
+                placeholder="Ask anything about MandaStrong Studio..."
+                style={{ flex: 1, background: 'var(--deep)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.6rem 1rem', fontFamily: 'Barlow', fontSize: '1rem', outline: 'none' }} />
+              <button onClick={sendGrokMessage} className="btn-primary" style={{ padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Send size={14} /> SEND
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* PAGE 22 — COMMUNITY HUB */}
+        {page === 22 && (
+          <div style={{ minHeight: '100vh', padding: '5rem 2rem 8rem', maxWidth: '1000px', margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '3rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.3em', color: 'var(--purple-bright)', marginBottom: '0.75rem' }}>CREATOR NETWORK</div>
+                <h1 className="font-display" style={{ fontSize: 'clamp(3rem,8vw,6rem)' }}>COMMUNITY HUB</h1>
+              </div>
+              <button onClick={() => fileInputRef.current?.click()} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.25rem' }}>
+                <Upload size={14} /> UPLOAD YOUR MOVIE
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: '1px', background: 'var(--border)' }}>
+              {communityPosts.map(post => (
+                <div key={post.id} className="panel" style={{ padding: '1.5rem' }}>
+                  <div style={{ aspectRatio: '16/9', background: 'var(--deep)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem', marginBottom: '1rem', border: '1px solid var(--border)' }}>
+                    {post.emoji}
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.5rem' }}>{post.title}</div>
+                  <div className="font-mono" style={{ fontSize: '0.9rem', color: 'var(--text-dim)', marginBottom: '1rem' }}>BY {post.user.toUpperCase()}</div>
+                  <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                    <button onClick={() => addToast('Liked!', 'success')} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.9rem', fontFamily: 'DM Mono' }}>
+                      <ThumbsUp size={12} style={{ color: '#3B82F6' }} /> {post.likes.toLocaleString()}
+                    </button>
+                    <button onClick={() => addToast('Loved!', 'success')} style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.9rem', fontFamily: 'DM Mono' }}>
+                      <Heart size={12} style={{ color: '#EF4444' }} /> {post.loves.toLocaleString()}
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input type="text" value={newComment[post.id] || ''} onChange={e => setNewComment(p => ({ ...p, [post.id]: e.target.value }))}
+                      placeholder="Comment..." style={{ flex: 1, background: 'var(--deep)', border: '1px solid var(--border)', color: 'var(--text)', padding: '0.4rem 0.6rem', fontSize: '0.9rem', outline: 'none' }} />
+                    <button onClick={() => { addToast('Comment posted!', 'success'); setNewComment(p => ({ ...p, [post.id]: '' })); }} className="btn-primary" style={{ padding: '0.4rem 0.75rem' }}>POST</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* PAGE 23 — THANK YOU */}
+        {page === 23 && (
+          <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(139,92,246,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(139,92,246,0.04) 1px,transparent 1px)', backgroundSize: '60px 60px', pointerEvents: 'none' }} />
+            <div className="font-mono" style={{ fontSize: '0.9rem', letterSpacing: '0.4em', color: 'var(--purple-bright)', marginBottom: '2rem' }}>THAT'S ALL FOLKS</div>
+            <h1 className="font-display" style={{ fontSize: 'clamp(4rem,15vw,12rem)', lineHeight: 0.85, marginBottom: '2rem', textShadow: '0 0 80px rgba(139,92,246,0.5)' }}>
+              MANDA<br />STRONG<br />STUDIO
+            </h1>
+            <blockquote style={{ maxWidth: '600px', fontSize: '1.1rem', fontWeight: 300, fontStyle: 'italic', color: 'var(--text-dim)', lineHeight: 1.7, marginBottom: '3rem' }}>
+              "Amanda's thank you to creators now and in the future.<br />Supporting cinematic innovation through our Veteran Fundraiser mission."
+            </blockquote>
+            <a href="https://MandaStrong1.Etsy.com" target="_blank" rel="noopener noreferrer"
+              className="font-display"
+              style={{ fontSize: 'clamp(1.5rem,5vw,3.5rem)', color: 'var(--purple-bright)', textDecoration: 'none', borderBottom: '2px solid var(--purple)', paddingBottom: '0.25rem', marginBottom: '3rem', display: 'block', transition: 'all 0.2s' }}>
+              MandaStrong1.Etsy.com
+            </a>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+              <button onClick={() => goTo(1)} className="btn-primary" style={{ padding: '0.85rem 2.5rem', fontSize: '0.95rem' }}>← HOME</button>
+              <button onClick={() => goTo(5)} className="btn-secondary" style={{ padding: '0.85rem 2.5rem', fontSize: '0.95rem' }}>BACK TO TOOLS</button>
+            </div>
+          </div>
+        )}
 
       </main>
     </div>
