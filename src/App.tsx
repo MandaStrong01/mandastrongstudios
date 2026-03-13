@@ -1,13 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Music, Mic, Zap, Sliders, Loader, Save, Share2 } from "lucide-react";
 
-// Simple self-contained addToast function
-const addToast = (message: string, type: "success" | "error" | "info" = "info") => {
-  // You can replace this with a proper toast library if you want later
-  console.log(`[${type.toUpperCase()}] ${message}`);
-  alert(message); // simple fallback for demo
-};
-
 export default function App() {
   const [page, setPage] = useState(1);
   const [audioLevels, setAudioLevels] = useState({ music: 75, voice: 50, sfx: 65, master: 80 });
@@ -17,6 +10,20 @@ export default function App() {
   const previewVideoRef = useRef<HTMLVideoElement>(null);
 
   const goTo = (p: number) => setPage(p);
+
+  // --- Toast function inside App.tsx ---
+  const addToast = (message: string, type: "success" | "info" | "error" = "info") => {
+    const toast = document.createElement("div");
+    toast.textContent = message;
+    toast.className = `fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg font-bold text-white ${
+      type === "success" ? "bg-green-600" : type === "error" ? "bg-red-600" : "bg-blue-600"
+    } animate-fade-in`;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add("animate-fade-out");
+      setTimeout(() => toast.remove(), 500);
+    }, 2000);
+  };
 
   const handleSavePreset = () => {
     setSavingPreset(true);
