@@ -1,35 +1,35 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Music, Mic, Zap, Sliders, Loader, Save, Share2 } from "lucide-react";
+import { addToast } from "./utils";
 
 export default function App() {
   const [page, setPage] = useState(1);
   const [audioLevels, setAudioLevels] = useState({ music: 75, voice: 50, sfx: 65, master: 80 });
   const [savingPreset, setSavingPreset] = useState(false);
+  const [duration, setDuration] = useState(90);
   const [exportSettings, setExportSettings] = useState({ quality: "1080p", format: "MP4" });
   const [currentVideo, setCurrentVideo] = useState<any>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
 
   const goTo = (p: number) => setPage(p);
 
-  // --- Page 1 fix: enable storage partitioning ---
+  // Page 1 fix: storage partition / service worker overlay
   useEffect(() => {
-    if (window.navigator.storage && window.navigator.storage.persist) {
-      window.navigator.storage.persist().then(granted => {
-        console.log("Storage persist granted:", granted);
-      });
-    }
+    const enableStorage = async () => {
+      if (navigator.storage && navigator.storage.persist) {
+        try {
+          const granted = await navigator.storage.persist();
+          console.log("Storage persist granted:", granted);
+        } catch (err) {
+          console.warn("Storage persist failed:", err);
+        }
+      }
+      // Hide the storage overlay if it exists
+      const overlay = document.getElementById("storage-partition-overlay");
+      if (overlay) overlay.style.display = "none";
+    };
+    enableStorage();
   }, []);
-
-  // --- Toast function (basic) ---
-  const addToast = (message: string, type: "success" | "info" | "error" = "info") => {
-    const toast = document.createElement("div");
-    toast.textContent = message;
-    toast.className = `fixed bottom-6 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg font-bold text-white ${
-      type === "success" ? "bg-green-600" : type === "error" ? "bg-red-600" : "bg-blue-600"
-    }`;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2000);
-  };
 
   const handleSavePreset = () => {
     setSavingPreset(true);
@@ -57,6 +57,24 @@ export default function App() {
   return (
     <div className="App bg-black text-white">
       <main>
+        {/* Page 1 – landing / initial page */}
+        {page === 1 && (
+          <div className="min-h-screen flex flex-col items-center justify-center fade-up p-8">
+            <h1 className="text-5xl font-black text-[#7c3aed] mb-6 text-center uppercase">
+              Welcome to MandaStrong Studio
+            </h1>
+            <p className="text-zinc-400 text-center mb-12">
+              Start creating your professional tutorial videos now.
+            </p>
+            <button
+              onClick={() => goTo(14)}
+              className="px-12 py-4 bg-[#7c3aed] text-white rounded-xl font-black uppercase hover:bg-[#6d28d9] transition"
+            >
+              GET STARTED
+            </button>
+          </div>
+        )}
+
         {/* Page 14 – Audio Mixer */}
         {page === 14 && (
           <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
@@ -147,12 +165,14 @@ export default function App() {
                 style={{ minHeight: "360px", background: "#000" }}
                 onCanPlay={() => {
                   if (previewVideoRef.current) {
-                    previewVideoRef.current.play().catch(() => {
-                      if (previewVideoRef.current) {
-                        previewVideoRef.current.muted = true;
-                        previewVideoRef.current.play();
-                      }
-                    });
+                    previewVideoRef.current
+                      .play()
+                      .catch(() => {
+                        if (previewVideoRef.current) {
+                          previewVideoRef.current.muted = true;
+                          previewVideoRef.current.play();
+                        }
+                      });
                   }
                 }}
               />
