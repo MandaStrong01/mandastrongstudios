@@ -21,27 +21,23 @@ export default function App() {
   const [page, setPage] = useState<number>(1);
   const [audioLevels, setAudioLevels] = useState<AudioLevels>({ music: 75, voice: 50, sfx: 65, master: 80 });
   const [savingPreset, setSavingPreset] = useState<boolean>(false);
-  const [exportSettings, setExportSettings] = useState({ quality: "1080p", format: "MP4" });
+  const [exportSettings] = useState({ quality: "1080p", format: "MP4" });
   const [currentVideo, setCurrentVideo] = useState<Video | null>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
 
   const goTo = (p: number) => setPage(p);
 
-  // Page 1 fix: persistent storage & hide overlay
+  // Page 1 storage partition fix
   useEffect(() => {
-    const enableStorage = async () => {
-      if (navigator.storage && navigator.storage.persist) {
-        try {
-          const granted = await navigator.storage.persist();
-          console.log("Persistent storage granted:", granted);
-        } catch (err) {
-          console.warn("Persistent storage failed:", err);
-        }
+    (async () => {
+      try {
+        if (navigator.storage?.persist) await navigator.storage.persist();
+      } catch {
+        console.warn("Persistent storage not available");
       }
       const overlay = document.getElementById("storage-partition-overlay");
       if (overlay) overlay.style.display = "none";
-    };
-    enableStorage();
+    })();
   }, []);
 
   const handleSavePreset = () => {
@@ -62,7 +58,7 @@ export default function App() {
     };
     setCurrentVideo(renderedVideo);
     addToast("🎬 Video rendered successfully!", "success");
-    setPage(16); // go to public video player
+    setPage(16);
   };
 
   const handleShare = () => addToast("🔗 Public link copied!", "success");
@@ -70,7 +66,7 @@ export default function App() {
   return (
     <div className="App bg-black text-white">
       <main>
-        {/* Page 1 – landing */}
+        {/* Page 1 */}
         {page === 1 && (
           <div className="min-h-screen flex flex-col items-center justify-center fade-up p-8">
             <h1 className="text-5xl font-black text-[#7c3aed] mb-6 text-center uppercase">
