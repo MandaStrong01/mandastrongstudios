@@ -161,3 +161,12 @@ export default function App() {
         )}
 
         {page > 1 && page < 22 && (
+          <div className="fixed bottom-10 left-0 w-full flex justify-center gap-10 z-[100]">
+            <button onClick={() => setPage(page - 1)} className="px-10 py-3 border border-white/20 hover:bg-white/5 transition uppercase tracking-widest text-[10px] font-black text-white">Back</button>
+            <button onClick={() => setPage(page + 1)} className="px-10 py-3 bg-purple-600 hover:bg-purple-500 transition uppercase tracking-widest text-[10px] font-black text-white">Next</button>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
