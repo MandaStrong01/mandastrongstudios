@@ -1,6 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Music, Mic, Zap, Sliders, Loader, Save, Share2 } from "lucide-react";
-import { addToast } from "./utils";
+
+// Minimal toast function, replace with your actual utils if needed
+const addToast = (message: string, type: "success" | "info" = "info") => {
+  console.log(`${type.toUpperCase()}: ${message}`);
+};
 
 interface AudioLevels {
   music: number;
@@ -19,9 +23,13 @@ interface Video {
 
 export default function App() {
   const [page, setPage] = useState<number>(1);
-  const [audioLevels, setAudioLevels] = useState<AudioLevels>({ music: 75, voice: 50, sfx: 65, master: 80 });
+  const [audioLevels, setAudioLevels] = useState<AudioLevels>({
+    music: 75,
+    voice: 50,
+    sfx: 65,
+    master: 80,
+  });
   const [savingPreset, setSavingPreset] = useState<boolean>(false);
-  const [exportSettings] = useState({ quality: "1080p", format: "MP4" });
   const [currentVideo, setCurrentVideo] = useState<Video | null>(null);
   const previewVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -35,8 +43,6 @@ export default function App() {
       } catch {
         console.warn("Persistent storage not available");
       }
-      const overlay = document.getElementById("storage-partition-overlay");
-      if (overlay) overlay.style.display = "none";
     })();
   }, []);
 
@@ -53,8 +59,8 @@ export default function App() {
       url: videoUrl,
       name: videoName,
       size: "150MB",
-      quality: exportSettings.quality,
-      format: exportSettings.format,
+      quality: "1080p",
+      format: "MP4",
     };
     setCurrentVideo(renderedVideo);
     addToast("🎬 Video rendered successfully!", "success");
@@ -64,11 +70,11 @@ export default function App() {
   const handleShare = () => addToast("🔗 Public link copied!", "success");
 
   return (
-    <div className="App bg-black text-white">
+    <div className="App bg-black text-white min-h-screen">
       <main>
         {/* Page 1 */}
         {page === 1 && (
-          <div className="min-h-screen flex flex-col items-center justify-center fade-up p-8">
+          <div className="flex flex-col items-center justify-center min-h-screen p-8 fade-up">
             <h1 className="text-5xl font-black text-[#7c3aed] mb-6 text-center uppercase">
               Welcome to MandaStrong Studio
             </h1>
@@ -87,7 +93,9 @@ export default function App() {
         {/* Page 14 – Audio Mixer */}
         {page === 14 && (
           <div className="min-h-screen p-8 pt-20 pb-40 fade-up">
-            <h1 className="text-5xl font-black text-[#7c3aed] mb-12 text-center uppercase">PROFESSIONAL AUDIO MIXER</h1>
+            <h1 className="text-5xl font-black text-[#7c3aed] mb-12 text-center uppercase">
+              PROFESSIONAL AUDIO MIXER
+            </h1>
             <div className="grid grid-cols-4 gap-6 max-w-6xl mx-auto">
               {[
                 { key: "music", label: "MUSIC", icon: Music },
@@ -115,7 +123,10 @@ export default function App() {
                     max={100}
                     value={audioLevels[ch.key as keyof AudioLevels]}
                     onChange={(e) =>
-                      setAudioLevels((prev) => ({ ...prev, [ch.key]: Number(e.target.value) }))
+                      setAudioLevels((prev) => ({
+                        ...prev,
+                        [ch.key]: Number(e.target.value),
+                      }))
                     }
                     className="w-full mb-4 cursor-pointer"
                   />
