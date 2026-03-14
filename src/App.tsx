@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import SubscriptionPricing from './components/SubscriptionPricing';
+import SubscriptionDashboard from './components/SubscriptionDashboard';
 
 const GOLD = "#d4a847";
 const GOLD2 = "#f0c870";
@@ -338,58 +340,15 @@ function PageShowcase({goTo}:{goTo:(n:number)=>void}) {
 }
 
 function PagePlans({goTo}:{goTo:(n:number)=>void}) {
+  const [view, setView] = useState<'pricing' | 'dashboard'>('pricing');
+
   return (
-    <div style={{maxWidth:1000,margin:"0 auto",padding:"28px 20px 60px"}}>
-      <div style={{background:`linear-gradient(90deg,transparent,rgba(212,168,71,.15),transparent)`,border:`1px solid ${GOLDDIM}`,padding:10,textAlign:"center",fontSize:12,letterSpacing:2,color:GOLD2,marginBottom:6}}>
-        🎬 SPECIAL OFFER — All New Studio Plan Subscribers Receive a 7-Day Free Trial
-      </div>
-      <div style={{textAlign:"center",fontSize:9,letterSpacing:3,color:TEXT3,marginBottom:20}}>NO CREDIT CARD REQUIRED TO START</div>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24,marginBottom:24}}>
-        {[{title:"EXISTING USER — SIGN IN",fields:["Email Address","Password"],btn:"SIGN IN TO STUDIO",extra:"🔒 Secured with 256-bit encryption"},
-          {title:"NEW CREATOR — 7-DAY FREE TRIAL",fields:["Your Name","Email Address","Create Password"],btn:"START FREE TRIAL",extra:"No credit card needed · Cancel anytime"}
-        ].map(box=>(
-          <div key={box.title} style={{background:BG3,border:`1px solid ${BORDER}`,padding:24}}>
-            <div style={S.cinzel(12,GOLD)}>{box.title}</div>
-            <div style={{marginTop:14}}>
-              {box.fields.map(f=>(
-                <div key={f} style={{marginBottom:10}}>
-                  <label style={{display:"block",fontSize:9,letterSpacing:2,color:TEXT2,marginBottom:4,textTransform:"uppercase"}}>{f}</label>
-                  <input type={f.toLowerCase().includes("pass")?"password":f.toLowerCase().includes("email")?"email":"text"} placeholder={f}/>
-                </div>
-              ))}
-              <Btn variant={box.btn.includes("START")?"gold":"out"} style={{width:"100%",justifyContent:"center",marginBottom:8}}>{box.btn}</Btn>
-              <div style={{fontSize:9,letterSpacing:1,color:TEXT3,textAlign:"center"}}>{box.extra}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div style={{textAlign:"center",margin:"16px 0"}}>
-        <div style={{fontSize:12,color:TEXT2,marginBottom:10}}>Browse all 600+ AI tools before committing. No account required.</div>
-        <Btn variant="ghost" onClick={()=>goTo(4)}>BROWSE AS GUEST →</Btn>
-      </div>
-      <div style={{height:1,background:`linear-gradient(90deg,transparent,${GOLDDIM},transparent)`,margin:"24px 0"}}/>
-      <div style={{textAlign:"center",marginBottom:16}}>
-        <div style={S.cinzel(11,GOLD2)}>🎬 Studio Plan: 7-Day Free Trial Included</div>
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16}}>
-        {[
-          {name:"CREATOR PLAN",price:"$20",period:"/mo",desc:"Perfect for hobbyists & family films",feats:["HD Export 1080p","100 AI Tools","10GB Storage","Email Support","Basic Timeline"],btn:"out",badge:null,trial:false},
-          {name:"PRO PLAN",price:"$30",period:"/mo",desc:"For serious independent filmmakers",feats:["4K Export","300 AI Tools","100GB Storage","Priority Support","Full Timeline","Commercial License"],btn:"gold",badge:"MOST POPULAR",trial:false},
-          {name:"STUDIO PLAN",price:"$50",period:"/mo",desc:"Full professional production suite",feats:["8K Export","600+ AI Tools","1TB Storage","24/7 Support","Full Rights","API Access","Collaboration","7-Day Free Trial"],btn:"gold",badge:"7-DAY FREE TRIAL",trial:true},
-        ].map(p=>(
-          <div key={p.name} style={{background:BG3,border:`1px solid ${p.badge==="MOST POPULAR"?GOLD:BORDER}`,borderWidth:p.badge==="MOST POPULAR"?2:1,padding:24,position:"relative"}}>
-            {p.badge && <div style={{position:"absolute",top:-1,right:12,background:p.trial?GOLDDIM:GOLD,color:"#000",fontSize:8,letterSpacing:2,fontWeight:700,padding:"3px 8px"}}>{p.badge}</div>}
-            <div style={S.cinzel(16,GOLD2)}>{p.name}</div>
-            <div style={{...S.cinzel(30,TEXT,900),margin:"10px 0"}}>{p.price}<span style={{fontSize:13,color:TEXT2,fontFamily:"'Rajdhani',sans-serif"}}>{p.period}</span></div>
-            <div style={{fontSize:10,color:TEXT3,marginBottom:10}}>{p.desc}</div>
-            <ul style={{listStyle:"none",marginBottom:20,display:"flex",flexDirection:"column",gap:6}}>
-              {p.feats.map(f=><li key={f} style={{fontSize:11,letterSpacing:1,color:TEXT2,paddingLeft:14,position:"relative"}}><span style={{position:"absolute",left:0,color:GOLD}}>▸</span>{f}</li>)}
-            </ul>
-            <Btn variant={p.btn as "gold"|"out"} style={{width:"100%",justifyContent:"center"}}>{p.trial?"START FREE TRIAL":"SUBSCRIBE NOW"}</Btn>
-          </div>
-        ))}
-      </div>
-      <div style={{textAlign:"center",fontSize:10,letterSpacing:1,color:TEXT3,marginTop:10}}>All plans include a 30-day money-back guarantee · Secure checkout via Stripe</div>
+    <div>
+      {view === 'pricing' ? (
+        <SubscriptionPricing onClose={() => goTo(0)} />
+      ) : (
+        <SubscriptionDashboard />
+      )}
     </div>
   );
 }
