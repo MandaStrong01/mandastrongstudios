@@ -1,1 +1,176 @@
-import React, { useState, useRef, useEffect } from "react"; import { Music, Mic, Zap, Sliders, Loader, Save, Share2 } from "lucide-react"; type VideoData = { url: string; name: string; size: string; quality: string; format: string; }; const addToast = ( message: string, type: "success" | "info" | "error" = "info" ) => { const toast = document.createElement("div"); toast.textContent = message; toast.style.position = "fixed"; toast.style.bottom = "20px"; toast.style.left = "50%"; toast.style.transform = "translateX(-50%)"; toast.style.background = type === "success" ? "#16a34a" : type === "error" ? "#dc2626" : "#2563eb"; toast.style.color = "#fff"; toast.style.padding = "12px 24px"; toast.style.borderRadius = "12px"; toast.style.fontWeight = "bold"; toast.style.zIndex = "9999"; document.body.appendChild(toast); setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000); }; export default function App() { const [page, setPage] = useState(1); const [audioLevels, setAudioLevels] = useState({ music: 75, voice: 50, sfx: 65, master: 80, }); const [savingPreset, setSavingPreset] = useState(false); const [exportSettings] = useState({ quality: "1080p", format: "MP4", }); const [currentVideo, setCurrentVideo] = useState<VideoData | null>(null); const previewVideoRef = useRef<HTMLVideoElement | null>(null); const goTo = (p: number) => setPage(p); useEffect(() => { if ("serviceWorker" in navigator) { navigator.serviceWorker.getRegistrations().then((regs) => { regs.forEach((reg) => reg.unregister()); }); } }, []); const handleSavePreset = () => { setSavingPreset(true); setTimeout(() => { setSavingPreset(false); addToast("Preset saved!", "success"); }, 1000); }; const handleRender = (videoUrl: string, videoName: string) => { const renderedVideo: VideoData = { url: videoUrl, name: videoName, size: "150MB", quality: exportSettings.quality, format: exportSettings.format, }; setCurrentVideo(renderedVideo); addToast("🎬 Video rendered successfully!", "success"); setPage(3); }; const handleShare = async () => { if (!currentVideo) return; try { await navigator.clipboard.writeText(currentVideo.url); addToast("🔗 Public link copied!", "success"); } catch { addToast("Copy failed", "error"); } }; return ( <div className="App bg-black text-white min-h-screen"> {/* LANDING PAGE */} {page === 1 && ( <div className="flex flex-col items-center justify-center text-center min-h-screen px-6"> <h1 className="text-6xl font-black text-[#7c3aed] mb-6"> MANDASTRONG STUDIO </h1> <p className="text-zinc-400 mb-10 max-w-xl"> The All-In-One AI Movie Creation Platform. Generate scenes, mix audio, render films and share instantly. </p> <div className="flex gap-4 flex-wrap justify-center"> <button onClick={() => goTo(2)} className="px-10 py-4 bg-[#7c3aed] rounded-xl font-black hover:bg-[#6d28d9]" > START CREATING </button> <button onClick={() => handleRender("/videos/tutorial.mp4", "MandaStrong Demo") } className="px-10 py-4 bg-blue-600 rounded-xl font-black hover:bg-blue-700" > RENDER DEMO </button> </div> </div> )} {/* AUDIO MIXER */} {page === 2 && ( <div className="p-10"> <h1 className="text-5xl text-center font-black text-[#7c3aed] mb-12"> AUDIO MIXER </h1> <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto"> {[ { key: "music", label: "MUSIC", icon: Music }, { key: "voice", label: "VOICE", icon: Mic }, { key: "sfx", label: "SFX", icon: Zap }, { key: "master", label: "MASTER", icon: Sliders }, ].map((ch) => ( <div key={ch.key} className="bg-zinc-900 rounded-2xl p-6 flex flex-col items-center" > <ch.icon size={32} className="text-[#7c3aed] mb-4" /> <input type="range" min="0" max="100" value={audioLevels[ch.key as keyof typeof audioLevels]} onChange={(e) => setAudioLevels((prev) => ({ ...prev, [ch.key]: Number(e.target.value), })) } className="w-full" /> <div className="mt-4 font-bold"> {audioLevels[ch.key as keyof typeof audioLevels]}% </div> </div> ))} </div> <div className="flex justify-center gap-4 mt-12"> <button onClick={() => { setAudioLevels({ music: 75, voice: 50, sfx: 65, master: 80, }); addToast("Levels reset"); }} className="px-8 py-4 bg-zinc-800 rounded-xl font-bold" > RESET </button> <button onClick={handleSavePreset} className="px-8 py-4 bg-[#7c3aed] rounded-xl font-bold flex items-center gap-2" > {savingPreset ? <Loader className="animate-spin" /> : <Save />} SAVE </button> <button onClick={() => handleRender("/videos/tutorial.mp4", "Rendered Film") } className="px-8 py-4 bg-green-600 rounded-xl font-bold" > RENDER FILM </button> </div> </div> )} {/* VIDEO PLAYER */} {page === 3 && currentVideo && ( <div className="flex flex-col items-center justify-center text-center p-6"> <h1 className="text-4xl font-black text-[#7c3aed] mb-6"> YOUR VIDEO IS READY </h1> <div className="max-w-4xl w-full mb-6"> <video ref={previewVideoRef} src={currentVideo.url} controls autoPlay loop playsInline className="w-full rounded-2xl" /> </div> <p className="text-zinc-400 mb-6"> {currentVideo.name} • {currentVideo.quality} {currentVideo.format} </p> <div className="flex gap-4 flex-wrap justify-center"> <button onClick={handleShare} className="px-8 py-4 bg-blue-600 rounded-xl font-bold flex items-center gap-2" > <Share2 size={18} /> SHARE </button> <button onClick={() => goTo(2)} className="px-8 py-4 bg-zinc-800 rounded-xl font-bold" > EDIT AGAIN </button> </div> </div> )} </div> ); }
+```tsx
+import React, { useState, useEffect, useRef } from "react";
+import { Music, Mic, Zap, Sliders, Loader, Save, Share2 } from "lucide-react";
+
+type VideoData = {
+  url: string;
+  name: string;
+  size: string;
+  quality: string;
+  format: string;
+};
+
+export default function App() {
+
+  const [page, setPage] = useState(1);
+
+  const [audioLevels, setAudioLevels] = useState({
+    music: 75,
+    voice: 50,
+    sfx: 65,
+    master: 80,
+  });
+
+  const [savingPreset, setSavingPreset] = useState(false);
+
+  const [currentVideo, setCurrentVideo] = useState<VideoData | null>(null);
+
+  const previewVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  const addToast = (message: string) => {
+    const el = document.createElement("div");
+
+    el.innerText = message;
+    el.style.position = "fixed";
+    el.style.bottom = "20px";
+    el.style.left = "50%";
+    el.style.transform = "translateX(-50%)";
+    el.style.background = "#7c3aed";
+    el.style.color = "white";
+    el.style.padding = "10px 20px";
+    el.style.borderRadius = "10px";
+    el.style.fontWeight = "bold";
+    el.style.zIndex = "9999";
+
+    document.body.appendChild(el);
+
+    setTimeout(() => {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, 2500);
+  };
+
+  const goTo = (p:number) => setPage(p);
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((reg) => reg.unregister());
+      });
+    }
+  }, []);
+
+  const handleSavePreset = () => {
+
+    setSavingPreset(true);
+
+    setTimeout(() => {
+      setSavingPreset(false);
+      addToast("Preset saved");
+    }, 800);
+
+  };
+
+  const handleRender = () => {
+
+    const video: VideoData = {
+      url: "/videos/tutorial.mp4",
+      name: "MandaStrong Demo",
+      size: "150MB",
+      quality: "1080p",
+      format: "MP4"
+    };
+
+    setCurrentVideo(video);
+    addToast("Video rendered");
+    setPage(3);
+
+  };
+
+  const handleShare = async () => {
+
+    if (!currentVideo) return;
+
+    try {
+
+      await navigator.clipboard.writeText(currentVideo.url);
+      addToast("Public link copied");
+
+    } catch {
+
+      addToast("Copy failed");
+
+    }
+
+  };
+
+  return (
+
+    <div className="min-h-screen bg-black text-white">
+
+      {page === 1 && (
+
+        <div className="flex flex-col items-center justify-center min-h-screen text-center px-6">
+
+          <h1 className="text-6xl font-black text-[#7c3aed] mb-6">
+            MANDASTRONG STUDIO
+          </h1>
+
+          <p className="text-zinc-400 mb-10 max-w-xl">
+            AI Movie Creation Platform
+          </p>
+
+          <button
+            onClick={()=>goTo(2)}
+            className="px-10 py-4 bg-[#7c3aed] rounded-xl font-bold hover:bg-[#6d28d9]"
+          >
+            START CREATING
+          </button>
+
+        </div>
+
+      )}
+
+      {page === 2 && (
+
+        <div className="p-10">
+
+          <h1 className="text-4xl text-center font-black text-[#7c3aed] mb-12">
+            AUDIO MIXER
+          </h1>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
+
+            {[
+              { key: "music", icon: Music },
+              { key: "voice", icon: Mic },
+              { key: "sfx", icon: Zap },
+              { key: "master", icon: Sliders }
+            ].map((ch)=>{
+
+              const Icon = ch.icon;
+
+              return(
+
+                <div key={ch.key} className="bg-zinc-900 p-6 rounded-2xl text-center">
+
+                  <Icon className="mx-auto mb-4 text-[#7c3aed]" size={32}/>
+
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={audioLevels[ch.key as keyof typeof audioLevels]}
+                    onChange={(e)=>{
+
+                      setAudioLevels({
+                        ...audioLevels,
+                        [ch.key]:Number(e.target.value)
+                      })
+
+                    }}
+                    className="w-full"
+                  />
+
+                  <div className="mt-3 font-bold">
+                    {audi
+```
