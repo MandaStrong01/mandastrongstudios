@@ -5,9 +5,7 @@ import React, { useEffect } from "react";
    ========================= */
 
 const GOLD = "#D4AF37";
-const GOLD_SOFT = "#C9A227";
 const BLACK = "#000000";
-const DARK = "#0A0A0A";
 const CARD = "#111111";
 const BORDER = "#1F1F1F";
 const TEXT = "#FFFFFF";
@@ -33,7 +31,7 @@ const GlobalStyle = () => {
         box-sizing: border-box;
       }
 
-      /* Buttons */
+      /* 🔥 BUTTONS */
       button {
         background: ${GOLD};
         color: ${BLACK};
@@ -49,9 +47,9 @@ const GlobalStyle = () => {
         opacity: 0.9;
       }
 
-      /* Inputs */
+      /* 🔥 INPUTS */
       input, textarea, select {
-        background: #111;
+        background: ${CARD};
         border: 1px solid ${BORDER};
         color: ${TEXT};
         padding: 10px;
@@ -59,7 +57,7 @@ const GlobalStyle = () => {
         outline: none;
       }
 
-      /* Cards / Panels */
+      /* 🔥 CARDS */
       .card {
         background: ${CARD};
         border: 1px solid ${BORDER};
@@ -67,18 +65,17 @@ const GlobalStyle = () => {
         padding: 16px;
       }
 
-      /* Titles */
+      /* 🔥 TITLES */
       .title {
         color: ${GOLD};
         font-weight: 700;
-        letter-spacing: 0.5px;
       }
 
       .muted {
         color: ${MUTED};
       }
 
-      /* Scrollbar */
+      /* 🔥 SCROLLBAR */
       ::-webkit-scrollbar {
         width: 6px;
       }
@@ -90,6 +87,10 @@ const GlobalStyle = () => {
     `;
 
     document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
   }, []);
 
   return null;
@@ -105,11 +106,8 @@ export default function App() {
       
       <GlobalStyle />
 
-      {/* =========================
-         🚨 YOUR ENTIRE APP RENDERS HERE
-         ========================= */}
-
-      {/* NOTHING ELSE CHANGED — YOUR EXISTING APP LOADS NORMALLY */}
+      {/* 🚨 YOUR REAL APP CONTENT STARTS BELOW */}
+      {/* DO NOT DELETE YOUR EXISTING COMPONENTS / ROUTES */}
 
     </div>
   );
