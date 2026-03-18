@@ -1,101 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Video, Heart, HelpCircle, Shield, CreditCard, Users } from 'lucide-react';
-
-export default function App() {
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // Stripe Success Redirect Logic
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('session_id')) {
-      setCurrentPage(3); // Land on Dashboard after payment
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-  }, []);
-
-  const next = () => setCurrentPage((p) => Math.min(p + 1, 21));
-  const back = () => setCurrentPage((p) => Math.max(p - 1, 1));
-
-  return (
-    <div className="min-h-screen bg-black text-[#D4AF37] flex flex-col font-serif selection:bg-[#D4AF37] selection:text-black">
-      {/* 100% Match Header */}
-      <header className="border-b border-[#D4AF37] p-6 text-center bg-black sticky top-0 z-50">
-        <h1 className="text-3xl md:text-5xl font-bold tracking-[0.2em] uppercase mb-2">Manda Strong Studio</h1>
-        <p className="text-[10px] tracking-[0.3em] uppercase opacity-80">600+ AI TOOLS • 8K EXPORT • 3-HOUR FILMS</p>
-      </header>
-
-      <main className="flex-grow flex flex-col items-center justify-center p-8">
-        {currentPage === 1 && (
-          <div className="text-center animate-in fade-in duration-700">
-            <div className="border-[4px] border-[#D4AF37] w-40 h-40 md:w-56 md:h-56 flex items-center justify-center mx-auto mb-12 bg-black">
-              <span className="text-8xl md:text-9xl font-bold">G</span>
-            </div>
-            <button onClick={next} className="bg-[#D4AF37] text-black px-12 py-4 text-xl font-bold uppercase tracking-widest hover:scale-105 transition-transform flex items-center gap-3 mx-auto">
-              Start Creating <Play size={24} fill="black" />
-            </button>
-          </div>
-        )}
-
-        {currentPage === 2 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl">
-            {[ {name: 'Creator', price: 20}, {name: 'Pro', price: 30}, {name: 'Studio', price: 50} ].map((plan, i) => (
-              <div key={i} className={`border ${i === 2 ? 'border-[5px]' : 'border'} border-[#D4AF37] p-10 text-center bg-black transition-all hover:bg-[#0a0a0a]`}>
-                <h3 className="text-2xl font-bold uppercase mb-6">{plan.name} Plan</h3>
-                <p className="text-5xl font-bold mb-8">${plan.price} <span className="text-sm block opacity-70">Monthly</span></p>
-                <button className={`w-full py-4 font-bold uppercase border-2 border-[#D4AF37] tracking-widest ${i >= 1 ? 'bg-[#D4AF37] text-black' : 'hover:bg-[#D4AF37] hover:text-black'}`}>
-                  {i === 2 ? 'Start Free Trial' : 'Subscribe Now'}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {currentPage === 3 && (
-          <div className="w-full max-w-6xl text-center">
-            <h2 className="text-2xl font-bold mb-12 uppercase tracking-[0.4em]">Examples Made By MandaStrong Studio</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[1, 2, 3].map((v) => (
-                <div key={v} className="border-2 border-[#D4AF37] aspect-video bg-[#050505] flex flex-col items-center justify-center p-8 group cursor-pointer hover:border-white transition-colors">
-                  <Video size={56} className="mb-6 opacity-40 group-hover:opacity-100 transition-opacity" />
-                  <div className="border border-dashed border-[#D4AF37] w-full py-3 text-xs uppercase tracking-widest">Upload Film</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {currentPage === 21 && (
-          <div className="w-full max-w-4xl text-center animate-in zoom-in duration-500">
-            <div className="border-2 border-[#D4AF37] mb-8 bg-black aspect-video flex items-center justify-center relative overflow-hidden">
-               <video className="absolute inset-0 w-full h-full object-cover opacity-80" autoPlay muted loop>
-                 <source src="/thatsallfolks.mp4" type="video/mp4" />
-               </video>
-               <div className="relative z-10 bg-black/60 p-4 border border-[#D4AF37] uppercase tracking-[0.5em] font-bold">Playing: thatsallfolks.mp4</div>
-            </div>
-            <h2 className="text-5xl font-bold mb-6 italic tracking-tight">That's All Folks!</h2>
-            <div className="border-2 border-[#D4AF37] p-10 bg-black space-y-6">
-              <p className="text-sm uppercase leading-relaxed tracking-wider">
-                Storytelling should have no gatekeepers. Thank you for being part of this mission.
-              </p>
-              <div className="h-[1px] bg-[#D4AF37] w-1/2 mx-auto"></div>
-              <p className="font-bold text-lg tracking-widest uppercase">Supporting Our Heroes</p>
-              <p className="text-[11px] uppercase opacity-80">All Etsy Store proceeds benefit Veterans Mental Health Services.</p>
-            </div>
-          </div>
-        )}
-      </main>
-
-      <footer className="border-t border-[#D4AF37] p-8 text-center bg-black">
-        <div className="flex justify-center items-center gap-12 mb-6">
-          <button onClick={back} className="border-2 border-[#D4AF37] px-8 py-2 uppercase text-xs font-bold hover:bg-[#D4AF37] hover:text-black transition-colors">Back</button>
-          <span className="text-xs uppercase tracking-[0.3em] font-bold">Page {currentPage} / 21</span>
-          <button onClick={next} className="border-2 border-[#D4AF37] px-8 py-2 uppercase text-xs font-bold hover:bg-[#D4AF37] hover:text-black transition-colors">Next</button>
-        </div>
-        <div className="space-y-2 opacity-90">
-          <p className="text-xs uppercase tracking-widest font-bold text-white">Author Of Doxy The School Bully</p>
-          <p className="text-[10px] uppercase tracking-[0.2em] italic text-[#D4AF37]">MandaStrong1.Etsy.com</p>
-        </div>
-      </footer>
-    </div>
-  );
-}
+Prompts for AI Video/Image Generation
+Prompt 1: A chaotic digital vortex of purple, black, and white pixels swirling into a futuristic city skyline, cinematic lighting, 8k, glitch art style.
+Prompt 2: A glowing humanoid silhouette standing in front of a wall of vintage television screens displaying static and binary code, dramatic shadows.
+Prompt 3: A close-up of a human hand reaching out to touch a holographic floating quill pen made of light, ethereal atmosphere, deep purple background.
+Prompt 4: A massive supercomputer shaped like a brain, pulsing with gold and white light, surrounded by floating film reels and camera lenses.
+Prompt 5: A sleek, professional dark-mode video editing interface projected in mid-air, a user’s hands manipulating glowing waveforms and video clips.
+Prompt 6: A split screen: one side a messy charcoal sketch, the other side a hyper-realistic cinematic landscape of a distant planet.
+Prompt 7: Visual representation of sound waves turning into physical objects—gold musical notes falling like rain into a dark, quiet forest.
+Prompt 8: A clock face melting into digital binary code, representing the flow of a 90-minute film, cinematic time-lapse style.
+Prompt 9: A beautiful digital error—a landscape where the sky is fracturing into geometric shapes and vibrant neon colors, "the perfect glitch."
+Prompt 10: A glowing heart beating inside a transparent glass robot, warm light radiating from within, symbol of human-AI connection.
+Prompt 11: A director’s chair sitting alone on a vast, polished black floor, under a single bright white spotlight, high contrast, professional.
+Prompt 12: A massive cinema screen in an empty theater, showing a blindingly bright white light that transitions into the MandaStrong Studio logo.
+Narrator Dialogue Script
+"Welcome to the future. It’s a bit of a disaster, isn’t it? A beautiful, pixelated, slightly confusing mess. But don’t panic—this is AI For Future: A Dummies Guide To Our Mess and Magic. Think of me as your cynical tour guide through the digital apocalypse. I’ve got the map; you’ve got the snacks. Try not to spill anything on the servers; they're sensitive.
+For decades, we were told AI would be this cold, calculated overlord that would turn us all into batteries. Turns out, it just wants to help you make movies so you don't have to deal with actual human actors and their 'feelings.' Total win, right? You don’t need a PhD, a tech-bro vest, or a six-figure budget. You just need an idea that isn’t... well, let’s just say we’re aiming for 'inspired' rather than 'accidental.'
+Chapter 1: The Digital Wake-Up Call. We’re pulling back the curtain on the 'Mess.' It’s that chaotic space where your raw ideas meet the algorithm. It’s messy, it’s loud, and it’s exactly where the best stories start.
+Chapter 2: The Myth of the Machine. We address the fear that technology replaces the artist. Spoiler alert: it doesn't. It just handles the rendering while you handle the soul.
+Chapter 3: Writing for the Future. This is where your prompt becomes a blueprint. Use your imagination—the one you used to have before you spent eight hours a day scrolling through cat videos.
+Chapter 4: The Generative Spark. Watch the AI build your scenes. It does the heavy lifting, the rendering, and the complicated math while you sit back and take 100% of the credit. It’s a very healthy, one-sided relationship.
+Chapter 5: Refining the Chaos. Enter the MandaStrong Editor. This is where you fix the mess, find the magic, and make it look like you actually knew what you were doing all along.
+Chapter 6: Visual Storytelling for Dummies. We break down the aesthetics. AI can give you a thousand suns, but it’s up to you to decide which one shines. That’s the 'Magic.'
+Chapter 7: The Sound of Silence. Adding the layers that breathe life into the pixels. If you bore the audience, that's on you. If the visuals are stunning, that's on the tools.
+Chapter 8: Pacing and Flow. Keeping them hooked for the full ninety minutes. It’s a marathon, not a sprint, and your narrative is the heartbeat.
+Chapter 9: The Glitch in the Matrix. Embracing the mistakes. Sometimes the 'Mess' is where the masterpiece is hiding. Don't be afraid of the noise; carve out the signal.
+Chapter 10: Human Connection. Reminding the world that behind every AI-generated frame is a human heart with something to say.
+Chapter 11: The Final Polish. Bringing the technical and the emotional into one seamless cinematic experience.
+Chapter 12: The Grand Finale. Whether you’re crafting a short clip or a 90-minute epic, you’ve reached the end of the guide and the beginning of your career. Now, are you going to keep staring at the cursor, or are we going to build something worth watching?
+MandaStrong Studio is engineered to transform your conceptual vision into high-fidelity cinematic content by integrating advanced generative models with professional-grade editing tools, ensuring your creative intent meets professional industry standards."
+Would you like me to create the images for these 12 prompts now?
