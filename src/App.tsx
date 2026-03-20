@@ -662,26 +662,4 @@ export default function App() {
   };
 
   return (
-    <>
-      <div style={{ background: BG2, borderBottom: `1px solid ${BORDER}`, position: "fixed", top: 0, left: 0, right: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 12px", gap: 8 }}>
-        <button onClick={() => go(Math.max(1, page - 1))} disabled={page === 1} style={{ color: GOLD, background: "none", border: "none", fontSize: 26, fontWeight: 900, cursor: "pointer", opacity: page === 1 ? 0.3 : 1, padding: "0 4px" }}>‹</button>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
-          <span style={{ color: GOLD, fontWeight: 800, fontSize: 13, letterSpacing: 1 }}>MandaStrong</span>
-          <span style={{ color: TEXT3, fontSize: 10 }}>{page}/{TOTAL}</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <button onClick={() => setShowQA(true)} style={{ background: BG3, border: `1px solid ${GOLDDIM}`, color: GOLD, borderRadius: 10, padding: "5px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>⚡ Quick</button>
-          {user.isAdmin && <button onClick={() => setShowAdmin(true)} style={{ background: "linear-gradient(135deg,#7f1d1d,#991b1b)", border: "1px solid #ef4444", color: "#ef4444", borderRadius: 10, padding: "5px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>🛡️ Admin</button>}
-          <div style={{ background: BG3, border: `1px solid ${BORDER}`, borderRadius: 10, padding: "4px 10px", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-            <span style={{ color: TEXT, fontSize: 11, fontWeight: 700 }}>{user.name.split(" ")[0]}</span>
-            <span style={{ color: GOLDDIM, fontSize: 9 }}>{user.plan}</span>
-          </div>
-          <button onClick={() => go(Math.min(TOTAL, page + 1))} disabled={page === TOTAL} style={{ color: GOLD, background: "none", border: "none", fontSize: 26, fontWeight: 900, cursor: "pointer", opacity: page === TOTAL ? 0.3 : 1, padding: "0 4px" }}>›</button>
-        </div>
-      </div>
-      {pages[page] ?? <P1 go={go} />}
-      {showQA && <QuickAccess go={go} onClose={() => setShowQA(false)} />}
-      {showAdmin && <AdminDashboard go={go} onClose={() => setShowAdmin(false)} />}
-    </>
-  );
-}
+    <
