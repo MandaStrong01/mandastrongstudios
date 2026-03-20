@@ -228,34 +228,3 @@ export default function App({
         style={{
           display: "flex",
           justifyContent: "space-between",
-          padding: "7px 16px",
-          background: BG2,
-          borderTop: `1px solid ${GOLDDIM}`,
-          fontSize: 9,
-        }}
-      >
-        <div>MANDASTRONG STUDIO 2026</div>
-
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            onClick={() => goTo(page - 1)}
-            style={S.btn("out")}
-          >
-            ◀
-          </button>
-
-          <span>PAGE {page + 1} / {TOTAL}</span>
-
-          <button
-            onClick={() => goTo(page + 1)}
-            style={S.btn("out")}
-          >
-            ▶
-          </button>
-        </div>
-      </footer>
-
-      {aiTool && <AIPanel tool={aiTool} onClose={() => setAiTool("")} />}
-    </div>
-  );
-}
