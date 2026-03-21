@@ -1,37 +1,3 @@
-letterSpacing: 4, textTransform: "uppercase", marginBottom: 12 }}>Cinema Intelligence Platform</div>
-        <h1 style={{ color: GOLD, fontSize: 42, fontWeight: 900, letterSpacing: 4, textTransform: "uppercase", marginBottom: 8, lineHeight: 1.1, animation: "glowPulse 3s ease-in-out infinite", textShadow: "0 0 20px #d4a847, 0 0 40px #8a6d22" }}>
-          MandaStrong<br />Studio
-        </h1>
-        <p style={{ color: TEXT2, fontSize: 13, marginBottom: 8, letterSpacing: 1 }}>Welcome To The All In One Make Your Own Longer Movies App!</p>
-        <div style={{ display: "flex", gap: 16, marginBottom: 32, marginTop: 8 }}>
-          {[["600+","AI Tools"],["8K","Cinema Export"],["3HRS","Max Duration"]].map(([v,l]) => (
-            <div key={l} style={{ background: "#0d0900", border: "1px solid " + GOLDDIM, borderRadius: 12, padding: "10px 16px", textAlign: "center" }}>
-              <div style={{ color: GOLD, fontWeight: 900, fontSize: 22 }}>{v}</div>
-              <div style={{ color: TEXT3, fontSize: 10, letterSpacing: 1 }}>{l}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ width: "100%", maxWidth: 320, display: "flex", flexDirection: "column", gap: 12 }}>
-          <GoldBtn onClick={() => go(3)}>Start Creating</GoldBtn>
-          <PurBtn onClick={() => go(2)}>Our Story</PurBtn>
-        </div>
-        <button onClick={() => go(19)} style={{ marginTop: 20, background: "transparent", border: "1px solid #333", borderRadius: 20, padding: "6px 16px", color: TEXT3, fontSize: 11, cursor: "pointer", letterSpacing: 1 }}>
-          Agent Grok &nbsp; <span style={{ color: "#2ecc71" }}>● ONLINE</span>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function P2({ go }: { go: (n: number) => void }) {
-  return (
-    <Page sparkle>
-      <div style={{ padding: "24px 20px", maxWidth: 500, margin: "0 auto" }}>
-        <SH>Our Story</SH>
-        <div style={{ background: BG3, border: "1px solid " + BORDER, borderRadius: 16, padding: 20, marginBottom: 16 }}>
-          <p style={{ color: TEXT2, lineHeight: 1.8 }}>MandaStrong Studio was born from a vision to give every storyteller - regardless of budget or technical skill - the power to create meaningful films. We combine cutting-edge AI tools with an intuitive studio interface so your ideas can become reality.</p>
-        </div>
-        <div style={{ background: BG3, border: "1px solid " + BORDER, borderRadius: 16, padding: 20, marginBottom: 16 }}>
           <p style={{ color: GOLD, fontWeight: 700, marginBottom: 6 }}>Our Mission</p>
           <p style={{ color: TEXT2, lineHeight: 1.7 }}>To educate, inspire, and bring awareness to critical issues like bullying prevention, social skills development, and humanity's collective growth - through the power of film.</p>
         </div>
