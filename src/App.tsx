@@ -880,4 +880,278 @@ function P21({ go }: { go: (n: number) => void }) {
           <div style={{ color:GOLD2, fontWeight:900, fontSize:18, marginBottom:16, textAlign:"center" }}>About Our Mission</div>
           <p style={{ color:TEXT, fontSize:15, lineHeight:2.0, marginBottom:16, textAlign:"center" }}><strong style={{ color:GOLD }}>MandaStrong Studio</strong> is more than a filmmaking platform. It is part of a comprehensive educational initiative designed to bring awareness and real action to schools regarding bullying prevention, social skills development, and the cultivation of humanity and empathy in our communities.</p>
           <div style={{ background:"rgba(0,0,0,0.4)", border:"1px solid "+GOLDDIM, borderRadius:16, padding:18, marginBottom:14 }}><p style={{ color:TEXT, fontSize:15, lineHeight:1.9, textAlign:"center" }}><strong style={{ color:GOLD }}>Fundraiser: Educational Program on Bullying Prevention &amp; Social Skills</strong> &mdash; Through this comprehensive program, we provide educational resources and movie-based content to help schools address these critical issues. Our goal is to create safe, supportive environments where every student can thrive and feel truly seen.</p></div>
-          <div style={{ background:"rgba(5,26,10,0.6)", border:"1px solid #166534", borderRadius:16, padding:18 }}><div style={{ color:"#4ade80", fontWeight:900, fontSize:16, marginBottom:10, textAlign:"center" }}>Supporting Our Heroes</div><p style={{ color:TEXT, fontSize:15, lineHeight:1.9, textAlign:"center" }}><strong style={{ color:"#4ade80" }}>All Etsy Store Proceeds Benefit Veterans Mental Health Services</strong> &mdash; 100% of all proceeds from our Etsy
+          <div style={{ background:"rgba(5,26,10,0.6)", border:"1px solid #166534", borderRadius:16, padding:18 }}><div style={{ color:"#4ade80", fontWeight:900, fontSize:16, marginBottom:10, textAlign:"center" }}>Supporting Our Heroes</div><p style={{ color:TEXT, fontSize:15, lineHeight:1.9, textAlign:"center" }}><strong style={{ color:"#4ade80" }}>All Etsy Store Proceeds Benefit Veterans Mental Health Services</strong> &mdash; 100% of all proceeds from our Etsy Store fundraiser are donated directly to Veterans Mental Health Services, in heartfelt support of those who have sacrificed everything for our freedom and deserve every resource available to heal.</p></div>
+        </div>
+        <div style={{ textAlign:"center", marginBottom:24 }}>
+          <a href="https://www.etsy.com/shop/MandaStrong1" target="_blank" rel="noopener noreferrer" style={{ color:GOLD, fontWeight:800, fontSize:16, textDecoration:"underline", letterSpacing:1 }}>Visit MandaStrong1.Etsy.com &rarr;</a>
+        </div>
+        <GoldBtn onClick={()=>go(1)}>🎬 Start Creating Again</GoldBtn>
+      </div>
+    </div>
+  );
+}
+
+function QuickAccess({ go, onClose }: { go:(n:number)=>void; onClose:()=>void }) {
+  const links = [
+    { label:"Welcome", icon:"🏠", page:1 }, { label:"Our Story", icon:"📖", page:2 }, { label:"Plans & Login", icon:"💳", page:3 },
+    { label:"Script & Story", icon:"📝", page:4 }, { label:"Design & Chars", icon:"🎨", page:5 }, { label:"Video & VFX", icon:"🎬", page:6 },
+    { label:"Writing & Mktg", icon:"✍️", page:7 }, { label:"Upload & Enhance", icon:"⬆️", page:8 }, { label:"Edit & Export", icon:"✂️", page:9 },
+    { label:"Upload Movie", icon:"🎞️", page:10 }, { label:"Media Library", icon:"🗂️", page:11 }, { label:"Editor Suite", icon:"🖥️", page:12 },
+    { label:"Timeline Editor", icon:"⏱️", page:13 }, { label:"Audio Mixer", icon:"🎛️", page:14 }, { label:"Render Film", icon:"📤", page:15 },
+    { label:"Tutorials", icon:"🎓", page:16 }, { label:"Film Preview", icon:"▶️", page:17 }, { label:"Terms & Disc.", icon:"📄", page:18 },
+    { label:"Agent Grok", icon:"🤖", page:19 }, { label:"Community Hub", icon:"👥", page:20 }, { label:"That's All Folks", icon:"🎉", page:21 },
+  ];
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:200, background:"rgba(0,0,0,0.92)", display:"flex", alignItems:"flex-end" }} onClick={onClose}>
+      <div style={{ background:BG2, borderTop:"2px solid "+GOLD, width:"100%", maxHeight:"82vh", overflowY:"auto", borderRadius:"24px 24px 0 0", padding:22, boxShadow:"0 -10px 50px "+GOLDDIM+"55" }} onClick={e=>e.stopPropagation()}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
+          <div style={{ color:GOLD, fontWeight:900, fontSize:18, letterSpacing:2 }}>&#9889; QUICK ACCESS</div>
+          <button onClick={onClose} style={{ background:"none", border:"none", color:TEXT3, fontSize:26, cursor:"pointer" }}>&times;</button>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+          {links.map(l=>(<button key={l.page} onClick={()=>{go(l.page);onClose();}} style={{ background:BG3, border:"1px solid "+GOLDDIM, borderRadius:14, padding:"12px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:10, textAlign:"left" }}><span style={{ fontSize:20 }}>{l.icon}</span><span style={{ color:TEXT, fontSize:15, fontWeight:600 }}>{l.label}</span><span style={{ color:TEXT3, fontSize:11, marginLeft:"auto" }}>p{l.page}</span></button>))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminDashboard({ onClose }: { onClose:()=>void }) {
+  const stats = [
+    { label:"Total Users", value:"1,284", icon:"👥" }, { label:"Active Subs", value:"847", icon:"💳" },
+    { label:"Films Created", value:"3,921", icon:"🎬" }, { label:"Revenue MRR", value:"$16,940", icon:"💰" },
+    { label:"Basic Plans", value:"312", icon:"📗" }, { label:"Pro Plans", value:"428", icon:"📘" },
+    { label:"Studio Plans", value:"107", icon:"📕" }, { label:"Community Films", value:"659", icon:"📣" },
+  ];
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:200, background:"rgba(0,0,0,0.95)", overflowY:"auto" }} onClick={onClose}>
+      <div style={{ background:BG2, margin:"18px 12px", borderRadius:24, border:"2px solid "+GOLD, padding:22, boxShadow:"0 0 50px "+GOLDDIM+"66" }} onClick={e=>e.stopPropagation()}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+          <div style={{ color:GOLD, fontWeight:900, fontSize:20, letterSpacing:2 }}>🛡️ ADMIN DASHBOARD</div>
+          <button onClick={onClose} style={{ background:"none", border:"none", color:TEXT3, fontSize:26, cursor:"pointer" }}>&times;</button>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:22 }}>
+          {stats.map(s=>(<div key={s.label} style={{ background:BG3, border:"1px solid "+GOLDDIM, borderRadius:16, padding:16 }}><div style={{ fontSize:24, marginBottom:6 }}>{s.icon}</div><div style={{ color:GOLD2, fontWeight:900, fontSize:22 }}>{s.value}</div><div style={{ color:TEXT3, fontSize:13 }}>{s.label}</div></div>))}
+        </div>
+        <div style={{ background:BG3, border:"1px solid "+GOLDDIM, borderRadius:16, padding:18, marginBottom:20 }}>
+          <div style={{ color:GOLD, fontWeight:700, marginBottom:12, fontSize:16 }}>Stripe Revenue &mdash; This Month</div>
+          <div style={{ display:"flex", gap:6, alignItems:"flex-end", height:70 }}>
+            {[40,55,45,70,60,80,75,90,85,95,88,100].map((h,i)=>(<div key={i} style={{ flex:1, background:"linear-gradient(to top,"+PUR2+","+GOLD+")", borderRadius:4, height:h+"%", opacity:0.8 }} />))}
+          </div>
+          <div style={{ display:"flex", justifyContent:"space-between", marginTop:8, color:TEXT3, fontSize:12 }}><span>Jan</span><span>Dec</span></div>
+        </div>
+        <GoldBtn onClick={onClose}>Close Dashboard</GoldBtn>
+      </div>
+    </div>
+  );
+}
+
+const TOTAL = 21;
+
+export default function App() {
+  const [user, setUser]           = useState<User|null>(null);
+  const [page, setPage]           = useState(1);
+  const [assets, setAssets]       = useState<string[]>([]);
+  const [showQA, setShowQA]       = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+
+  const go = useCallback((n:number) => {
+    const c = Math.max(1,Math.min(TOTAL,n));
+    setPage(c);
+    window.scrollTo({ top:0, behavior:"smooth" });
+  },[]);
+
+  const addAsset = useCallback((name:string) => {
+    setAssets(prev=>prev.includes(name)?prev:[...prev,name]);
+  },[]);
+
+  const handleAuth = useCallback((u:User) => { setUser(u); setPage(1); },[]);
+
+  if (!user) return <LoginScreen onAuth={handleAuth} />;
+
+  const pages: Record<number,React.ReactNode> = {
+    1: <P1 go={go} />,
+    2: <P2 go={go} />,
+    3: <P3 go={go} onAuth={handleAuth} />,
+    4: <AIToolBoard pageNum={4} go={go} addAsset={addAsset} />,
+    5: <AIToolBoard pageNum={5} go={go} addAsset={addAsset} />,
+    6: <AIToolBoard pageNum={6} go={go} addAsset={addAsset} />,
+    7: <AIToolBoard pageNum={7} go={go} addAsset={addAsset} />,
+    8: <AIToolBoard pageNum={8} go={go} addAsset={addAsset} />,
+    9: <AIToolBoard pageNum={9} go={go} addAsset={addAsset} />,
+    10: <P10 go={go} />,
+    11: <P11 go={go} assets={assets} />,
+    12: <P12 go={go} />,
+    13: <P13 go={go} />,
+    14: <P14 go={go} />,
+    15: <P15 go={go} />,
+    16: <P16 go={go} />,
+    17: <P17 go={go} />,
+    18: <P18 go={go} />,
+    19: <P19 go={go} />,
+    20: <P20 go={go} />,
+    21: <P21 go={go} />,
+  };
+
+  return (
+    <>
+      <div style={{ background:BG2, borderBottom:"1px solid "+GOLDDIM, position:"fixed", top:0, left:0, right:0, zIndex:100, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 14px", gap:8, boxShadow:"0 2px 24px "+GOLDDIM+"44" }}>
+        <button onClick={()=>go(Math.max(1,page-1))} disabled={page===1} style={{ color:GOLD, background:"none", border:"none", fontSize:28, fontWeight:900, cursor:"pointer", opacity:page===1?0.3:1, padding:"0 4px" }}>&#8249;</button>
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", flex:1 }}>
+          <span style={{ color:GOLD, fontWeight:900, fontSize:13, letterSpacing:3, textTransform:"uppercase" }}>MandaStrong</span>
+          <span style={{ color:TEXT3, fontSize:11 }}>{page} / {TOTAL}</span>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <button onClick={()=>setShowQA(true)} style={{ background:BG3, border:"1px solid "+GOLDDIM, color:GOLD, borderRadius:10, padding:"6px 12px", fontSize:13, fontWeight:800, cursor:"pointer" }}>&#9889; Quick</button>
+          {user?.isAdmin && (<button onClick={()=>setShowAdmin(true)} style={{ background:"#7f1d1d", border:"1px solid #ef4444", color:"#ef4444", borderRadius:10, padding:"6px 12px", fontSize:13, fontWeight:800, cursor:"pointer" }}>&#128737; Admin</button>)}
+          <div style={{ background:BG3, border:"1px solid "+GOLDDIM, borderRadius:10, padding:"5px 12px", display:"flex", flexDirection:"column", alignItems:"flex-end" }}>
+            <span style={{ color:GOLD, fontSize:13, fontWeight:800 }}>{user.name.split(" ")[0]}</span>
+            <span style={{ color:GOLDDIM, fontSize:10 }}>{user.plan}</span>
+          </div>
+          <button onClick={()=>go(Math.min(TOTAL,page+1))} disabled={page===TOTAL} style={{ color:GOLD, background:"none", border:"none", fontSize:28, fontWeight:900, cursor:"pointer", opacity:page===TOTAL?0.3:1, padding:"0 4px" }}>&#8250;</button>
+        </div>
+      </div>
+
+      {pages[page] ?? <P1 go={go} />}
+      {showQA    && <QuickAccess go={go} onClose={()=>setShowQA(false)} />}
+      {showAdmin && <AdminDashboard onClose={()=>setShowAdmin(false)} />}
+    </>
+  );
+}Store fundraiser are donated directly to Veterans Mental Health Services, in heartfelt support of those who have sacrificed everything for our freedom and deserve every resource available to heal.</p></div>
+        </div>
+        <div style={{ textAlign:"center", marginBottom:24 }}>
+          <a href="https://www.etsy.com/shop/MandaStrong1" target="_blank" rel="noopener noreferrer" style={{ color:GOLD, fontWeight:800, fontSize:16, textDecoration:"underline", letterSpacing:1 }}>Visit MandaStrong1.Etsy.com &rarr;</a>
+        </div>
+        <GoldBtn onClick={()=>go(1)}>🎬 Start Creating Again</GoldBtn>
+      </div>
+    </div>
+  );
+}
+
+function QuickAccess({ go, onClose }: { go:(n:number)=>void; onClose:()=>void }) {
+  const links = [
+    { label:"Welcome", icon:"🏠", page:1 }, { label:"Our Story", icon:"📖", page:2 }, { label:"Plans & Login", icon:"💳", page:3 },
+    { label:"Script & Story", icon:"📝", page:4 }, { label:"Design & Chars", icon:"🎨", page:5 }, { label:"Video & VFX", icon:"🎬", page:6 },
+    { label:"Writing & Mktg", icon:"✍️", page:7 }, { label:"Upload & Enhance", icon:"⬆️", page:8 }, { label:"Edit & Export", icon:"✂️", page:9 },
+    { label:"Upload Movie", icon:"🎞️", page:10 }, { label:"Media Library", icon:"🗂️", page:11 }, { label:"Editor Suite", icon:"🖥️", page:12 },
+    { label:"Timeline Editor", icon:"⏱️", page:13 }, { label:"Audio Mixer", icon:"🎛️", page:14 }, { label:"Render Film", icon:"📤", page:15 },
+    { label:"Tutorials", icon:"🎓", page:16 }, { label:"Film Preview", icon:"▶️", page:17 }, { label:"Terms & Disc.", icon:"📄", page:18 },
+    { label:"Agent Grok", icon:"🤖", page:19 }, { label:"Community Hub", icon:"👥", page:20 }, { label:"That's All Folks", icon:"🎉", page:21 },
+  ];
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:200, background:"rgba(0,0,0,0.92)", display:"flex", alignItems:"flex-end" }} onClick={onClose}>
+      <div style={{ background:BG2, borderTop:"2px solid "+GOLD, width:"100%", maxHeight:"82vh", overflowY:"auto", borderRadius:"24px 24px 0 0", padding:22, boxShadow:"0 -10px 50px "+GOLDDIM+"55" }} onClick={e=>e.stopPropagation()}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
+          <div style={{ color:GOLD, fontWeight:900, fontSize:18, letterSpacing:2 }}>&#9889; QUICK ACCESS</div>
+          <button onClick={onClose} style={{ background:"none", border:"none", color:TEXT3, fontSize:26, cursor:"pointer" }}>&times;</button>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+          {links.map(l=>(<button key={l.page} onClick={()=>{go(l.page);onClose();}} style={{ background:BG3, border:"1px solid "+GOLDDIM, borderRadius:14, padding:"12px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:10, textAlign:"left" }}><span style={{ fontSize:20 }}>{l.icon}</span><span style={{ color:TEXT, fontSize:15, fontWeight:600 }}>{l.label}</span><span style={{ color:TEXT3, fontSize:11, marginLeft:"auto" }}>p{l.page}</span></button>))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminDashboard({ onClose }: { onClose:()=>void }) {
+  const stats = [
+    { label:"Total Users", value:"1,284", icon:"👥" }, { label:"Active Subs", value:"847", icon:"💳" },
+    { label:"Films Created", value:"3,921", icon:"🎬" }, { label:"Revenue MRR", value:"$16,940", icon:"💰" },
+    { label:"Basic Plans", value:"312", icon:"📗" }, { label:"Pro Plans", value:"428", icon:"📘" },
+    { label:"Studio Plans", value:"107", icon:"📕" }, { label:"Community Films", value:"659", icon:"📣" },
+  ];
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:200, background:"rgba(0,0,0,0.95)", overflowY:"auto" }} onClick={onClose}>
+      <div style={{ background:BG2, margin:"18px 12px", borderRadius:24, border:"2px solid "+GOLD, padding:22, boxShadow:"0 0 50px "+GOLDDIM+"66" }} onClick={e=>e.stopPropagation()}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20 }}>
+          <div style={{ color:GOLD, fontWeight:900, fontSize:20, letterSpacing:2 }}>🛡️ ADMIN DASHBOARD</div>
+          <button onClick={onClose} style={{ background:"none", border:"none", color:TEXT3, fontSize:26, cursor:"pointer" }}>&times;</button>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:22 }}>
+          {stats.map(s=>(<div key={s.label} style={{ background:BG3, border:"1px solid "+GOLDDIM, borderRadius:16, padding:16 }}><div style={{ fontSize:24, marginBottom:6 }}>{s.icon}</div><div style={{ color:GOLD2, fontWeight:900, fontSize:22 }}>{s.value}</div><div style={{ color:TEXT3, fontSize:13 }}>{s.label}</div></div>))}
+        </div>
+        <div style={{ background:BG3, border:"1px solid "+GOLDDIM, borderRadius:16, padding:18, marginBottom:20 }}>
+          <div style={{ color:GOLD, fontWeight:700, marginBottom:12, fontSize:16 }}>Stripe Revenue &mdash; This Month</div>
+          <div style={{ display:"flex", gap:6, alignItems:"flex-end", height:70 }}>
+            {[40,55,45,70,60,80,75,90,85,95,88,100].map((h,i)=>(<div key={i} style={{ flex:1, background:"linear-gradient(to top,"+PUR2+","+GOLD+")", borderRadius:4, height:h+"%", opacity:0.8 }} />))}
+          </div>
+          <div style={{ display:"flex", justifyContent:"space-between", marginTop:8, color:TEXT3, fontSize:12 }}><span>Jan</span><span>Dec</span></div>
+        </div>
+        <GoldBtn onClick={onClose}>Close Dashboard</GoldBtn>
+      </div>
+    </div>
+  );
+}
+
+const TOTAL = 21;
+
+export default function App() {
+  const [user, setUser]           = useState<User|null>(null);
+  const [page, setPage]           = useState(1);
+  const [assets, setAssets]       = useState<string[]>([]);
+  const [showQA, setShowQA]       = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+
+  const go = useCallback((n:number) => {
+    const c = Math.max(1,Math.min(TOTAL,n));
+    setPage(c);
+    window.scrollTo({ top:0, behavior:"smooth" });
+  },[]);
+
+  const addAsset = useCallback((name:string) => {
+    setAssets(prev=>prev.includes(name)?prev:[...prev,name]);
+  },[]);
+
+  const handleAuth = useCallback((u:User) => { setUser(u); setPage(1); },[]);
+
+  if (!user) return <LoginScreen onAuth={handleAuth} />;
+
+  const pages: Record<number,React.ReactNode> = {
+    1: <P1 go={go} />,
+    2: <P2 go={go} />,
+    3: <P3 go={go} onAuth={handleAuth} />,
+    4: <AIToolBoard pageNum={4} go={go} addAsset={addAsset} />,
+    5: <AIToolBoard pageNum={5} go={go} addAsset={addAsset} />,
+    6: <AIToolBoard pageNum={6} go={go} addAsset={addAsset} />,
+    7: <AIToolBoard pageNum={7} go={go} addAsset={addAsset} />,
+    8: <AIToolBoard pageNum={8} go={go} addAsset={addAsset} />,
+    9: <AIToolBoard pageNum={9} go={go} addAsset={addAsset} />,
+    10: <P10 go={go} />,
+    11: <P11 go={go} assets={assets} />,
+    12: <P12 go={go} />,
+    13: <P13 go={go} />,
+    14: <P14 go={go} />,
+    15: <P15 go={go} />,
+    16: <P16 go={go} />,
+    17: <P17 go={go} />,
+    18: <P18 go={go} />,
+    19: <P19 go={go} />,
+    20: <P20 go={go} />,
+    21: <P21 go={go} />,
+  };
+
+  return (
+    <>
+      <div style={{ background:BG2, borderBottom:"1px solid "+GOLDDIM, position:"fixed", top:0, left:0, right:0, zIndex:100, display:"flex", alignItems:"center", justifyContent:"space-between", padding:"8px 14px", gap:8, boxShadow:"0 2px 24px "+GOLDDIM+"44" }}>
+        <button onClick={()=>go(Math.max(1,page-1))} disabled={page===1} style={{ color:GOLD, background:"none", border:"none", fontSize:28, fontWeight:900, cursor:"pointer", opacity:page===1?0.3:1, padding:"0 4px" }}>&#8249;</button>
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", flex:1 }}>
+          <span style={{ color:GOLD, fontWeight:900, fontSize:13, letterSpacing:3, textTransform:"uppercase" }}>MandaStrong</span>
+          <span style={{ color:TEXT3, fontSize:11 }}>{page} / {TOTAL}</span>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <button onClick={()=>setShowQA(true)} style={{ background:BG3, border:"1px solid "+GOLDDIM, color:GOLD, borderRadius:10, padding:"6px 12px", fontSize:13, fontWeight:800, cursor:"pointer" }}>&#9889; Quick</button>
+          {user?.isAdmin && (<button onClick={()=>setShowAdmin(true)} style={{ background:"#7f1d1d", border:"1px solid #ef4444", color:"#ef4444", borderRadius:10, padding:"6px 12px", fontSize:13, fontWeight:800, cursor:"pointer" }}>&#128737; Admin</button>)}
+          <div style={{ background:BG3, border:"1px solid "+GOLDDIM, borderRadius:10, padding:"5px 12px", display:"flex", flexDirection:"column", alignItems:"flex-end" }}>
+            <span style={{ color:GOLD, fontSize:13, fontWeight:800 }}>{user.name.split(" ")[0]}</span>
+            <span style={{ color:GOLDDIM, fontSize:10 }}>{user.plan}</span>
+          </div>
+          <button onClick={()=>go(Math.min(TOTAL,page+1))} disabled={page===TOTAL} style={{ color:GOLD, background:"none", border:"none", fontSize:28, fontWeight:900, cursor:"pointer", opacity:page===TOTAL?0.3:1, padding:"0 4px" }}>&#8250;</button>
+        </div>
+      </div>
+
+      {pages[page] ?? <P1 go={go} />}
+      {showQA    && <QuickAccess go={go} onClose={()=>setShowQA(false)} />}
+      {showAdmin && <AdminDashboard onClose={()=>setShowAdmin(false)} />}
+    </>
+  );
+}
