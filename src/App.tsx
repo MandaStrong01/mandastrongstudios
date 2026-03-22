@@ -779,24 +779,52 @@ function P16({ go, timeline, setRendered }) {
 }
 
 function P17({ go, rendered, mediaLib }) {
-  const vs=mediaLib.find(a=>a.type.startsWith("video"))?mediaLib.find(a=>a.type.startsWith("video")).url:"";
+  const videoRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const vs = mediaLib.find(a => a.type.startsWith("video")) ? mediaLib.find(a => a.type.startsWith("video")).url : "";
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (isPlaying) { videoRef.current.pause(); setIsPlaying(false); }
+    else { videoRef.current.play(); setIsPlaying(true); }
+  };
+  const seek = (dir) => {
+    if (!videoRef.current) return;
+    videoRef.current.currentTime += dir;
+  };
+  const fmt = (s) => { const m = Math.floor(s/60); const sec = Math.floor(s%60); return `${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`; };
+
   return (
     <div style={{...Sp,padding:40}}>
       <div style={{maxWidth:880,margin:"0 auto"}}>
         <h1 style={{...H1,fontSize:28,marginBottom:14}}>FILM PREVIEW</h1>
         <div style={{background:"#000",borderRadius:0,overflow:"hidden",marginBottom:14,aspectRatio:"16/9",display:"flex",alignItems:"center",justifyContent:"center",border:`1px solid ${GOLDDIM}`}}>
-          {vs?<video src={vs} controls style={{width:"100%",height:"100%"}}/>:
+          {vs ?
+            <video ref={videoRef} src={vs}
+              style={{width:"100%",height:"100%"}}
+              onTimeUpdate={()=>setCurrentTime(videoRef.current?.currentTime||0)}
+              onLoadedMetadata={()=>setDuration(videoRef.current?.duration||0)}
+              onEnded={()=>setIsPlaying(false)} /> :
             <div style={{textAlign:"center"}}>
               <div style={{fontSize:36,marginBottom:10}}>🎬</div>
-              <div style={{fontSize:12,letterSpacing:3,color:WHITE}}>NO RENDER AVAILABLE</div>
-              <button onClick={()=>go(16)} style={{...G("out",true),marginTop:12}}>GO TO RENDER</button>
+              <div style={{fontSize:13,letterSpacing:3,color:WHITE,marginBottom:12}}>NO RENDER AVAILABLE</div>
+              <div style={{fontSize:12,color:WHITE,marginBottom:16}}>Upload media on Page 11 then add clips to Timeline on Page 13</div>
+              <button onClick={()=>go(16)} style={{...G("out",true)}}>GO TO RENDER →</button>
             </div>}
         </div>
-        {rendered&&<div style={{...Card(),color:WHITE,fontSize:12,fontWeight:700,letterSpacing:1}}>RENDERED: {rendered.quality} · {rendered.format} · {rendered.timestamp}</div>}
-        <div style={{...Card(),marginTop:10,display:"flex",alignItems:"center",gap:8}}>
-          {["⏮","⏪","▶","⏩","⏭"].map(c=><button key={c} style={{...G("out",true)}}>{c}</button>)}
-          <div style={{flex:1,height:3,background:"#000",borderRadius:1}}/>
-          <span style={{color:WHITE,fontSize:12,fontWeight:700,letterSpacing:1}}>00:00 / 90:00</span>
+        <div style={{...Card(),display:"flex",alignItems:"center",gap:8}}>
+          <button onClick={()=>{ if(videoRef.current) { videoRef.current.currentTime=0; }}} style={{...G("out",true)}}>⏮</button>
+          <button onClick={()=>seek(-10)} style={{...G("out",true)}}>⏪</button>
+          <button onClick={togglePlay} style={{...G("gold",true), minWidth:44}}>{isPlaying?"⏸":"▶"}</button>
+          <button onClick={()=>seek(10)} style={{...G("out",true)}}>⏩</button>
+          <button onClick={()=>{ if(videoRef.current) { videoRef.current.currentTime=duration; }}} style={{...G("out",true)}}>⏭</button>
+          <div style={{flex:1,height:4,background:"#111",borderRadius:0,cursor:"pointer",position:"relative"}}
+            onClick={e=>{ if(!videoRef.current||!duration) return; const r=e.currentTarget.getBoundingClientRect(); videoRef.current.currentTime=((e.clientX-r.left)/r.width)*duration; }}>
+            <div style={{width:`${duration?( currentTime/duration*100):0}%`,height:"100%",background:GOLD,transition:"width .1s"}}/>
+          </div>
+          <span style={{color:WHITE,fontSize:12,fontWeight:700,letterSpacing:1,whiteSpace:"nowrap"}}>{fmt(currentTime)} / {fmt(duration||5400)}</span>
         </div>
       </div>
     </div>
