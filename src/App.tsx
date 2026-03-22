@@ -76,9 +76,9 @@ function Header({ go, setMenu }) {
         <div style={{ fontFamily:"'Cinzel',serif", color:GOLD, fontSize:13, fontWeight:900, letterSpacing:3, lineHeight:1, textShadow:`0 0 16px ${GOLD}99` }}>MANDA STRONG</div>
         <div style={{ fontFamily:"'Cinzel',serif", color:GOLDDIM, fontSize:9, letterSpacing:4 }}>STUDIO</div>
       </div>
-      <div style={{ flex:1, overflow:"hidden", margin:"0 10px" }}>
-        <div style={{ color:DIM, fontSize:10, letterSpacing:2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-          ✦ CINEMA INTELLIGENCE PLATFORM &nbsp;·&nbsp; 600+ AI TOOLS &nbsp;·&nbsp; 8K EXPORT &nbsp;·&nbsp; UP TO 3-HOUR FILMS &nbsp;·&nbsp; PROFESSIONAL CINEMA SYNTHESIS
+      <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <div style={{ color:GOLD, fontSize:10, letterSpacing:2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", fontWeight:700 }}>
+          ✦ CINEMA INTELLIGENCE PLATFORM &nbsp;·&nbsp; 600+ AI TOOLS &nbsp;·&nbsp; 8K EXPORT &nbsp;·&nbsp; UP TO 3-HOUR FILMS
         </div>
       </div>
       <div style={{ display:"flex", alignItems:"center", gap:10, flexShrink:0 }}>
@@ -108,16 +108,16 @@ function Footer({ page, go }) {
 function ToolCard({ name, onOpen }) {
   return (
     <div onClick={() => onOpen(name)}
-      style={{ background:"#000", border:`1px solid ${GOLDDIM}`, borderRadius:0, padding:"14px 14px 12px", cursor:"pointer", transition:"all .15s" }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor=GOLD; e.currentTarget.style.background=BG4; e.currentTarget.style.boxShadow=`0 0 10px ${GOLD}33`; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor=GOLDDIM; e.currentTarget.style.background=BG3; e.currentTarget.style.boxShadow="none"; }}>
-      <div style={{ color:WHITE, fontSize:14, fontWeight:900, lineHeight:1.3, marginBottom:6, letterSpacing:.5 }}>{name}</div>
-      <div style={{ color:GOLD, fontSize:10, letterSpacing:2, fontWeight:700 }}>CREATE · PASTE · AI CREATE ✦</div>
+      style={{ background:"#000", border:`1px solid ${GOLDDIM}`, borderRadius:0, padding:"14px 12px", cursor:"pointer", transition:"all .15s", minHeight:56, display:"flex", alignItems:"center" }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor=GOLD; e.currentTarget.style.background="#0a0800"; e.currentTarget.style.boxShadow=`0 0 10px ${GOLD}44`; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor=GOLDDIM; e.currentTarget.style.background="#000"; e.currentTarget.style.boxShadow="none"; }}>
+      <div style={{ color:WHITE, fontSize:13, fontWeight:800, lineHeight:1.3, letterSpacing:.5 }}>{name}</div>
     </div>
   );
 }
 
 function ToolPanel({ tool, onClose, onSave }) {
+  const [mode, setMode] = useState("upload");
   const [describe, setDescribe] = useState("");
   const [result, setResult] = useState("");
   const [url, setUrl] = useState("");
@@ -147,41 +147,76 @@ function ToolPanel({ tool, onClose, onSave }) {
     setSaved(true);
   };
 
+  const handleFile = (files) => {
+    if (!files || !files[0]) return;
+    const f = files[0];
+    if (onSave) onSave({ id:Date.now()+Math.random(), name:f.name, type:f.type, file:f, url:URL.createObjectURL(f) });
+    setSaved(true);
+  };
+
   const inp = { width:"100%", background:"#000", border:`1px solid ${GOLDDIM}`, borderRadius:0, padding:"9px 12px", color:WHITE, fontSize:14, outline:"none", boxSizing:"border-box", letterSpacing:.5, fontFamily:"'Rajdhani',sans-serif" };
 
   return (
-    <div style={{ position:"fixed", inset:0, zIndex:900, background:"rgba(0,0,0,0.9)", display:"flex", alignItems:"center", justifyContent:"center" }}>
+    <div style={{ position:"fixed", inset:0, zIndex:900, background:"rgba(0,0,0,0.92)", display:"flex", alignItems:"center", justifyContent:"center" }}>
       <div style={{ width:"min(560px,95vw)", background:"#000", border:`1px solid ${GOLD}`, borderRadius:0, padding:26, maxHeight:"90vh", overflowY:"auto" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
           <h2 style={{ ...H1, fontSize:16, margin:0, letterSpacing:4 }}>{tool}</h2>
           <button onClick={onClose} style={{ background:"none", border:"none", color:GOLD, fontSize:20, cursor:"pointer" }}>✕</button>
         </div>
+        {/* 3 mode buttons */}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:18 }}>
-          {["CREATE","PASTE","AI CREATE ✦"].map(m => <button key={m} style={{ ...G("out",true), textAlign:"center", fontSize:11 }}>{m}</button>)}
+          {[["upload","UPLOAD"],["paste","PASTE"],["ai","AI CREATE ✦"]].map(([m,l]) => (
+            <button key={m} onClick={() => setMode(m)}
+              style={{ ...G(mode===m?"gold":"out",true), textAlign:"center", fontSize:11 }}>{l}</button>
+          ))}
         </div>
-        <div style={{ marginBottom:14 }}>
-          <div style={{ color:GOLD, fontSize:10, letterSpacing:3, fontWeight:900, marginBottom:6 }}>ADD URL</div>
-          <input value={url} onChange={e => setUrl(e.target.value)} placeholder="Paste a URL to import content..." style={inp} />
-        </div>
-        <div style={{ marginBottom:14 }}>
-          <div style={{ color:GOLD, fontSize:10, letterSpacing:3, fontWeight:900, marginBottom:6 }}>DESCRIBE</div>
-          <textarea value={describe} onChange={e => setDescribe(e.target.value)} placeholder={`Describe what you want from "${tool}"...`}
-            style={{ ...inp, height:80, resize:"none", lineHeight:1.6 }} />
-          <button onClick={runAI} disabled={loading||!describe.trim()}
-            style={{ ...G("gold",false), marginTop:8, width:"100%", padding:"12px", opacity:loading||!describe.trim()?0.5:1 }}>
-            {loading ? "⟳  GENERATING..." : "AI CREATE ✦"}
-          </button>
-        </div>
-        {result && (
+        {/* UPLOAD mode */}
+        {mode==="upload" && (
           <div style={{ marginBottom:14 }}>
-            <div style={{ color:GOLD, fontSize:10, letterSpacing:3, fontWeight:900, marginBottom:6 }}>RESULT</div>
-            <textarea value={result} onChange={e => setResult(e.target.value)}
-              style={{ ...inp, height:140, resize:"none", lineHeight:1.7 }} />
-            <button onClick={save} style={{ ...G("gold",false), marginTop:8, width:"100%", padding:"12px" }}>GENERATE & SAVE</button>
+            <div style={{ color:GOLD, fontSize:10, letterSpacing:3, fontWeight:900, marginBottom:10 }}>UPLOAD FILE</div>
+            <div onClick={() => fileRef.current && fileRef.current.click()}
+              style={{ border:`2px dashed ${GOLDDIM}`, padding:"30px 20px", textAlign:"center", cursor:"pointer", transition:"border-color .15s" }}
+              onMouseEnter={e => e.currentTarget.style.borderColor=GOLD}
+              onMouseLeave={e => e.currentTarget.style.borderColor=GOLDDIM}>
+              <div style={{ fontSize:28, marginBottom:8 }}>⬆</div>
+              <div style={{ color:WHITE, fontSize:13, fontWeight:700, letterSpacing:1 }}>CLICK TO BROWSE</div>
+              <div style={{ color:DIM, fontSize:11, marginTop:4 }}>Video · Audio · Image · Text</div>
+            </div>
+            <input ref={fileRef} type="file" style={{ display:"none" }} onChange={e => handleFile(e.target.files)} />
           </div>
         )}
-        <button onClick={() => fileRef.current && fileRef.current.click()} style={{ ...G("out",true), width:"100%", marginTop:6 }}>⬆ UPLOAD FILE</button>
-        <input ref={fileRef} type="file" style={{ display:"none" }} />
+        {/* PASTE mode */}
+        {mode==="paste" && (
+          <div style={{ marginBottom:14 }}>
+            <div style={{ color:GOLD, fontSize:10, letterSpacing:3, fontWeight:900, marginBottom:6 }}>ADD URL</div>
+            <input value={url} onChange={e => setUrl(e.target.value)} placeholder="Paste a URL to import content..." style={{ ...inp, marginBottom:10 }} />
+            <div style={{ color:GOLD, fontSize:10, letterSpacing:3, fontWeight:900, marginBottom:6 }}>OR PASTE TEXT</div>
+            <textarea value={describe} onChange={e => setDescribe(e.target.value)} placeholder="Paste your content here..."
+              style={{ ...inp, height:100, resize:"none", lineHeight:1.6 }} />
+            <button onClick={() => { if(onSave) onSave({ id:Date.now()+Math.random(), name:`${tool} — Pasted`, type:"text/plain", url: url||"", content:describe }); setSaved(true); }}
+              style={{ ...G("gold",false), marginTop:8, width:"100%", padding:"12px" }}>SAVE TO MEDIA LIBRARY</button>
+          </div>
+        )}
+        {/* AI CREATE mode */}
+        {mode==="ai" && (
+          <div style={{ marginBottom:14 }}>
+            <div style={{ color:GOLD, fontSize:10, letterSpacing:3, fontWeight:900, marginBottom:6 }}>DESCRIBE</div>
+            <textarea value={describe} onChange={e => setDescribe(e.target.value)} placeholder={`Describe what you want from "${tool}"...`}
+              style={{ ...inp, height:80, resize:"none", lineHeight:1.6 }} />
+            <button onClick={runAI} disabled={loading||!describe.trim()}
+              style={{ ...G("gold",false), marginTop:8, width:"100%", padding:"12px", opacity:loading||!describe.trim()?0.5:1 }}>
+              {loading ? "⟳  GENERATING..." : "AI CREATE ✦"}
+            </button>
+            {result && (
+              <div style={{ marginTop:14 }}>
+                <div style={{ color:GOLD, fontSize:10, letterSpacing:3, fontWeight:900, marginBottom:6 }}>RESULT</div>
+                <textarea value={result} onChange={e => setResult(e.target.value)}
+                  style={{ ...inp, height:140, resize:"none", lineHeight:1.7 }} />
+                <button onClick={save} style={{ ...G("gold",false), marginTop:8, width:"100%", padding:"12px" }}>GENERATE & SAVE</button>
+              </div>
+            )}
+          </div>
+        )}
         {saved && (
           <div style={{ marginTop:14, background:"#0a2a0a", border:`1px solid #22c55e`, borderRadius:0, padding:"12px 16px", textAlign:"center" }}>
             <div style={{ color:"#22c55e", fontWeight:900, fontSize:14, letterSpacing:2 }}>✓ ASSET SAVED TO MEDIA LIBRARY</div>
@@ -285,20 +320,24 @@ function P2({ go }) {
 }
 
 function P3() {
+  const [playing, setPlaying] = useState([false,false,false]);
+  const toggle = i => setPlaying(p => p.map((v,j) => j===i?!v:v));
   return (
     <div style={{ ...Sp, padding:40 }}>
-      <div style={{ maxWidth:880, margin:"0 auto" }}>
+      <div style={{ maxWidth:980, margin:"0 auto" }}>
         <div style={{ fontSize:9, color:GOLD, letterSpacing:4, marginBottom:8, fontWeight:700 }}>SHOWCASE</div>
         <h1 style={{ ...H1, fontSize:30, marginBottom:24 }}>EXAMPLES MADE BY MANDASTRONG STUDIO</h1>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-          {[{s:1,d:"A documentary film — MandaStrong Studio x Doxy"},{s:2,d:"A plain-English guide to artificial intelligence"}].map(f => (
-            <div key={f.s} style={{ ...Card() }}>
-              <div style={{ background:"#000", borderRadius:0, height:160, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:12, border:`1px solid ${GOLDDIM}` }}>
-                <div style={{ fontSize:40 }}>🎬</div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16 }}>
+          {[1,2,3].map(s => (
+            <div key={s} style={{ ...Card() }}>
+              <div style={{ background:"#000", height:160, display:"flex", alignItems:"center", justifyContent:"center", marginBottom:12, border:`1px solid ${GOLDDIM}`, position:"relative", cursor:"pointer" }}
+                onClick={() => toggle(s-1)}>
+                <div style={{ width:52, height:52, borderRadius:0, border:`2px solid ${GOLD}`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                  <div style={{ color:GOLD, fontSize:22, marginLeft:4 }}>{playing[s-1] ? "⏸" : "▶"}</div>
+                </div>
+                <div style={{ position:"absolute", bottom:8, left:10, color:GOLD, fontSize:9, fontWeight:700, letterSpacing:2 }}>VIEWER 0{s}</div>
               </div>
-              <div style={{ fontSize:9, color:GOLD, letterSpacing:3, fontWeight:700, marginBottom:6 }}>VIEWER 0{f.s}</div>
-              <div style={{ color:WHITE, fontSize:14, marginBottom:14, fontWeight:600, lineHeight:1.5 }}>{f.d}</div>
-              <button style={{ ...G("out",true) }}>⬆ UPLOAD FILM</button>
+              <button style={{ ...G("out",true), width:"100%" }}>⬆ UPLOAD FILM</button>
             </div>
           ))}
         </div>
@@ -442,9 +481,20 @@ function P12({ go, mediaLib }) {
           ))}
         </div>
         <div style={{...Card()}}>
-          <div style={{color:GOLD,fontWeight:900,fontSize:10,letterSpacing:3,marginBottom:10}}>MOVIE DURATION</div>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-            {[30,60,90,120,180].map(m=><button key={m} onClick={()=>setDur(m)} style={{...G(dur===m?"gold":"out",true)}}>{m} MIN</button>)}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <div style={{color:GOLD,fontWeight:900,fontSize:10,letterSpacing:3}}>MOVIE DURATION</div>
+            <div style={{color:GOLD,fontFamily:"'Cinzel',serif",fontSize:20,fontWeight:900}}>{dur} MIN</div>
+          </div>
+          <input type="range" min={0} max={180} step={5} value={dur} onChange={e=>setDur(+e.target.value)}
+            style={{width:"100%",accentColor:GOLD,height:4,marginBottom:8}}/>
+          <div style={{display:"flex",justifyContent:"space-between"}}>
+            <span style={{color:DIM,fontSize:10,letterSpacing:1}}>0 MIN</span>
+            <span style={{color:DIM,fontSize:10,letterSpacing:1}}>30</span>
+            <span style={{color:DIM,fontSize:10,letterSpacing:1}}>60</span>
+            <span style={{color:DIM,fontSize:10,letterSpacing:1}}>90</span>
+            <span style={{color:DIM,fontSize:10,letterSpacing:1}}>120</span>
+            <span style={{color:DIM,fontSize:10,letterSpacing:1}}>150</span>
+            <span style={{color:DIM,fontSize:10,letterSpacing:1}}>180 MIN</span>
           </div>
         </div>
       </div>
@@ -582,6 +632,7 @@ function P15() {
 function P16({ go, timeline, setRendered }) {
   const [quality,setQuality]=useState("8K - 4320p");
   const [format,setFormat]=useState("MP4");
+  const [dur,setDur]=useState(90);
   const [progress,setProgress]=useState(0);
   const [rendering,setRendering]=useState(false);
   const [done,setDone]=useState(false);
@@ -589,7 +640,7 @@ function P16({ go, timeline, setRendered }) {
   const startRender=()=>{
     if(clips===0){alert("Add clips to the timeline first!");return;}
     setRendering(true);setDone(false);setProgress(0);
-    let p=0;const iv=setInterval(()=>{p+=Math.random()*7+2;if(p>=100){clearInterval(iv);setProgress(100);setRendering(false);setDone(true);setRendered({url:"",quality,format,timestamp:new Date().toLocaleString()});}else setProgress(Math.round(p));},200);
+    let p=0;const iv=setInterval(()=>{p+=Math.random()*7+2;if(p>=100){clearInterval(iv);setProgress(100);setRendering(false);setDone(true);setRendered({url:"",quality,format,duration:dur,timestamp:new Date().toLocaleString()});}else setProgress(Math.round(p));},200);
   };
   return (
     <div style={{...Sp,padding:40}}>
@@ -608,6 +659,21 @@ function P16({ go, timeline, setRendered }) {
             <div style={{display:"flex",gap:6}}>
               {["MP4","MOV","AVI","WebM"].map(f=><button key={f} onClick={()=>setFormat(f)} style={{...G(format===f?"gold":"out",true)}}>{f}</button>)}
             </div>
+          </div>
+        </div>
+        <div style={{...Card(),marginBottom:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <div style={{color:GOLD,fontWeight:900,fontSize:10,letterSpacing:3}}>FILM DURATION</div>
+            <div style={{color:GOLD,fontFamily:"'Cinzel',serif",fontSize:18,fontWeight:900}}>{dur} MIN</div>
+          </div>
+          <input type="range" min={0} max={180} step={5} value={dur} onChange={e=>setDur(+e.target.value)}
+            style={{width:"100%",accentColor:GOLD,marginBottom:6}}/>
+          <div style={{display:"flex",justifyContent:"space-between"}}>
+            <span style={{color:DIM,fontSize:9,letterSpacing:1}}>0</span>
+            <span style={{color:DIM,fontSize:9,letterSpacing:1}}>60</span>
+            <span style={{color:DIM,fontSize:9,letterSpacing:1}}>90</span>
+            <span style={{color:DIM,fontSize:9,letterSpacing:1}}>120</span>
+            <span style={{color:DIM,fontSize:9,letterSpacing:1}}>180 MIN</span>
           </div>
         </div>
         <div style={{...Card(),display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
@@ -680,9 +746,22 @@ function P18({ rendered, mediaLib }) {
         </div>
         <div style={{color:GOLD,fontWeight:900,fontSize:10,letterSpacing:3,marginBottom:10}}>SHARE DIRECTLY TO SOCIAL MEDIA</div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-          {["YouTube","Instagram","TikTok","X / Twitter","Facebook","LinkedIn","Vimeo","Pinterest","WhatsApp"].map(s=>(
-            <button key={s} style={{...Card(),padding:"8px 12px",cursor:"pointer"}}>
-              <div style={{color:WHITE,fontSize:12,fontWeight:700}}>{s}</div>
+          {[
+            {n:"YouTube",c:"#FF0000",icon:"▶"},
+            {n:"Instagram",c:"#E1306C",icon:"◈"},
+            {n:"TikTok",c:"#ffffff",icon:"♪"},
+            {n:"X / Twitter",c:"#ffffff",icon:"𝕏"},
+            {n:"Facebook",c:"#1877F2",icon:"f"},
+            {n:"LinkedIn",c:"#0A66C2",icon:"in"},
+            {n:"Vimeo",c:"#1AB7EA",icon:"V"},
+            {n:"Pinterest",c:"#E60023",icon:"P"},
+            {n:"WhatsApp",c:"#25D366",icon:"✆"},
+          ].map(s=>(
+            <button key={s.n} style={{background:"#000",border:`1px solid ${GOLDDIM}`,padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:8,transition:"border-color .15s"}}
+              onMouseEnter={e=>e.currentTarget.style.borderColor=s.c}
+              onMouseLeave={e=>e.currentTarget.style.borderColor=GOLDDIM}>
+              <span style={{color:s.c,fontSize:14,fontWeight:900,minWidth:16,textAlign:"center"}}>{s.icon}</span>
+              <span style={{color:WHITE,fontSize:11,fontWeight:700}}>{s.n}</span>
             </button>
           ))}
         </div>
@@ -819,23 +898,39 @@ function P22() {
 }
 
 function P23({ go }) {
+  const [guideOpen, setGuideOpen] = useState(false);
   return (
     <div style={{...Sp,padding:"26px 40px 80px"}}>
       <div style={{maxWidth:780,margin:"0 auto",textAlign:"center"}}>
         <h1 style={{fontFamily:"'Cinzel',serif",color:GOLD,fontSize:"clamp(20px,3vw,28px)",fontWeight:900,letterSpacing:5,textShadow:`0 0 30px ${GOLD}99`,marginBottom:14}}>THAT'S ALL FOLKS</h1>
         <div style={{height:1,background:`linear-gradient(90deg,transparent,${GOLD},transparent)`,marginBottom:18}}/>
-        <div style={{background:"#000",borderRadius:0,overflow:"hidden",marginBottom:20,aspectRatio:"16/9",display:"flex",alignItems:"center",justifyContent:"center",border:`1px solid ${GOLDDIM}`}}>
-          <div style={{textAlign:"center"}}>
-            <div style={{fontSize:36,marginBottom:8}}>🎬</div>
-            <div style={{fontSize:11,color:WHITE,fontWeight:700,letterSpacing:3}}>THATSALLFOLKS.MP4</div>
-          </div>
+        <video autoPlay loop muted playsInline
+          style={{width:"100%",aspectRatio:"16/9",background:"#000",border:`1px solid ${GOLDDIM}`,marginBottom:20,display:"block"}}>
+          <source src="/background.mp4" type="video/mp4" />
+          <source src="/thatsallfolks.mp4" type="video/mp4" />
+          <source src="/ocean.mp4" type="video/mp4" />
+        </video>
+        <div onClick={() => setGuideOpen(g => !g)}
+          style={{...Card(),marginBottom:guideOpen?0:16,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",textAlign:"left",border:`1px solid ${GOLD}`}}>
+          <span style={{color:GOLD,fontWeight:900,fontSize:14,letterSpacing:3}}>📖 HOW TO USE GUIDE</span>
+          <span style={{color:GOLD,fontSize:18}}>{guideOpen?"▲":"▼"}</span>
         </div>
+        {guideOpen && (
+          <div style={{...Card(),textAlign:"left",marginBottom:16,borderTop:"none"}}>
+            {[["NAVIGATION","Use ☰ Quick Access menu or BACK/NEXT buttons to move between all 23 pages."],["PAGES 1-3","Home, Platform overview, and Example films. Upload your own films to the viewer slots."],["PAGE 4","Login, register for your 7-Day Free Trial, or browse as guest. Stripe handles all payments."],["PAGES 5-10","600+ AI Tools across 6 categories. Click any tool to open it, describe what you want, hit AI CREATE."],["PAGE 11","Upload your media — video, audio, images. Drag files in or click Browse."],["PAGE 12","Editor Suite hub — access all editing tools from one place."],["PAGE 13","Timeline Editor — drag your media onto tracks. Add extra tracks with + ADD TRACK."],["PAGE 14","Enhancement Studio — AI-powered video enhancement with sliders."],["PAGE 15","Audio Mixer — 4 channels: Music, Voice, EFX, Master."],["PAGE 16","Render Engine — choose quality (up to 8K) and format, then START RENDER."],["PAGE 17","Film Preview — watch your rendered film, use playback controls."],["PAGE 18","Export & Distribute — download or share to social media."],["PAGES 19-20","Tutorials and Terms of Service."],["PAGE 21","Agent Grok — your 24/7 AI assistant powered by Claude."],["PAGE 22","Community Hub — share your films with other creators."]].map(([t,d]) => (
+              <div key={t} style={{borderBottom:`1px solid ${GOLDDIM}33`,paddingBottom:10,marginBottom:10}}>
+                <div style={{color:GOLD,fontWeight:900,fontSize:11,letterSpacing:2,marginBottom:4}}>{t}</div>
+                <div style={{color:WHITE,fontSize:13,lineHeight:1.7}}>{d}</div>
+              </div>
+            ))}
+          </div>
+        )}
         <div style={{...Card(),textAlign:"left",marginBottom:16}}>
           <h2 style={{color:GOLD,fontWeight:900,fontSize:15,textAlign:"center",marginBottom:14,letterSpacing:3}}>✦ A SPECIAL THANK YOU ✦</h2>
           <p style={{color:WHITE,fontSize:14,lineHeight:1.9}}>Dear Creator,</p>
           <p style={{color:WHITE,fontSize:14,lineHeight:1.9}}>From the bottom of my heart — <strong style={{color:GOLD}}>thank you.</strong> Whether you're here to capture precious family memories, tell a story that's lived rent-free in your head for years, or simply explore what's possible when creativity meets technology, you chose to do it with MandaStrong Studio. That means everything.</p>
           <p style={{color:WHITE,fontSize:14,lineHeight:1.9}}>I built this platform because I believe that <strong style={{color:GOLD}}>storytelling should have no gatekeepers.</strong> You don't need a film school degree or a Hollywood budget. You just need a story worth telling — and now you have 600+ professional tools to help you tell it.</p>
-          <p style={{color:WHITE,fontSize:14,lineHeight:1.9}}>Every subscription supports <strong style={{color:GOLD}}>veterans' mental health initiatives</strong> and <strong style={{color:GOLD}}>school anti-bullying programs</strong> — causes deeply personal to me as the author of <em>Doxy the School Bully.</em> When you create here, you're helping build a kinder world.</p>
+          <p style={{color:WHITE,fontSize:14,lineHeight:1.9}}>Every subscription supports <strong style={{color:GOLD}}>veterans' mental health initiatives</strong> and <strong style={{color:GOLD}}>school anti-bullying programs</strong> — causes deeply personal to me as the author of <em>Doxy the School Bully.</em> A significant portion of all proceeds goes directly to these causes. When you create here, you're helping build a kinder world.</p>
           <p style={{color:WHITE,fontSize:14,lineHeight:1.9}}>Together, we are building a community of creators who use their talents to spread kindness, understanding, and hope.</p>
           <p style={{color:WHITE,fontSize:14,lineHeight:1.9}}>With gratitude and cinematic love,</p>
           <p style={{color:GOLD,fontWeight:900,fontSize:14,letterSpacing:2}}>— AMANDA STRONG</p>
@@ -844,7 +939,7 @@ function P23({ go }) {
         <div style={{...Card(),textAlign:"left",marginBottom:16}}>
           <h2 style={{color:GOLD,fontWeight:900,fontSize:12,letterSpacing:3,marginBottom:14}}>OUR MISSION</h2>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-            {[{ic:"🎬",t:"EMPOWER CREATORS",d:"600+ AI tools making professional filmmaking accessible to everyone."},{ic:"🛡",t:"PROTECT THE YOUNG",d:"Revenue funds school anti-bullying programs, inspired by Doxy the School Bully."},{ic:"🏅",t:"SUPPORT VETERANS",d:"We fund mental health services for veterans — because they deserve the best."},{ic:"🌐",t:"BUILD COMMUNITY",d:"The Creator Network connects filmmakers worldwide to share and grow."}].map(m=>(
+            {[{ic:"🎬",t:"EMPOWER CREATORS",d:"600+ AI tools making professional filmmaking accessible to everyone."},{ic:"🛡",t:"PROTECT THE YOUNG",d:"Most proceeds fund school anti-bullying programs, inspired by Doxy the School Bully."},{ic:"🏅",t:"SUPPORT VETERANS",d:"A major portion funds mental health services for veterans — because they deserve the best."},{ic:"🌐",t:"BUILD COMMUNITY",d:"The Creator Network connects filmmakers worldwide to share and grow."}].map(m=>(
               <div key={m.t} style={{background:"#000",border:`1px solid ${GOLDDIM}`,borderRadius:0,padding:12}}>
                 <div style={{fontSize:18,marginBottom:5}}>{m.ic}</div>
                 <div style={{color:GOLD,fontWeight:900,fontSize:10,letterSpacing:2,marginBottom:4}}>{m.t}</div>
