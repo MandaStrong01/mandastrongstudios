@@ -89,7 +89,7 @@ function Header({ go, setMenu }) {
   );
 }
 
-function Footer({ page, go }) {
+function Footer({ page, go, onSave }) {
   return (
     <footer style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:400, background:"#000", borderTop:`1px solid ${GOLD}`, padding:"6px 20px 8px", display:"flex", flexDirection:"column", gap:4 }}>
       <div style={{ textAlign:"center" }}>
@@ -99,7 +99,8 @@ function Footer({ page, go }) {
         <button onClick={() => go(Math.max(1,page-1))} disabled={page===1} style={{ ...G("out",true), opacity:page===1?0.3:1 }}>◀ BACK</button>
         <span style={{ color:GOLD, fontSize:13, fontWeight:900, fontFamily:"'Cinzel',serif", letterSpacing:2 }}>PAGE {page} / {TOTAL}</span>
         <button onClick={() => go(Math.min(TOTAL,page+1))} disabled={page===TOTAL} style={{ ...G("gold",true), opacity:page===TOTAL?0.3:1 }}>NEXT ▶</button>
-        <span style={{ color:"#22c55e", fontSize:13, fontWeight:700, marginLeft:20 }}>● AUTOSAVE ON</span>
+        <button onClick={onSave} style={{ ...G("out",true), fontSize:11, letterSpacing:2 }}>💾 SAVE PROJECT</button>
+        <span style={{ color:"#22c55e", fontSize:13, fontWeight:700 }}>● AUTOSAVE ON</span>
       </div>
     </footer>
   );
@@ -131,18 +132,7 @@ function ToolPanel({ tool, onClose, onSave }) {
   const fileRef = useRef(null);
 
   const speak = (vid, txt) => {
-    if (!txt.trim()) return;
-    const v = STOCK_VOICES.find(x => x.id===vid);
-    if (!v) return;
-    window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(txt);
-    utt.pitch = v.pitch; utt.rate = v.rate;
-    const voices = window.speechSynthesis.getVoices();
-    const match = voices.find(x => x.lang.startsWith("en"));
-    if (match) utt.voice = match;
-    setPlaying(vid);
-    utt.onend = () => setPlaying(null);
-    window.speechSynthesis.speak(utt);
+    speakText(vid, txt, ()=>setPlaying(vid), ()=>setPlaying(null));
   };
 
   const runAI = async () => {
@@ -1072,29 +1062,63 @@ const STOCK_VOICES = [
   { id:"river", name:"River", desc:"Warm American Male", style:"Friendly · Intimate", accent:"American South", pitch:0.95, rate:0.92 },
 ];
 
+function speakText(voiceId, txt, onStart, onEnd) {
+  if (!txt || !txt.trim()) return;
+  const v = STOCK_VOICES.find(x => x.id === voiceId) || STOCK_VOICES[0];
+  window.speechSynthesis.cancel();
+
+  const doSpeak = () => {
+    const allVoices = window.speechSynthesis.getVoices();
+    const utt = new SpeechSynthesisUtterance(txt.replace(/\[pause\]/g,". ").replace(/\*|\/\n/g," ").slice(0,5000));
+    utt.pitch = v.pitch;
+    utt.rate = v.rate;
+
+    // Try to match voice by gender and accent
+    let picked = null;
+    if (voiceId === "james" || voiceId === "marcus" || voiceId === "river") {
+      // Male voices
+      picked = allVoices.find(x => /david|james|daniel|oliver|arthur|google uk.*male|en-gb.*m/i.test(x.name))
+            || allVoices.find(x => x.lang==="en-GB" && x.name.toLowerCase().includes("male"))
+            || allVoices.find(x => /gordon|alex|fred|tom|bruce|lee|ryan|eric|en-au.*m/i.test(x.name))
+            || allVoices.find(x => x.lang.startsWith("en") && !/female|zira|samantha|victoria|moira|karen|susan|lisa|fiona|kate|serena/i.test(x.name) && x !== allVoices[0])
+            || allVoices.find(x => x.lang.startsWith("en"));
+    } else {
+      // Female voices — aurora british, sophia australian, nova neutral
+      if (voiceId === "aurora") {
+        picked = allVoices.find(x => /kate|serena|google uk.*female|en-gb/i.test(x.name))
+              || allVoices.find(x => x.lang==="en-GB");
+      } else if (voiceId === "sophia") {
+        picked = allVoices.find(x => /karen|en-au/i.test(x.name))
+              || allVoices.find(x => x.lang==="en-AU");
+      } else {
+        picked = allVoices.find(x => /samantha|victoria|zira|nova/i.test(x.name));
+      }
+      picked = picked || allVoices.find(x => x.lang.startsWith("en"));
+    }
+
+    if (picked) utt.voice = picked;
+    if (onStart) onStart();
+    utt.onend = () => { if (onEnd) onEnd(); };
+    utt.onerror = () => { if (onEnd) onEnd(); };
+    window.speechSynthesis.speak(utt);
+  };
+
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length > 0) { doSpeak(); }
+  else { window.speechSynthesis.onvoiceschanged = () => { doSpeak(); }; }
+}
+
 function P6Voice({ onSave }) {
   const [selVoice, setSelVoice] = useState("aurora");
   const [text, setText] = useState("");
-  const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
   const [saved, setSaved] = useState(false);
   const [playing, setPlaying] = useState(null);
   const [search, setSearch] = useState("");
   const filtered = VOICE.filter(t => t.toLowerCase().includes(search.toLowerCase()));
 
-  const speak = (voiceId, txt) => {
-    if (!txt.trim()) return;
-    const v = STOCK_VOICES.find(x => x.id === voiceId);
-    if (!v) return;
-    const utt = new SpeechSynthesisUtterance(txt);
-    utt.pitch = v.pitch; utt.rate = v.rate;
-    const voices = window.speechSynthesis.getVoices();
-    const match = voices.find(x => x.lang.startsWith("en"));
-    if (match) utt.voice = match;
-    setPlaying(voiceId);
-    utt.onend = () => setPlaying(null);
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utt);
+  const speak = (vid, txt) => {
+    speakText(vid, txt, ()=>setPlaying(vid), ()=>setPlaying(null));
   };
 
   const generateNarration = async () => {
@@ -1176,6 +1200,10 @@ function P6Voice({ onSave }) {
               style={{ ...G("out",false), padding:"12px 20px", opacity:!text.trim()?0.5:1 }}>
               ▶ SPEAK NOW
             </button>
+            <button onClick={() => { window.speechSynthesis.cancel(); setText(""); setResult(""); setSaved(false); }}
+              style={{ ...G("out",false), padding:"12px 16px", color:"#ef4444", borderColor:"#ef4444" }}>
+              ✕ CLEAR
+            </button>
           </div>
         </div>
 
@@ -1185,7 +1213,7 @@ function P6Voice({ onSave }) {
             <textarea value={result} onChange={e => setResult(e.target.value)}
               style={{ ...inp, height:120, resize:"none", lineHeight:1.7, marginBottom:10 }} />
             <div style={{ display:"flex", gap:10 }}>
-              <button onClick={() => speak(selVoice, result.replace(/\[pause\]|\*|\/|\n/g," "))} style={{ ...G("out",false) }}>▶ PLAY NARRATION</button>
+              <button onClick={() => speak(selVoice, result.replace(/\[pause\]|\*|\/|\n/g," "))} style={{ ...G("out",false) }}>▶ PLAY</button>
               <button onClick={() => window.speechSynthesis.cancel()} style={{ ...G("out",false) }}>⏹ STOP</button>
               <button onClick={saveToLibrary} style={{ ...G("gold",false) }}>SAVE TO MEDIA LIBRARY</button>
             </div>
@@ -1208,14 +1236,30 @@ function P6Voice({ onSave }) {
 }
 
 export default function App() {
-  const [page,setPage]=useState(1);
+  const [page,setPage]=useState(()=>{ try{ return JSON.parse(localStorage.getItem("ms_page")||"1"); }catch{ return 1; }});
   const [menu,setMenu]=useState(false);
-  const [user,setUser]=useState({name:"Guest",plan:"Guest",isAdmin:false});
-  const [mediaLib,setMediaLib]=useState([]);
-  const [timeline,setTimeline]=useState({});
-  const [rendered,setRendered]=useState(null);
-  const go=p=>{setPage(p);window.scrollTo(0,0);};
+  const [user,setUser]=useState(()=>{ try{ return JSON.parse(localStorage.getItem("ms_user")||'{"name":"Guest","plan":"Guest","isAdmin":false}'); }catch{ return {name:"Guest",plan:"Guest",isAdmin:false}; }});
+  const [mediaLib,setMediaLib]=useState(()=>{ try{ const s=localStorage.getItem("ms_media"); return s?JSON.parse(s).map(a=>({...a,url:a.url||""})):[];  }catch{ return []; }});
+  const [timeline,setTimeline]=useState(()=>{ try{ return JSON.parse(localStorage.getItem("ms_timeline")||"{}"); }catch{ return {}; }});
+  const [rendered,setRendered]=useState(()=>{ try{ return JSON.parse(localStorage.getItem("ms_rendered")||"null"); }catch{ return null; }});
+  const [saved, setSavedNotice]=useState(false);
+
+  const go=p=>{setPage(p);window.scrollTo(0,0);try{localStorage.setItem("ms_page",JSON.stringify(p));}catch{}};
   const save=a=>setMediaLib(p=>[...p,a]);
+
+  const saveProject=()=>{
+    try{
+      localStorage.setItem("ms_page",JSON.stringify(page));
+      localStorage.setItem("ms_user",JSON.stringify(user));
+      localStorage.setItem("ms_timeline",JSON.stringify(timeline));
+      localStorage.setItem("ms_rendered",JSON.stringify(rendered));
+      const saveable=mediaLib.map(a=>({...a,file:undefined,url:a.type==="text/plain"||a.type==="audio/narration"?a.url:""}));
+      localStorage.setItem("ms_media",JSON.stringify(saveable));
+      setSavedNotice(true);
+      setTimeout(()=>setSavedNotice(false),2000);
+    }catch(e){ alert("Project saved locally to this browser."); }
+  };
+
   const pages={
     1:<P1 go={go}/>,2:<P2 go={go}/>,3:<P3/>,4:<P4 go={go} setUser={setUser}/>,
     5:<ToolPage title="WRITING TOOLS" subtitle="AI WORKSTATION 01 — WRITING" tools={WRITING} onSave={save}/>,
@@ -1238,8 +1282,9 @@ export default function App() {
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Rajdhani:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
       <Header go={go} setMenu={setMenu}/>
       {menu&&<QAMenu go={go} onClose={()=>setMenu(false)} user={user}/>}
+      {saved&&<div style={{position:"fixed",top:60,left:"50%",transform:"translateX(-50%)",background:GOLDDIM,color:"#000",padding:"10px 24px",fontWeight:900,fontSize:13,letterSpacing:2,zIndex:999}}>✓ PROJECT SAVED</div>}
       <div style={{minHeight:"calc(100vh - 116px)"}}>{pages[page]||<P1 go={go}/>}</div>
-      <Footer page={page} go={go}/>
+      <Footer page={page} go={go} onSave={saveProject}/>
     </div>
   );
 }
