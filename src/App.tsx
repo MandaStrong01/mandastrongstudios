@@ -48,10 +48,10 @@ function QAMenu({ go, onClose, user }) {
           <button onClick={onClose} style={{ background:"none", border:"none", color:GOLD, fontSize:20, cursor:"pointer" }}>✕</button>
         </div>
         <div style={{ background:`linear-gradient(135deg,${GOLDDIM},${GOLD})`, borderRadius:0, padding:"9px 12px", marginBottom:10, textAlign:"center" }}>
-          <div style={{ color:"#000", fontWeight:900, fontSize:10, letterSpacing:3, fontFamily:"'Cinzel',serif" }}>MANDA STRONG STUDIO</div>
+          <div style={{ color:"#000", fontWeight:900, fontSize:12, letterSpacing:3, fontFamily:"'Cinzel',serif" }}>MANDA STRONG STUDIO</div>
         </div>
         {user && user.plan && <div style={{ background:"#000", border:`1px solid ${GOLDDIM}`, borderRadius:0, padding:"7px 10px", marginBottom:14, textAlign:"center" }}>
-          <div style={{ color:DIM, fontSize:9, letterSpacing:2 }}>PLAN</div>
+          <div style={{ color:DIM, fontSize:13, letterSpacing:2 }}>PLAN</div>
           <div style={{ color:GOLD, fontWeight:900, fontSize:14, fontFamily:"'Cinzel',serif" }}>{user.plan}</div>
         </div>}
         {NAV.map(i => (
@@ -74,15 +74,15 @@ function Header({ go, setMenu }) {
       <button onClick={() => setMenu(true)} style={{ background:"none", border:`1px solid ${GOLD}`, color:GOLD, borderRadius:0, width:34, height:34, cursor:"pointer", fontSize:16, flexShrink:0 }}>☰</button>
       <div onClick={() => go(1)} style={{ cursor:"pointer", flexShrink:0 }}>
         <div style={{ fontFamily:"'Cinzel',serif", color:GOLD, fontSize:13, fontWeight:900, letterSpacing:3, lineHeight:1, textShadow:`0 0 16px ${GOLD}99` }}>MANDA STRONG</div>
-        <div style={{ fontFamily:"'Cinzel',serif", color:GOLDDIM, fontSize:9, letterSpacing:4 }}>STUDIO</div>
+        <div style={{ fontFamily:"'Cinzel',serif", color:GOLDDIM, fontSize:13, letterSpacing:4 }}>STUDIO</div>
       </div>
       <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center" }}>
-        <div style={{ color:GOLD, fontSize:10, letterSpacing:2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", fontWeight:700 }}>
+        <div style={{ color:GOLD, fontSize:12, letterSpacing:2, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", fontWeight:700 }}>
           ✦ CINEMA INTELLIGENCE PLATFORM &nbsp;·&nbsp; 600+ AI TOOLS &nbsp;·&nbsp; 8K EXPORT &nbsp;·&nbsp; UP TO 3-HOUR FILMS
         </div>
       </div>
       <div style={{ display:"flex", alignItems:"center", gap:10, flexShrink:0 }}>
-        <div style={{ color:"#22c55e", fontSize:11, letterSpacing:2, fontWeight:900 }}>● SYSTEM ONLINE</div>
+        <div style={{ color:"#22c55e", fontSize:13, letterSpacing:2, fontWeight:900 }}>● SYSTEM ONLINE</div>
         <div onClick={() => go(21)} style={{ width:36, height:36, background:`linear-gradient(135deg,${GOLDDIM},${GOLD})`, borderRadius:0, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", fontFamily:"'Cinzel',serif", fontSize:19, fontWeight:900, color:"#000", boxShadow:`0 0 18px ${GOLD}77` }}>G</div>
       </div>
     </header>
@@ -93,13 +93,13 @@ function Footer({ page, go }) {
   return (
     <footer style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:400, background:"#000", borderTop:`1px solid ${GOLD}`, padding:"6px 20px 8px", display:"flex", flexDirection:"column", gap:4 }}>
       <div style={{ textAlign:"center" }}>
-        <span style={{ color:GOLD, fontSize:10, letterSpacing:1, fontWeight:700 }}>MANDASTRONG STUDIO 2026 · PROFESSIONAL CINEMA SYNTHESIS · MandaStrong1.Etsy.com</span>
+        <span style={{ color:GOLD, fontSize:12, letterSpacing:1, fontWeight:700 }}>MANDASTRONG STUDIO 2026 · PROFESSIONAL CINEMA SYNTHESIS · MandaStrong1.Etsy.com</span>
       </div>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:16 }}>
         <button onClick={() => go(Math.max(1,page-1))} disabled={page===1} style={{ ...G("out",true), opacity:page===1?0.3:1 }}>◀ BACK</button>
-        <span style={{ color:GOLD, fontSize:11, fontWeight:900, fontFamily:"'Cinzel',serif", letterSpacing:2 }}>PAGE {page} / {TOTAL}</span>
+        <span style={{ color:GOLD, fontSize:13, fontWeight:900, fontFamily:"'Cinzel',serif", letterSpacing:2 }}>PAGE {page} / {TOTAL}</span>
         <button onClick={() => go(Math.min(TOTAL,page+1))} disabled={page===TOTAL} style={{ ...G("gold",true), opacity:page===TOTAL?0.3:1 }}>NEXT ▶</button>
-        <span style={{ color:"#22c55e", fontSize:11, fontWeight:700, marginLeft:20 }}>● AUTOSAVE ON</span>
+        <span style={{ color:"#22c55e", fontSize:13, fontWeight:700, marginLeft:20 }}>● AUTOSAVE ON</span>
       </div>
     </footer>
   );
@@ -116,14 +116,34 @@ function ToolCard({ name, onOpen }) {
   );
 }
 
+const VOICE_TOOLS = ["Text to Voice","Text to Speech","Text to Narration","Text to Audiobook","Text to Voiceover","AI Voice Actor","Neural Voice Generator","Emotion Voice Synth","Documentary Voice","Trailer Voice Generator","Commercial Voice","Character Voice Creator","Audiobook Creator","Podcast Voice"];
+
 function ToolPanel({ tool, onClose, onSave }) {
-  const [mode, setMode] = useState("upload");
+  const isVoiceTool = VOICE_TOOLS.includes(tool);
+  const [mode, setMode] = useState(isVoiceTool ? "voice" : "upload");
+  const [selVoice, setSelVoice] = useState("aurora");
   const [describe, setDescribe] = useState("");
   const [result, setResult] = useState("");
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [playing, setPlaying] = useState(null);
   const fileRef = useRef(null);
+
+  const speak = (vid, txt) => {
+    if (!txt.trim()) return;
+    const v = STOCK_VOICES.find(x => x.id===vid);
+    if (!v) return;
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(txt);
+    utt.pitch = v.pitch; utt.rate = v.rate;
+    const voices = window.speechSynthesis.getVoices();
+    const match = voices.find(x => x.lang.startsWith("en"));
+    if (match) utt.voice = match;
+    setPlaying(vid);
+    utt.onend = () => setPlaying(null);
+    window.speechSynthesis.speak(utt);
+  };
 
   const runAI = async () => {
     if (!describe.trim()) return;
@@ -133,17 +153,21 @@ function ToolPanel({ tool, onClose, onSave }) {
         method:"POST",
         headers:{ "Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true" },
         body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:800,
-          messages:[{ role:"user", content:`MandaStrong Studio — Tool: "${tool}"\nUser request: ${describe}\n\nGenerate professional cinematic content for this tool. Be specific and creative.` }] })
+          messages:[{ role:"user", content: isVoiceTool
+            ? `You are a professional narrator. Voice style: ${STOCK_VOICES.find(x=>x.id===selVoice)?.style}. Format this text as cinematic narration with natural pacing. Mark pauses as [pause] and emphasis as *word*:\n\n${describe}`
+            : `MandaStrong Studio — Tool: "${tool}"\nUser request: ${describe}\n\nGenerate professional cinematic content. Be specific and creative.` }] })
       });
       const d = await res.json();
-      setResult(d.content && d.content[0] ? d.content[0].text : "Generated successfully!");
-    } catch(e) { setResult("Error connecting — check API key in Bolt settings."); }
+      const txt = d.content && d.content[0] ? d.content[0].text : "Generated!";
+      setResult(txt);
+      if (isVoiceTool) speak(selVoice, txt.replace(/\[pause\]|\*|\/|\n/g," "));
+    } catch(e) { setResult("Error — check API key in Bolt settings."); }
     setLoading(false);
   };
 
   const save = () => {
     if (!result.trim()) return;
-    if (onSave) onSave({ id:Date.now()+Math.random(), name:`${tool} — Result`, type:"text/plain", url:"", content:result });
+    if (onSave) onSave({ id:Date.now()+Math.random(), name:`${tool} — ${isVoiceTool ? STOCK_VOICES.find(x=>x.id===selVoice)?.name : "Result"}`, type: isVoiceTool ? "audio/narration" : "text/plain", url:"", content:result });
     setSaved(true);
   };
 
@@ -158,58 +182,111 @@ function ToolPanel({ tool, onClose, onSave }) {
 
   return (
     <div style={{ position:"fixed", inset:0, zIndex:900, background:"rgba(0,0,0,0.92)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <div style={{ width:"min(560px,95vw)", background:"#000", border:`1px solid ${GOLD}`, borderRadius:0, padding:26, maxHeight:"90vh", overflowY:"auto" }}>
+      <div style={{ width:"min(600px,95vw)", background:"#000", border:`1px solid ${GOLD}`, borderRadius:0, padding:26, maxHeight:"92vh", overflowY:"auto" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
           <h2 style={{ ...H1, fontSize:16, margin:0, letterSpacing:4 }}>{tool}</h2>
           <button onClick={onClose} style={{ background:"none", border:"none", color:GOLD, fontSize:20, cursor:"pointer" }}>✕</button>
         </div>
-        {/* 3 mode buttons */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:18 }}>
+
+        {/* MODE BUTTONS — voice tools get extra VOICE tab */}
+        <div style={{ display:"grid", gridTemplateColumns: isVoiceTool ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap:8, marginBottom:18 }}>
+          {isVoiceTool && <button onClick={() => setMode("voice")} style={{ ...G(mode==="voice"?"gold":"out",true), fontSize:11 }}>🎙 VOICE</button>}
           {[["upload","UPLOAD"],["paste","PASTE"],["ai","AI CREATE ✦"]].map(([m,l]) => (
-            <button key={m} onClick={() => setMode(m)}
-              style={{ ...G(mode===m?"gold":"out",true), textAlign:"center", fontSize:11 }}>{l}</button>
+            <button key={m} onClick={() => setMode(m)} style={{ ...G(mode===m?"gold":"out",true), fontSize:11 }}>{l}</button>
           ))}
         </div>
+
+        {/* VOICE MODE — 6 stock voices + text to speak */}
+        {mode==="voice" && isVoiceTool && (
+          <div>
+            <div style={{ color:GOLD, fontSize:12, letterSpacing:3, fontWeight:900, marginBottom:10 }}>SELECT VOICE</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:16 }}>
+              {STOCK_VOICES.map(v => (
+                <div key={v.id} onClick={() => setSelVoice(v.id)}
+                  style={{ background:"#000", border:`2px solid ${selVoice===v.id?GOLD:GOLDDIM}`, padding:"10px 12px", cursor:"pointer", boxShadow:selVoice===v.id?`0 0 12px ${GOLD}44`:"none" }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+                    <span style={{ color:selVoice===v.id?GOLD:WHITE, fontSize:14, fontWeight:900 }}>{v.name}</span>
+                    <button onClick={e => { e.stopPropagation(); speak(v.id, `Hi, I'm ${v.name}. ${v.desc}. Ready to narrate.`); }}
+                      style={{ background:"none", border:`1px solid ${GOLDDIM}`, color:GOLD, padding:"2px 8px", cursor:"pointer", fontSize:10, fontWeight:900 }}>
+                      {playing===v.id?"⏹":"▶"}
+                    </button>
+                  </div>
+                  <div style={{ color:GOLD, fontSize:11 }}>{v.desc}</div>
+                  <div style={{ color:WHITE, fontSize:10, marginTop:2 }}>{v.style} · {v.accent}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ color:GOLD, fontSize:12, letterSpacing:3, fontWeight:900, marginBottom:6 }}>PASTE YOUR SCRIPT OR DIALOGUE</div>
+            <textarea value={describe} onChange={e => setDescribe(e.target.value)}
+              placeholder="Paste your script, narration, or dialogue here. AI will format it for cinematic delivery and speak it in the selected voice..."
+              style={{ ...inp, height:110, resize:"none", lineHeight:1.7, marginBottom:10 }} />
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom: result?14:0 }}>
+              <button onClick={runAI} disabled={loading||!describe.trim()}
+                style={{ ...G("gold",false), padding:"12px", opacity:loading||!describe.trim()?0.5:1 }}>
+                {loading?"⟳ GENERATING...":"AI FORMAT & SPEAK ✦"}
+              </button>
+              <button onClick={() => speak(selVoice, describe)} disabled={!describe.trim()}
+                style={{ ...G("out",false), padding:"12px", opacity:!describe.trim()?0.5:1 }}>
+                ▶ SPEAK NOW
+              </button>
+            </div>
+            {result && (
+              <div>
+                <div style={{ color:GOLD, fontSize:12, letterSpacing:3, fontWeight:900, marginBottom:6 }}>FORMATTED NARRATION</div>
+                <textarea value={result} onChange={e => setResult(e.target.value)}
+                  style={{ ...inp, height:110, resize:"none", lineHeight:1.7, marginBottom:10 }} />
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+                  <button onClick={() => speak(selVoice, result.replace(/\[pause\]|\*|\/|\n/g," "))} style={{ ...G("out",false), padding:"10px" }}>▶ PLAY</button>
+                  <button onClick={() => window.speechSynthesis.cancel()} style={{ ...G("out",false), padding:"10px" }}>⏹ STOP</button>
+                  <button onClick={save} style={{ ...G("gold",false), padding:"10px" }}>SAVE TO LIBRARY</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* UPLOAD mode */}
         {mode==="upload" && (
           <div style={{ marginBottom:14 }}>
-            <div style={{ color:GOLD, fontSize:10, letterSpacing:3, fontWeight:900, marginBottom:10 }}>UPLOAD FILE</div>
+            <div style={{ color:GOLD, fontSize:12, letterSpacing:3, fontWeight:900, marginBottom:10 }}>UPLOAD FILE</div>
             <div onClick={() => fileRef.current && fileRef.current.click()}
               style={{ border:`2px dashed ${GOLDDIM}`, padding:"30px 20px", textAlign:"center", cursor:"pointer", transition:"border-color .15s" }}
               onMouseEnter={e => e.currentTarget.style.borderColor=GOLD}
               onMouseLeave={e => e.currentTarget.style.borderColor=GOLDDIM}>
               <div style={{ fontSize:28, marginBottom:8 }}>⬆</div>
               <div style={{ color:WHITE, fontSize:13, fontWeight:700, letterSpacing:1 }}>CLICK TO BROWSE</div>
-              <div style={{ color:DIM, fontSize:11, marginTop:4 }}>Video · Audio · Image · Text</div>
+              <div style={{ color:DIM, fontSize:13, marginTop:4 }}>Video · Audio · Image · Text</div>
             </div>
             <input ref={fileRef} type="file" style={{ display:"none" }} onChange={e => handleFile(e.target.files)} />
           </div>
         )}
+
         {/* PASTE mode */}
         {mode==="paste" && (
           <div style={{ marginBottom:14 }}>
-            <div style={{ color:GOLD, fontSize:10, letterSpacing:3, fontWeight:900, marginBottom:6 }}>ADD URL</div>
+            <div style={{ color:GOLD, fontSize:12, letterSpacing:3, fontWeight:900, marginBottom:6 }}>ADD URL</div>
             <input value={url} onChange={e => setUrl(e.target.value)} placeholder="Paste a URL to import content..." style={{ ...inp, marginBottom:10 }} />
-            <div style={{ color:GOLD, fontSize:10, letterSpacing:3, fontWeight:900, marginBottom:6 }}>OR PASTE TEXT</div>
+            <div style={{ color:GOLD, fontSize:12, letterSpacing:3, fontWeight:900, marginBottom:6 }}>OR PASTE TEXT</div>
             <textarea value={describe} onChange={e => setDescribe(e.target.value)} placeholder="Paste your content here..."
               style={{ ...inp, height:100, resize:"none", lineHeight:1.6 }} />
-            <button onClick={() => { if(onSave) onSave({ id:Date.now()+Math.random(), name:`${tool} — Pasted`, type:"text/plain", url: url||"", content:describe }); setSaved(true); }}
+            <button onClick={() => { if(onSave) onSave({ id:Date.now()+Math.random(), name:`${tool} — Pasted`, type:"text/plain", url:url||"", content:describe }); setSaved(true); }}
               style={{ ...G("gold",false), marginTop:8, width:"100%", padding:"12px" }}>SAVE TO MEDIA LIBRARY</button>
           </div>
         )}
+
         {/* AI CREATE mode */}
         {mode==="ai" && (
           <div style={{ marginBottom:14 }}>
-            <div style={{ color:GOLD, fontSize:10, letterSpacing:3, fontWeight:900, marginBottom:6 }}>DESCRIBE</div>
+            <div style={{ color:GOLD, fontSize:12, letterSpacing:3, fontWeight:900, marginBottom:6 }}>DESCRIBE</div>
             <textarea value={describe} onChange={e => setDescribe(e.target.value)} placeholder={`Describe what you want from "${tool}"...`}
               style={{ ...inp, height:80, resize:"none", lineHeight:1.6 }} />
             <button onClick={runAI} disabled={loading||!describe.trim()}
               style={{ ...G("gold",false), marginTop:8, width:"100%", padding:"12px", opacity:loading||!describe.trim()?0.5:1 }}>
-              {loading ? "⟳  GENERATING..." : "AI CREATE ✦"}
+              {loading?"⟳  GENERATING...":"AI CREATE ✦"}
             </button>
             {result && (
               <div style={{ marginTop:14 }}>
-                <div style={{ color:GOLD, fontSize:10, letterSpacing:3, fontWeight:900, marginBottom:6 }}>RESULT</div>
+                <div style={{ color:GOLD, fontSize:12, letterSpacing:3, fontWeight:900, marginBottom:6 }}>RESULT</div>
                 <textarea value={result} onChange={e => setResult(e.target.value)}
                   style={{ ...inp, height:140, resize:"none", lineHeight:1.7 }} />
                 <button onClick={save} style={{ ...G("gold",false), marginTop:8, width:"100%", padding:"12px" }}>GENERATE & SAVE</button>
@@ -217,8 +294,9 @@ function ToolPanel({ tool, onClose, onSave }) {
             )}
           </div>
         )}
+
         {saved && (
-          <div style={{ marginTop:14, background:"#0a2a0a", border:`1px solid #22c55e`, borderRadius:0, padding:"12px 16px", textAlign:"center" }}>
+          <div style={{ marginTop:14, background:"#0a2a0a", border:`1px solid #22c55e`, padding:"12px 16px", textAlign:"center" }}>
             <div style={{ color:"#22c55e", fontWeight:900, fontSize:14, letterSpacing:2 }}>✓ ASSET SAVED TO MEDIA LIBRARY</div>
           </div>
         )}
@@ -235,7 +313,7 @@ function ToolPage({ title, subtitle, tools, onSave }) {
     <div style={{ ...Sp }}>
       <div style={{ padding:"14px 18px 12px", borderBottom:`1px solid ${GOLDDIM}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
         <div>
-          <div style={{ fontSize:9, color:GOLD, letterSpacing:4, fontWeight:700 }}>{subtitle}</div>
+          <div style={{ fontSize:13, color:GOLD, letterSpacing:4, fontWeight:700 }}>{subtitle}</div>
           <h1 style={{ ...H1, fontSize:24, margin:0 }}>{title}</h1>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -267,7 +345,7 @@ function P1({ go }) {
         </div>
         <style>{`@keyframes tw{0%,100%{opacity:.05}50%{opacity:.85}}`}</style>
         <div style={{ position:"relative", zIndex:1 }}>
-          <div style={{ fontSize:9, color:DIM, letterSpacing:6, marginBottom:12 }}>CINEMA INTELLIGENCE PLATFORM — EST. 2026</div>
+          <div style={{ fontSize:13, color:DIM, letterSpacing:6, marginBottom:12 }}>CINEMA INTELLIGENCE PLATFORM — EST. 2026</div>
           <div style={{ fontFamily:"'Cinzel',serif", fontSize:"clamp(34px,6vw,58px)", fontWeight:900, color:GOLD, letterSpacing:5, lineHeight:1, textShadow:`0 0 60px ${GOLD}dd, 0 0 120px ${GOLD}66` }}>MANDA STRONG</div>
           <div style={{ fontFamily:"'Cinzel',serif", fontSize:"clamp(34px,6vw,58px)", fontWeight:900, color:GOLD, letterSpacing:5, lineHeight:1, textShadow:`0 0 60px ${GOLD}dd, 0 0 120px ${GOLD}66`, marginBottom:14 }}>STUDIO</div>
           <div style={{ color:WHITE, fontSize:12, letterSpacing:4, marginBottom:28, fontWeight:600 }}>600+ AI TOOLS · 8K EXPORT · UP TO 3-HOUR FILMS</div>
@@ -281,7 +359,7 @@ function P1({ go }) {
         {[["600+","AI TOOLS"],["8K","EXPORT"],["3 HRS","DURATION"],["1TB","STORAGE"]].map(([v,l]) => (
           <div key={v} style={{ ...Card(), textAlign:"center", padding:12 }}>
             <div style={{ color:GOLD, fontFamily:"'Cinzel',serif", fontSize:22, fontWeight:900, textShadow:`0 0 16px ${GOLD}77` }}>{v}</div>
-            <div style={{ color:WHITE, fontSize:9, marginTop:3, fontWeight:700, letterSpacing:2 }}>{l}</div>
+            <div style={{ color:WHITE, fontSize:13, marginTop:3, fontWeight:700, letterSpacing:2 }}>{l}</div>
           </div>
         ))}
       </div>
@@ -291,7 +369,7 @@ function P1({ go }) {
           onMouseEnter={e => { e.currentTarget.style.background=GOLDDIM; }}
           onMouseLeave={e => { e.currentTarget.style.background="#000"; }}>
           <div style={{ fontSize:26, lineHeight:1 }}>⬇</div>
-          <div style={{ color:GOLD, fontSize:9, fontWeight:900, letterSpacing:1, textAlign:"center", lineHeight:1.4 }}>DOWNLOAD<br/>AS APP</div>
+          <div style={{ color:GOLD, fontSize:13, fontWeight:900, letterSpacing:1, textAlign:"center", lineHeight:1.4 }}>DOWNLOAD<br/>AS APP</div>
         </div>
       </div>
     </div>
@@ -302,14 +380,14 @@ function P2({ go }) {
   return (
     <div style={{ ...Sp, padding:40 }}>
       <div style={{ maxWidth:880, margin:"0 auto" }}>
-        <div style={{ fontSize:9, color:GOLD, letterSpacing:4, marginBottom:8, fontWeight:700 }}>AI CREATOR PLATFORM</div>
+        <div style={{ fontSize:13, color:GOLD, letterSpacing:4, marginBottom:8, fontWeight:700 }}>AI CREATOR PLATFORM</div>
         <h1 style={{ ...H1, fontSize:30, marginBottom:14 }}>MAKE AWESOME FAMILY MOVIES OR TURN YOUR DREAMS INTO REALITY</h1>
         <p style={{ color:WHITE, fontSize:15, lineHeight:1.9, maxWidth:720, marginBottom:28 }}>MandaStrong Studio combines the power of 600+ professional AI tools with an intuitive cinematic workspace — so anyone can create stunning short films, family videos, or feature-length productions up to 3 hours long. No film school required.</p>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:28 }}>
           {[["600+","AI Tools"],["8K","Export Quality"],["3 HOURS","Max Duration"],["1TB","Cloud Storage"]].map(([v,l]) => (
             <div key={v} style={{ ...Card(), textAlign:"center", padding:14 }}>
               <div style={{ color:GOLD, fontFamily:"'Cinzel',serif", fontSize:22, fontWeight:900 }}>{v}</div>
-              <div style={{ color:WHITE, fontSize:11, marginTop:4, fontWeight:600, letterSpacing:1 }}>{l}</div>
+              <div style={{ color:WHITE, fontSize:13, marginTop:4, fontWeight:600, letterSpacing:1 }}>{l}</div>
             </div>
           ))}
         </div>
@@ -325,7 +403,7 @@ function P3() {
   return (
     <div style={{ ...Sp, padding:40 }}>
       <div style={{ maxWidth:980, margin:"0 auto" }}>
-        <div style={{ fontSize:9, color:GOLD, letterSpacing:4, marginBottom:8, fontWeight:700 }}>SHOWCASE</div>
+        <div style={{ fontSize:13, color:GOLD, letterSpacing:4, marginBottom:8, fontWeight:700 }}>SHOWCASE</div>
         <h1 style={{ ...H1, fontSize:30, marginBottom:24 }}>EXAMPLES MADE BY MANDASTRONG STUDIO</h1>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16 }}>
           {[1,2,3].map(s => (
@@ -335,7 +413,7 @@ function P3() {
                 <div style={{ width:52, height:52, borderRadius:0, border:`2px solid ${GOLD}`, display:"flex", alignItems:"center", justifyContent:"center" }}>
                   <div style={{ color:GOLD, fontSize:22, marginLeft:4 }}>{playing[s-1] ? "⏸" : "▶"}</div>
                 </div>
-                <div style={{ position:"absolute", bottom:8, left:10, color:GOLD, fontSize:9, fontWeight:700, letterSpacing:2 }}>VIEWER 0{s}</div>
+                <div style={{ position:"absolute", bottom:8, left:10, color:GOLD, fontSize:13, fontWeight:700, letterSpacing:2 }}>VIEWER 0{s}</div>
               </div>
               <button style={{ ...G("out",true), width:"100%" }}>⬆ UPLOAD FILM</button>
             </div>
@@ -359,22 +437,22 @@ function P4({ go, setUser }) {
       <div style={{ maxWidth:1000, margin:"0 auto" }}>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:18, marginBottom:36 }}>
           <div style={{ ...Card() }}>
-            <div style={{ fontSize:9, color:GOLD, letterSpacing:3, marginBottom:8, fontWeight:700 }}>EXISTING USER</div>
+            <div style={{ fontSize:13, color:GOLD, letterSpacing:3, marginBottom:8, fontWeight:700 }}>EXISTING USER</div>
             <h2 style={{ ...H1, fontSize:18, marginBottom:18 }}>SIGN IN</h2>
             <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email address" style={inp}/>
             <input value={pass} onChange={e=>setPass(e.target.value)} type="password" placeholder="Password" style={{...inp,marginBottom:16}}/>
             <button onClick={login} style={{...G("gold",false),width:"100%",padding:"12px"}}>SIGN IN TO STUDIO</button>
-            <div style={{textAlign:"center",marginTop:8,color:DIM,fontSize:10,letterSpacing:1}}>Secured with 256-bit encryption</div>
+            <div style={{textAlign:"center",marginTop:8,color:DIM,fontSize:12,letterSpacing:1}}>Secured with 256-bit encryption</div>
           </div>
           <div style={{...Card(),border:`2px solid #22c55e`,position:"relative"}}>
-            <div style={{position:"absolute",top:-11,left:"50%",transform:"translateX(-50%)",background:"#22c55e",color:"#000",borderRadius:0,padding:"3px 14px",fontSize:10,fontWeight:900,whiteSpace:"nowrap",letterSpacing:1}}>🎉 7-DAY FREE TRIAL</div>
-            <div style={{fontSize:9,color:GOLD,letterSpacing:3,marginBottom:8,marginTop:10,fontWeight:700}}>NEW CREATOR</div>
+            <div style={{position:"absolute",top:-11,left:"50%",transform:"translateX(-50%)",background:"#22c55e",color:"#000",borderRadius:0,padding:"3px 14px",fontSize:12,fontWeight:900,whiteSpace:"nowrap",letterSpacing:1}}>🎉 7-DAY FREE TRIAL</div>
+            <div style={{fontSize:13,color:GOLD,letterSpacing:3,marginBottom:8,marginTop:10,fontWeight:700}}>NEW CREATOR</div>
             <h2 style={{...H1,fontSize:18,marginBottom:18}}>CREATE ACCOUNT</h2>
             <input value={name} onChange={e=>setName(e.target.value)} placeholder="Your Name" style={inp}/>
             <input value={re} onChange={e=>setRe(e.target.value)} placeholder="Email address" style={{...inp,marginBottom:16}}/>
             <button onClick={()=>{setUser({name:name||"Creator",plan:"Studio Trial",isAdmin:false});window.open(STRIPE.studio,"_blank");go(5);}}
               style={{width:"100%",padding:"12px",background:"#22c55e",border:"none",color:"#000",borderRadius:0,fontWeight:900,fontSize:13,cursor:"pointer",letterSpacing:2}}>START FREE TRIAL — $0</button>
-            <div style={{textAlign:"center",marginTop:8,color:DIM,fontSize:10,letterSpacing:1}}>Studio Plan Free for 7 Days · No Credit Card</div>
+            <div style={{textAlign:"center",marginTop:8,color:DIM,fontSize:12,letterSpacing:1}}>Studio Plan Free for 7 Days · No Credit Card</div>
           </div>
           <div style={{...Card(),textAlign:"center"}}>
             <div style={{fontSize:36,marginBottom:10}}>👁</div>
@@ -391,9 +469,9 @@ function P4({ go, setUser }) {
             {t:"STUDIO PLAN",p:"50",link:STRIPE.studio,f:["8K Export","600+ AI Tools","1TB Storage","24/7 Support","Full Rights","API Access","7-Day Free Trial"],pop:false,trial:true},
           ].map(plan => (
             <div key={plan.t} style={{...Card(),border:plan.pop?`2px solid ${GOLD}`:`1px solid ${GOLDDIM}`,position:"relative"}}>
-              {plan.pop&&<div style={{position:"absolute",top:-11,left:"50%",transform:"translateX(-50%)",background:GOLD,color:"#000",borderRadius:0,padding:"2px 12px",fontSize:10,fontWeight:900,whiteSpace:"nowrap",letterSpacing:1}}>MOST POPULAR</div>}
-              {plan.trial&&<div style={{position:"absolute",top:-11,right:12,background:"#22c55e",color:"#000",borderRadius:0,padding:"2px 10px",fontSize:10,fontWeight:900,whiteSpace:"nowrap"}}>🎉 FREE TRIAL</div>}
-              <div style={{color:WHITE,fontSize:9,letterSpacing:3,fontWeight:700}}>{plan.t}</div>
+              {plan.pop&&<div style={{position:"absolute",top:-11,left:"50%",transform:"translateX(-50%)",background:GOLD,color:"#000",borderRadius:0,padding:"2px 12px",fontSize:12,fontWeight:900,whiteSpace:"nowrap",letterSpacing:1}}>MOST POPULAR</div>}
+              {plan.trial&&<div style={{position:"absolute",top:-11,right:12,background:"#22c55e",color:"#000",borderRadius:0,padding:"2px 10px",fontSize:12,fontWeight:900,whiteSpace:"nowrap"}}>🎉 FREE TRIAL</div>}
+              <div style={{color:WHITE,fontSize:13,letterSpacing:3,fontWeight:700}}>{plan.t}</div>
               <div style={{color:GOLD,fontFamily:"'Cinzel',serif",fontSize:34,fontWeight:900,margin:"8px 0",textShadow:`0 0 20px ${GOLD}66`}}>${plan.p}<span style={{fontSize:12,color:WHITE}}>/mo</span></div>
               <div style={{margin:"12px 0"}}>{plan.f.map(f=><div key={f} style={{color:WHITE,fontSize:13,padding:"3px 0",borderBottom:`1px solid ${BG}`}}>✓ {f}</div>)}</div>
               <button onClick={()=>window.open(plan.link,"_blank")} style={{...G(plan.trial?"out":"gold",false),width:"100%"}}>{plan.trial?"START FREE TRIAL":"SUBSCRIBE NOW"}</button>
@@ -416,7 +494,7 @@ function P11({ mediaLib, setMediaLib }) {
   return (
     <div style={{...Sp,padding:40}}>
       <div style={{maxWidth:800,margin:"0 auto"}}>
-        <div style={{fontSize:9,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>ASSET INGESTION</div>
+        <div style={{fontSize:13,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>ASSET INGESTION</div>
         <h1 style={{...H1,fontSize:28,marginBottom:4}}>UPLOAD MEDIA</h1>
         <div style={{color:WHITE,fontSize:14,marginBottom:20,fontWeight:700,letterSpacing:1}}>{mediaLib.length} ASSETS IN LIBRARY</div>
         <div onDragOver={e=>{e.preventDefault();e.currentTarget.style.borderColor=GOLD;}}
@@ -433,7 +511,7 @@ function P11({ mediaLib, setMediaLib }) {
             <button key={lb} onClick={()=>fileRef.current&&fileRef.current.click()}
               style={{...Card(),textAlign:"center",padding:16,cursor:"pointer",display:"block",border:`1px solid ${GOLDDIM}`}}>
               <div style={{fontSize:22,marginBottom:6}}>{ic}</div>
-              <div style={{color:WHITE,fontSize:11,fontWeight:800,letterSpacing:2}}>{lb}</div>
+              <div style={{color:WHITE,fontSize:13,fontWeight:800,letterSpacing:2}}>{lb}</div>
             </button>
           ))}
         </div>
@@ -446,9 +524,9 @@ function P11({ mediaLib, setMediaLib }) {
                   {a.type.startsWith("video")?<video src={a.url} style={{width:"100%",borderRadius:0,marginBottom:5}}/>:
                    a.type.startsWith("image")?<img src={a.url} style={{width:"100%",borderRadius:0,marginBottom:5}} alt={a.name}/>:
                    <div style={{height:60,background:"#000",borderRadius:0,marginBottom:5,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>🎵</div>}
-                  <div style={{color:WHITE,fontSize:11,fontWeight:800,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</div>
+                  <div style={{color:WHITE,fontSize:13,fontWeight:800,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{a.name}</div>
                   <button onClick={()=>setMediaLib(p=>p.filter(x=>x.id!==a.id))}
-                    style={{position:"absolute",top:5,right:5,background:"#7f1d1d",border:"none",color:"#ef4444",borderRadius:0,width:16,height:16,cursor:"pointer",fontSize:9,padding:0}}>✕</button>
+                    style={{position:"absolute",top:5,right:5,background:"#7f1d1d",border:"none",color:"#ef4444",borderRadius:0,width:16,height:16,cursor:"pointer",fontSize:13,padding:0}}>✕</button>
                 </div>
               ))}
             </div>
@@ -465,7 +543,7 @@ function P12({ go, mediaLib }) {
   return (
     <div style={{...Sp,padding:40}}>
       <div style={{maxWidth:880,margin:"0 auto"}}>
-        <div style={{fontSize:9,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>PRODUCTION HUB</div>
+        <div style={{fontSize:13,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>PRODUCTION HUB</div>
         <h1 style={{...H1,fontSize:28,marginBottom:4}}>EDITOR SUITE</h1>
         <div style={{color:WHITE,fontSize:14,marginBottom:20,fontWeight:600,letterSpacing:1}}>Your complete post-production workspace.</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:18}}>
@@ -482,19 +560,19 @@ function P12({ go, mediaLib }) {
         </div>
         <div style={{...Card()}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-            <div style={{color:GOLD,fontWeight:900,fontSize:10,letterSpacing:3}}>MOVIE DURATION</div>
+            <div style={{color:GOLD,fontWeight:900,fontSize:12,letterSpacing:3}}>MOVIE DURATION</div>
             <div style={{color:GOLD,fontFamily:"'Cinzel',serif",fontSize:20,fontWeight:900}}>{dur} MIN</div>
           </div>
           <input type="range" min={0} max={180} step={5} value={dur} onChange={e=>setDur(+e.target.value)}
             style={{width:"100%",accentColor:GOLD,height:4,marginBottom:8}}/>
           <div style={{display:"flex",justifyContent:"space-between"}}>
-            <span style={{color:DIM,fontSize:10,letterSpacing:1}}>0 MIN</span>
-            <span style={{color:DIM,fontSize:10,letterSpacing:1}}>30</span>
-            <span style={{color:DIM,fontSize:10,letterSpacing:1}}>60</span>
-            <span style={{color:DIM,fontSize:10,letterSpacing:1}}>90</span>
-            <span style={{color:DIM,fontSize:10,letterSpacing:1}}>120</span>
-            <span style={{color:DIM,fontSize:10,letterSpacing:1}}>150</span>
-            <span style={{color:DIM,fontSize:10,letterSpacing:1}}>180 MIN</span>
+            <span style={{color:DIM,fontSize:12,letterSpacing:1}}>0 MIN</span>
+            <span style={{color:DIM,fontSize:12,letterSpacing:1}}>30</span>
+            <span style={{color:DIM,fontSize:12,letterSpacing:1}}>60</span>
+            <span style={{color:DIM,fontSize:12,letterSpacing:1}}>90</span>
+            <span style={{color:DIM,fontSize:12,letterSpacing:1}}>120</span>
+            <span style={{color:DIM,fontSize:12,letterSpacing:1}}>150</span>
+            <span style={{color:DIM,fontSize:12,letterSpacing:1}}>180 MIN</span>
           </div>
         </div>
       </div>
@@ -509,7 +587,7 @@ function P13({ go, mediaLib, timeline, setTimeline }) {
     <div style={{...Sp,padding:20}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,flexWrap:"wrap",gap:10}}>
         <div>
-          <div style={{fontSize:9,color:GOLD,letterSpacing:4,fontWeight:700}}>EDITING WORKSPACE</div>
+          <div style={{fontSize:13,color:GOLD,letterSpacing:4,fontWeight:700}}>EDITING WORKSPACE</div>
           <h1 style={{...H1,fontSize:24,margin:0}}>TIMELINE EDITOR</h1>
         </div>
         <div style={{display:"flex",gap:8}}>
@@ -528,7 +606,7 @@ function P13({ go, mediaLib, timeline, setTimeline }) {
       </div>
       {tracks.map((tr,idx)=>(
         <div key={idx} style={{marginBottom:8}}>
-          <div style={{color:GOLD,fontSize:9,letterSpacing:3,marginBottom:4,fontWeight:900}}>{tr}</div>
+          <div style={{color:GOLD,fontSize:13,letterSpacing:3,marginBottom:4,fontWeight:900}}>{tr}</div>
           <div onDragOver={e=>e.preventDefault()}
             onDrop={e=>{e.preventDefault();const id=e.dataTransfer.getData("assetId");const a=mediaLib.find(x=>String(x.id)===id);if(a)addToTrack(idx,a);}}
             style={{background:"#000",border:`1px dashed ${GOLDDIM}`,borderRadius:0,minHeight:42,padding:6,display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
@@ -536,7 +614,7 @@ function P13({ go, mediaLib, timeline, setTimeline }) {
               <div key={i} style={{background:GOLDDIM,borderRadius:0,padding:"3px 10px",fontSize:12,color:"#000",fontWeight:900,display:"flex",alignItems:"center",gap:5}}>
                 {a.name.slice(0,12)}
                 <button onClick={()=>setTimeline(p=>({...p,[idx]:p[idx].filter((_,j)=>j!==i)}))}
-                  style={{background:"none",border:"none",color:"#000",cursor:"pointer",fontSize:11,padding:0}}>✕</button>
+                  style={{background:"none",border:"none",color:"#000",cursor:"pointer",fontSize:13,padding:0}}>✕</button>
               </div>
             ))}
             {!(timeline[idx]||[]).length&&<span style={{color:WHITE,fontSize:12,letterSpacing:1}}>DROP {tr} CLIPS HERE</span>}
@@ -545,7 +623,7 @@ function P13({ go, mediaLib, timeline, setTimeline }) {
       ))}
       {mediaLib.length>0&&(
         <div style={{marginTop:12}}>
-          <div style={{color:GOLD,fontSize:9,letterSpacing:3,marginBottom:6,fontWeight:900}}>DRAG TO TIMELINE:</div>
+          <div style={{color:GOLD,fontSize:13,letterSpacing:3,marginBottom:6,fontWeight:900}}>DRAG TO TIMELINE:</div>
           <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
             {mediaLib.map(a=>(
               <div key={a.id} draggable onDragStart={e=>e.dataTransfer.setData("assetId",String(a.id))}
@@ -580,7 +658,7 @@ function P14() {
         ))}
       </div>
       <div style={{flex:1,padding:28}}>
-        <div style={{fontSize:9,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>ENHANCEMENT STUDIO</div>
+        <div style={{fontSize:13,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>ENHANCEMENT STUDIO</div>
         <h2 style={{...H1,fontSize:22,marginBottom:6}}>{active.toUpperCase()}</h2>
         <div style={{color:WHITE,fontSize:14,marginBottom:20,fontWeight:600}}>Apply AI powered <strong style={{color:GOLD}}>{active}</strong> to your footage.</div>
         {Object.entries(vals).map(([k,v])=>(
@@ -606,12 +684,12 @@ function P15() {
   return (
     <div style={{...Sp,padding:40}}>
       <div style={{maxWidth:680,margin:"0 auto"}}>
-        <div style={{fontSize:9,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>MIXING CONSOLE</div>
+        <div style={{fontSize:13,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>MIXING CONSOLE</div>
         <h1 style={{...H1,fontSize:28,marginBottom:24}}>AUDIO MIXER</h1>
         <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:24}}>
           {Object.entries(lvl).map(([ch,val])=>(
             <div key={ch} style={{...Card(),textAlign:"center",padding:18}}>
-              <div style={{color:GOLD,fontSize:10,letterSpacing:3,marginBottom:8,fontWeight:900}}>{ch}</div>
+              <div style={{color:GOLD,fontSize:12,letterSpacing:3,marginBottom:8,fontWeight:900}}>{ch}</div>
               <div style={{color:GOLD,fontFamily:"'Cinzel',serif",fontSize:30,fontWeight:900,marginBottom:12,textShadow:`0 0 16px ${GOLD}88`}}>{val}</div>
               <input type="range" min={0} max={100} value={val} onChange={e=>setLvl(p=>({...p,[ch]:+e.target.value}))} style={{width:"100%",height:100,accentColor:GOLD}}/>
               <div style={{height:3,background:"#000",borderRadius:1,marginTop:10}}>
@@ -645,17 +723,17 @@ function P16({ go, timeline, setRendered }) {
   return (
     <div style={{...Sp,padding:40}}>
       <div style={{maxWidth:780,margin:"0 auto"}}>
-        <div style={{fontSize:9,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>FINAL OUTPUT</div>
+        <div style={{fontSize:13,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>FINAL OUTPUT</div>
         <h1 style={{...H1,fontSize:28,marginBottom:20}}>RENDER FILM</h1>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
           <div style={{...Card()}}>
-            <div style={{color:GOLD,fontWeight:900,fontSize:10,letterSpacing:3,marginBottom:10}}>EXPORT QUALITY</div>
+            <div style={{color:GOLD,fontWeight:900,fontSize:12,letterSpacing:3,marginBottom:10}}>EXPORT QUALITY</div>
             <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
               {["8K - 4320p","4K - 2160p","HD - 1080p","SD - 720p"].map(q=><button key={q} onClick={()=>setQuality(q)} style={{...G(quality===q?"gold":"out",true)}}>{q}</button>)}
             </div>
           </div>
           <div style={{...Card()}}>
-            <div style={{color:GOLD,fontWeight:900,fontSize:10,letterSpacing:3,marginBottom:10}}>FORMAT</div>
+            <div style={{color:GOLD,fontWeight:900,fontSize:12,letterSpacing:3,marginBottom:10}}>FORMAT</div>
             <div style={{display:"flex",gap:6}}>
               {["MP4","MOV","AVI","WebM"].map(f=><button key={f} onClick={()=>setFormat(f)} style={{...G(format===f?"gold":"out",true)}}>{f}</button>)}
             </div>
@@ -663,17 +741,17 @@ function P16({ go, timeline, setRendered }) {
         </div>
         <div style={{...Card(),marginBottom:16}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-            <div style={{color:GOLD,fontWeight:900,fontSize:10,letterSpacing:3}}>FILM DURATION</div>
+            <div style={{color:GOLD,fontWeight:900,fontSize:12,letterSpacing:3}}>FILM DURATION</div>
             <div style={{color:GOLD,fontFamily:"'Cinzel',serif",fontSize:18,fontWeight:900}}>{dur} MIN</div>
           </div>
           <input type="range" min={0} max={180} step={5} value={dur} onChange={e=>setDur(+e.target.value)}
             style={{width:"100%",accentColor:GOLD,marginBottom:6}}/>
           <div style={{display:"flex",justifyContent:"space-between"}}>
-            <span style={{color:DIM,fontSize:9,letterSpacing:1}}>0</span>
-            <span style={{color:DIM,fontSize:9,letterSpacing:1}}>60</span>
-            <span style={{color:DIM,fontSize:9,letterSpacing:1}}>90</span>
-            <span style={{color:DIM,fontSize:9,letterSpacing:1}}>120</span>
-            <span style={{color:DIM,fontSize:9,letterSpacing:1}}>180 MIN</span>
+            <span style={{color:DIM,fontSize:13,letterSpacing:1}}>0</span>
+            <span style={{color:DIM,fontSize:13,letterSpacing:1}}>60</span>
+            <span style={{color:DIM,fontSize:13,letterSpacing:1}}>90</span>
+            <span style={{color:DIM,fontSize:13,letterSpacing:1}}>120</span>
+            <span style={{color:DIM,fontSize:13,letterSpacing:1}}>180 MIN</span>
           </div>
         </div>
         <div style={{...Card(),display:"flex",alignItems:"center",gap:8,marginBottom:14}}>
@@ -731,7 +809,7 @@ function P18({ rendered, mediaLib }) {
   return (
     <div style={{...Sp,padding:40}}>
       <div style={{maxWidth:780,margin:"0 auto"}}>
-        <div style={{fontSize:9,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>DISTRIBUTION</div>
+        <div style={{fontSize:13,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>DISTRIBUTION</div>
         <h1 style={{...H1,fontSize:28,marginBottom:14}}>EXPORT & DISTRIBUTE</h1>
         <div style={{...Card(),marginBottom:16,textAlign:"center",color:rendered?WHITE:DIM,fontWeight:700,letterSpacing:1}}>
           {rendered?`FILM READY: ${rendered.quality} · ${rendered.format}`:"NO FILM RENDERED YET"}
@@ -740,11 +818,11 @@ function P18({ rendered, mediaLib }) {
           {[["💾","DOWNLOAD TO DEVICE",dl],["💿","SAVE PROJECT FILE",()=>{}],["🌐","SHARE TO COMMUNITY HUB",()=>{}]].map(([ic,lb,fn])=>(
             <button key={lb} onClick={fn} style={{...Card(),cursor:"pointer",textAlign:"center",padding:16,display:"block"}}>
               <div style={{fontSize:24,marginBottom:6}}>{ic}</div>
-              <div style={{color:WHITE,fontSize:11,fontWeight:900,letterSpacing:2}}>{lb}</div>
+              <div style={{color:WHITE,fontSize:13,fontWeight:900,letterSpacing:2}}>{lb}</div>
             </button>
           ))}
         </div>
-        <div style={{color:GOLD,fontWeight:900,fontSize:10,letterSpacing:3,marginBottom:10}}>SHARE DIRECTLY TO SOCIAL MEDIA</div>
+        <div style={{color:GOLD,fontWeight:900,fontSize:12,letterSpacing:3,marginBottom:10}}>SHARE DIRECTLY TO SOCIAL MEDIA</div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
           {[
             {n:"YouTube",c:"#FF0000",icon:"▶"},
@@ -761,7 +839,7 @@ function P18({ rendered, mediaLib }) {
               onMouseEnter={e=>e.currentTarget.style.borderColor=s.c}
               onMouseLeave={e=>e.currentTarget.style.borderColor=GOLDDIM}>
               <span style={{color:s.c,fontSize:14,fontWeight:900,minWidth:16,textAlign:"center"}}>{s.icon}</span>
-              <span style={{color:WHITE,fontSize:11,fontWeight:700}}>{s.n}</span>
+              <span style={{color:WHITE,fontSize:13,fontWeight:700}}>{s.n}</span>
             </button>
           ))}
         </div>
@@ -776,7 +854,7 @@ function P19() {
   return (
     <div style={{...Sp,padding:40}}>
       <div style={{maxWidth:780,margin:"0 auto"}}>
-        <div style={{fontSize:9,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>LEARNING CENTER</div>
+        <div style={{fontSize:13,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>LEARNING CENTER</div>
         <h1 style={{...H1,fontSize:28,marginBottom:20}}>TUTORIALS</h1>
         {tuts.map(t=>(
           <div key={t.n} onClick={()=>window.open("https://youtube.com","_blank")}
@@ -790,7 +868,7 @@ function P19() {
                 <div style={{color:WHITE,fontSize:12,marginTop:2,fontWeight:600,letterSpacing:1}}>{t.d} · OPENS ON YOUTUBE</div>
               </div>
             </div>
-            <span style={{background:lc[t.l]+"22",border:`1px solid ${lc[t.l]}`,color:lc[t.l],borderRadius:0,padding:"3px 10px",fontSize:9,fontWeight:900,flexShrink:0,letterSpacing:2}}>{t.l.toUpperCase()}</span>
+            <span style={{background:lc[t.l]+"22",border:`1px solid ${lc[t.l]}`,color:lc[t.l],borderRadius:0,padding:"3px 10px",fontSize:13,fontWeight:900,flexShrink:0,letterSpacing:2}}>{t.l.toUpperCase()}</span>
           </div>
         ))}
       </div>
@@ -802,7 +880,7 @@ function P20() {
   return (
     <div style={{...Sp,padding:40}}>
       <div style={{maxWidth:780,margin:"0 auto"}}>
-        <div style={{fontSize:9,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>LEGAL</div>
+        <div style={{fontSize:13,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>LEGAL</div>
         <h1 style={{...H1,fontSize:28,marginBottom:4}}>TERMS OF SERVICE & DISCLAIMER</h1>
         <div style={{color:WHITE,fontSize:12,marginBottom:20,fontWeight:600,letterSpacing:2}}>EFFECTIVE: MARCH 2026 · MANDASTRONG STUDIO LLC</div>
         <div style={{...Card(),marginBottom:14}}>
@@ -839,13 +917,13 @@ function P21() {
         <div style={{textAlign:"center",marginBottom:20}}>
           <div style={{width:52,height:52,background:`linear-gradient(135deg,${GOLDDIM},${GOLD})`,borderRadius:0,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 12px",fontFamily:"'Cinzel',serif",fontSize:26,fontWeight:900,color:"#000",boxShadow:`0 0 24px ${GOLD}88`}}>G</div>
           <h1 style={{...H1,fontSize:24}}>AGENT GROK</h1>
-          <div style={{color:WHITE,fontSize:10,letterSpacing:4,fontWeight:700}}>24/7 PRODUCTION SUPPORT</div>
-          <div style={{color:"#22c55e",fontSize:11,letterSpacing:3,marginTop:4,fontWeight:900}}>● ONLINE · BUILD 2026.03.21</div>
+          <div style={{color:WHITE,fontSize:12,letterSpacing:4,fontWeight:700}}>24/7 PRODUCTION SUPPORT</div>
+          <div style={{color:"#22c55e",fontSize:13,letterSpacing:3,marginTop:4,fontWeight:900}}>● ONLINE · BUILD 2026.03.21</div>
         </div>
         <div style={{...Card(),height:290,overflowY:"auto",marginBottom:10,display:"flex",flexDirection:"column",gap:8,padding:12}}>
           {msgs.map((m,i)=>(
             <div key={i} style={{padding:"10px 14px",borderRadius:0,background:m.role==="user"?"rgba(245,197,24,0.08)":"rgba(26,82,118,0.2)",borderLeft:`2px solid ${m.role==="user"?GOLD:"#2980b9"}`}}>
-              <span style={{fontSize:9,color:GOLD,display:"block",marginBottom:4,fontWeight:900,letterSpacing:2}}>{m.role==="user"?"YOU":"AGENT GROK"}</span>
+              <span style={{fontSize:13,color:GOLD,display:"block",marginBottom:4,fontWeight:900,letterSpacing:2}}>{m.role==="user"?"YOU":"AGENT GROK"}</span>
               <span style={{color:WHITE,fontSize:14,lineHeight:1.7}}>{m.content}</span>
             </div>
           ))}
@@ -871,7 +949,7 @@ function P22() {
   return (
     <div style={{...Sp,padding:40}}>
       <div style={{maxWidth:780,margin:"0 auto"}}>
-        <div style={{fontSize:9,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>CREATOR NETWORK</div>
+        <div style={{fontSize:13,color:GOLD,letterSpacing:4,marginBottom:4,fontWeight:700}}>CREATOR NETWORK</div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
           <h1 style={{...H1,fontSize:28,margin:0}}>COMMUNITY HUB</h1>
           <button style={{...G("gold",false)}}>UPLOAD YOUR MOVIE</button>
@@ -919,7 +997,7 @@ function P23({ go }) {
           <div style={{...Card(),textAlign:"left",marginBottom:16,borderTop:"none"}}>
             {[["NAVIGATION","Use ☰ Quick Access menu or BACK/NEXT buttons to move between all 23 pages."],["PAGES 1-3","Home, Platform overview, and Example films. Upload your own films to the viewer slots."],["PAGE 4","Login, register for your 7-Day Free Trial, or browse as guest. Stripe handles all payments."],["PAGES 5-10","600+ AI Tools across 6 categories. Click any tool to open it, describe what you want, hit AI CREATE."],["PAGE 11","Upload your media — video, audio, images. Drag files in or click Browse."],["PAGE 12","Editor Suite hub — access all editing tools from one place."],["PAGE 13","Timeline Editor — drag your media onto tracks. Add extra tracks with + ADD TRACK."],["PAGE 14","Enhancement Studio — AI-powered video enhancement with sliders."],["PAGE 15","Audio Mixer — 4 channels: Music, Voice, EFX, Master."],["PAGE 16","Render Engine — choose quality (up to 8K) and format, then START RENDER."],["PAGE 17","Film Preview — watch your rendered film, use playback controls."],["PAGE 18","Export & Distribute — download or share to social media."],["PAGES 19-20","Tutorials and Terms of Service."],["PAGE 21","Agent Grok — your 24/7 AI assistant powered by Claude."],["PAGE 22","Community Hub — share your films with other creators."]].map(([t,d]) => (
               <div key={t} style={{borderBottom:`1px solid ${GOLDDIM}33`,paddingBottom:10,marginBottom:10}}>
-                <div style={{color:GOLD,fontWeight:900,fontSize:11,letterSpacing:2,marginBottom:4}}>{t}</div>
+                <div style={{color:GOLD,fontWeight:900,fontSize:13,letterSpacing:2,marginBottom:4}}>{t}</div>
                 <div style={{color:WHITE,fontSize:13,lineHeight:1.7}}>{d}</div>
               </div>
             ))}
@@ -942,7 +1020,7 @@ function P23({ go }) {
             {[{ic:"🎬",t:"EMPOWER CREATORS",d:"600+ AI tools making professional filmmaking accessible to everyone."},{ic:"🛡",t:"PROTECT THE YOUNG",d:"Most proceeds fund school anti-bullying programs, inspired by Doxy the School Bully."},{ic:"🏅",t:"SUPPORT VETERANS",d:"A major portion funds mental health services for veterans — because they deserve the best."},{ic:"🌐",t:"BUILD COMMUNITY",d:"The Creator Network connects filmmakers worldwide to share and grow."}].map(m=>(
               <div key={m.t} style={{background:"#000",border:`1px solid ${GOLDDIM}`,borderRadius:0,padding:12}}>
                 <div style={{fontSize:18,marginBottom:5}}>{m.ic}</div>
-                <div style={{color:GOLD,fontWeight:900,fontSize:10,letterSpacing:2,marginBottom:4}}>{m.t}</div>
+                <div style={{color:GOLD,fontWeight:900,fontSize:12,letterSpacing:2,marginBottom:4}}>{m.t}</div>
                 <div style={{color:WHITE,fontSize:12,lineHeight:1.7}}>{m.d}</div>
               </div>
             ))}
@@ -951,6 +1029,150 @@ function P23({ go }) {
         <div style={{display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
           <button onClick={()=>window.open("https://MandaStrong1.Etsy.com","_blank")} style={{...G("out",false)}}>VISIT ETSY STORE</button>
           <button onClick={()=>window.close()} style={{...G("gold",false)}}>EXIT APP</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const STOCK_VOICES = [
+  { id:"aurora", name:"Aurora", desc:"Warm British Female", style:"Documentary · Narrator", accent:"British RP", pitch:1.0, rate:0.9 },
+  { id:"marcus", name:"Marcus", desc:"Deep American Male", style:"Cinematic · Authoritative", accent:"American", pitch:0.85, rate:0.95 },
+  { id:"sophia", name:"Sophia", desc:"Bright Australian Female", style:"Upbeat · Engaging", accent:"Australian", pitch:1.1, rate:1.05 },
+  { id:"james", name:"James", desc:"Dry British Male", style:"Sarcastic · Witty", accent:"British", pitch:0.92, rate:0.88 },
+  { id:"nova", name:"Nova", desc:"Neutral AI Female", style:"Clean · Professional", accent:"Neutral", pitch:1.05, rate:1.0 },
+  { id:"river", name:"River", desc:"Warm American Male", style:"Friendly · Intimate", accent:"American South", pitch:0.95, rate:0.92 },
+];
+
+function P6Voice({ onSave }) {
+  const [selVoice, setSelVoice] = useState("aurora");
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState("");
+  const [saved, setSaved] = useState(false);
+  const [playing, setPlaying] = useState(null);
+  const [search, setSearch] = useState("");
+  const filtered = VOICE.filter(t => t.toLowerCase().includes(search.toLowerCase()));
+
+  const speak = (voiceId, txt) => {
+    if (!txt.trim()) return;
+    const v = STOCK_VOICES.find(x => x.id === voiceId);
+    if (!v) return;
+    const utt = new SpeechSynthesisUtterance(txt);
+    utt.pitch = v.pitch; utt.rate = v.rate;
+    const voices = window.speechSynthesis.getVoices();
+    const match = voices.find(x => x.lang.startsWith("en"));
+    if (match) utt.voice = match;
+    setPlaying(voiceId);
+    utt.onend = () => setPlaying(null);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utt);
+  };
+
+  const generateNarration = async () => {
+    if (!text.trim()) return;
+    setLoading(true); setResult(""); setSaved(false);
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true" },
+        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000,
+          messages:[{ role:"user", content:`You are a professional narrator for MandaStrong Studio. The selected voice style is: ${STOCK_VOICES.find(x=>x.id===selVoice)?.style}. Take this text and format it as polished narration with natural pauses marked as [pause], emphasis marked as *word*, and breath marks as /. Make it sound cinematic and professional:\n\n${text}` }] })
+      });
+      const d = await res.json();
+      const narration = d.content && d.content[0] ? d.content[0].text : text;
+      setResult(narration);
+      speak(selVoice, narration.replace(/\[pause\]|\*|\/|\n/g, " "));
+    } catch(e) { setResult(text); speak(selVoice, text); }
+    setLoading(false);
+  };
+
+  const saveToLibrary = () => {
+    if (!result.trim()) return;
+    const v = STOCK_VOICES.find(x => x.id === selVoice);
+    if (onSave) onSave({ id:Date.now()+Math.random(), name:`Narration — ${v.name}`, type:"audio/narration", url:"", content:result });
+    setSaved(true);
+  };
+
+  const inp = { width:"100%", background:"#000", border:`1px solid ${GOLDDIM}`, borderRadius:0, padding:"10px 12px", color:WHITE, fontSize:14, outline:"none", boxSizing:"border-box", fontFamily:"'Rajdhani',sans-serif" };
+
+  return (
+    <div style={{ ...Sp }}>
+      <div style={{ padding:"14px 18px 12px", borderBottom:`1px solid ${GOLDDIM}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
+        <div>
+          <div style={{ fontSize:12, color:GOLD, letterSpacing:4, fontWeight:700 }}>AI WORKSTATION 02 — VOICE</div>
+          <h1 style={{ ...H1, fontSize:24, margin:0 }}>VOICE TOOLS</h1>
+        </div>
+        <div style={{ position:"relative" }}>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search voice tools..."
+            style={{ background:"#000", border:`1px solid ${GOLDDIM}`, borderRadius:0, padding:"7px 12px 7px 28px", color:WHITE, fontSize:13, outline:"none", width:200 }} />
+          <span style={{ position:"absolute", left:8, top:"50%", transform:"translateY(-50%)", color:GOLD }}>🔍</span>
+        </div>
+      </div>
+
+      <div style={{ padding:"16px 18px" }}>
+        {/* STOCK VOICES */}
+        <div style={{ color:GOLD, fontSize:12, letterSpacing:3, fontWeight:900, marginBottom:12 }}>SELECT VOICE</div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:20 }}>
+          {STOCK_VOICES.map(v => (
+            <div key={v.id} onClick={() => setSelVoice(v.id)}
+              style={{ background:"#000", border:`2px solid ${selVoice===v.id ? GOLD : GOLDDIM}`, padding:"12px 14px", cursor:"pointer", transition:"all .15s", boxShadow:selVoice===v.id?`0 0 16px ${GOLD}44`:"none" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
+                <div style={{ color:selVoice===v.id ? GOLD : WHITE, fontSize:15, fontWeight:900, letterSpacing:1 }}>{v.name}</div>
+                <button onClick={e => { e.stopPropagation(); speak(v.id, `Hello, I'm ${v.name}. ${v.desc}. Ready to narrate your documentary.`); }}
+                  style={{ background:selVoice===v.id?GOLDDIM:"#111", border:`1px solid ${GOLDDIM}`, color:GOLD, padding:"3px 10px", cursor:"pointer", fontSize:11, fontWeight:900, letterSpacing:1 }}>
+                  {playing===v.id ? "⏹ STOP" : "▶ PLAY"}
+                </button>
+              </div>
+              <div style={{ color:GOLD, fontSize:11, letterSpacing:1, marginBottom:3 }}>{v.desc}</div>
+              <div style={{ color:WHITE, fontSize:10, letterSpacing:1 }}>{v.style} · {v.accent}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* TEXT TO NARRATION */}
+        <div style={{ ...Card(), marginBottom:16 }}>
+          <div style={{ color:GOLD, fontSize:12, letterSpacing:3, fontWeight:900, marginBottom:10 }}>TEXT TO NARRATION / VOICEOVER</div>
+          <div style={{ color:WHITE, fontSize:13, marginBottom:12 }}>
+            Selected voice: <strong style={{ color:GOLD }}>{STOCK_VOICES.find(x=>x.id===selVoice)?.name}</strong> — {STOCK_VOICES.find(x=>x.id===selVoice)?.desc}
+          </div>
+          <textarea value={text} onChange={e => setText(e.target.value)}
+            placeholder="Paste your script, dialogue, narration, or any text here... AI will format it for professional narration and speak it in the selected voice."
+            style={{ ...inp, height:120, resize:"none", lineHeight:1.7, marginBottom:10 }} />
+          <div style={{ display:"flex", gap:10 }}>
+            <button onClick={generateNarration} disabled={loading||!text.trim()}
+              style={{ ...G("gold",false), flex:1, padding:"12px", opacity:loading||!text.trim()?0.5:1 }}>
+              {loading ? "⟳ GENERATING..." : "▶ GENERATE & SPEAK"}
+            </button>
+            <button onClick={() => speak(selVoice, text)} disabled={!text.trim()}
+              style={{ ...G("out",false), padding:"12px 20px", opacity:!text.trim()?0.5:1 }}>
+              ▶ SPEAK NOW
+            </button>
+          </div>
+        </div>
+
+        {result && (
+          <div style={{ ...Card(), marginBottom:16 }}>
+            <div style={{ color:GOLD, fontSize:12, letterSpacing:3, fontWeight:900, marginBottom:8 }}>NARRATION OUTPUT</div>
+            <textarea value={result} onChange={e => setResult(e.target.value)}
+              style={{ ...inp, height:120, resize:"none", lineHeight:1.7, marginBottom:10 }} />
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={() => speak(selVoice, result.replace(/\[pause\]|\*|\/|\n/g," "))} style={{ ...G("out",false) }}>▶ PLAY NARRATION</button>
+              <button onClick={() => window.speechSynthesis.cancel()} style={{ ...G("out",false) }}>⏹ STOP</button>
+              <button onClick={saveToLibrary} style={{ ...G("gold",false) }}>SAVE TO MEDIA LIBRARY</button>
+            </div>
+            {saved && <div style={{ marginTop:12, background:"#0a2a0a", border:"1px solid #22c55e", padding:"10px 14px", color:"#22c55e", fontWeight:900, fontSize:13, letterSpacing:2 }}>✓ ASSET SAVED TO MEDIA LIBRARY</div>}
+          </div>
+        )}
+
+        {/* REST OF VOICE TOOLS */}
+        <div style={{ color:GOLD, fontSize:12, letterSpacing:3, fontWeight:900, marginBottom:10, marginTop:8 }}>ALL VOICE TOOLS</div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8 }}>
+          {filtered.map(t => <ToolCard key={t} name={t} onOpen={n => {
+            if(n==="Text to Narration"||n==="Text to Voiceover"||n==="Text to Speech"||n==="Text to Voice") {
+              window.scrollTo(0,0);
+            }
+          }} />)}
         </div>
       </div>
     </div>
@@ -969,7 +1191,7 @@ export default function App() {
   const pages={
     1:<P1 go={go}/>,2:<P2 go={go}/>,3:<P3/>,4:<P4 go={go} setUser={setUser}/>,
     5:<ToolPage title="WRITING TOOLS" subtitle="AI WORKSTATION 01 — WRITING" tools={WRITING} onSave={save}/>,
-    6:<ToolPage title="VOICE TOOLS" subtitle="AI WORKSTATION 02 — VOICE" tools={VOICE} onSave={save}/>,
+    6:<P6Voice onSave={save}/>,
     7:<ToolPage title="IMAGE TOOLS" subtitle="AI WORKSTATION 03 — IMAGE" tools={IMAGE_T} onSave={save}/>,
     8:<ToolPage title="VIDEO TOOLS" subtitle="AI WORKSTATION 04 — VIDEO" tools={VIDEO_T} onSave={save}/>,
     9:<ToolPage title="MOTION & VFX" subtitle="AI WORKSTATION 05 — MOTION" tools={MOTION} onSave={save}/>,
