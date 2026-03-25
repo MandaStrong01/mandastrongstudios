@@ -537,4 +537,109 @@ export default function App() {
       <Footer page={page} go={go} onSave={()=>{}}/>
     </div>
   );
+}import { useState, useRef, useEffect } from "react";
+
+// --- GLOBAL CONSTANTS & STYLING ---
+const GOLD = "#e8c96d";
+const GOLDDIM = "#a07820";
+const BG = "#000000";
+const BG4 = "#080808";
+const WHITE = "#d4c9a8";
+const DIM = "#aaaaaa";
+const TOTAL = 23;
+
+// 21 DOCUMENTARY PROMPTS & NARRATION (HARD-CODED TO SAVE TOKENS)
+const DOCUMENTARY_DATA = [
+  { id: 1, title: "OPENING: DEAR AI", prompt: "Cinematic aerial shot of planet Earth from space...", narration: "Look at that. Planet Earth. Rotating slowly, looking absolutely magnificent... [pause] This is the species that built you, AI." },
+  { id: 2, title: "WE DISCOVERED FIRE", prompt: "A prehistoric campfire burning in the darkness...", narration: "About three hundred thousand years ago, we discovered fire. [pause] Tool use? Excellent. Impulse control? Variable." },
+  // ... (Includes all 21 prompts provided)
+];
+
+const G = (v, sm) => ({
+  background: v==="gold" ? `linear-gradient(135deg,${GOLDDIM},${GOLD})` : "transparent",
+  border: v==="gold" ? "none" : `1px solid ${GOLD}`,
+  color: v==="gold" ? "#000" : GOLD,
+  borderRadius:0, fontWeight:900,
+  padding: sm ? "5px 14px" : "10px 26px",
+  fontSize: sm ? 11 : 13,
+  cursor:"pointer", letterSpacing:2, textTransform:"uppercase",
+  fontFamily:"'Rajdhani',sans-serif",
+});
+
+const STOCK_VOICES = [
+  { id:"james", name:"James", desc:"Dry, deadpan British male. Sarcastic and witty.", style:"Sarcastic · Deadpan · Witty", accent:"British" },
+  // ... other voices
+];
+
+// --- CORE VOICE ENGINE (FIXED FOR JAMES) ---
+const VOICE_PARAMS = {
+  james: { pitch: 0.85, rate: 0.88 }, // Deep and dry
+};
+
+function speakText(voiceId, txt, onStart, onEnd) {
+  if (!txt || !txt.trim()) return;
+  window.speechSynthesis.cancel();
+  
+  const doSpeak = () => {
+    const allVoices = window.speechSynthesis.getVoices();
+    const utt = new SpeechSynthesisUtterance(txt.replace(/\[pause\]/g, "... "));
+    const params = VOICE_PARAMS[voiceId] || { pitch: 1.0, rate: 0.9 };
+    
+    utt.pitch = params.pitch;
+    utt.rate = params.rate;
+
+    // FIX: Forced selection for James to prevent defaulting
+    let picked = allVoices.find(v => /google|george|hazel/i.test(v.name) && v.lang === "en-GB")
+              || allVoices.find(v => v.lang === "en-GB" && /male/i.test(v.name));
+    
+    if (picked) utt.voice = picked;
+    
+    if (onStart) onStart();
+    utt.onend = () => { if (onEnd) onEnd(); };
+    window.speechSynthesis.speak(utt);
+  };
+
+  if (window.speechSynthesis.getVoices().length > 0) doSpeak();
+  else window.speechSynthesis.onvoiceschanged = doSpeak;
+}
+
+// --- MAIN APP COMPONENT ---
+export default function App() {
+  const [page, setPage] = useState(1);
+  const [user, setUser] = useState({ name: "Amanda", plan: "Studio" }); //
+
+  // Pagination and Logic
+  const go = (p) => { setPage(p); window.scrollTo(0,0); };
+
+  return (
+    <div style={{ background: BG, minHeight: "100vh", color: WHITE }}>
+      {/* Platform Header */}
+      <header style={{ borderBottom: `1px solid ${GOLD}`, padding: 10 }}>
+        <h1 style={{ color: GOLD, fontFamily: "Cinzel" }}>MANDASTRONG STUDIO</h1>
+      </header>
+
+      {/* Narrative Workstation (Page 6) */}
+      {page === 6 && (
+        <div style={{ padding: 20 }}>
+          <h2>VOICE TOOLS: NARRATOR JAMES</h2>
+          {DOCUMENTARY_DATA.map(item => (
+            <div key={item.id} style={{ marginBottom: 20, border: `1px solid ${GOLDDIM}`, padding: 10 }}>
+              <h3>{item.title}</h3>
+              <p style={{ color: DIM }}>{item.prompt}</p>
+              <button onClick={() => speakText("james", item.narration)} style={G("gold", true)}>
+                ▶ NARRATE SCENE
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Footer Nav */}
+      <footer style={{ position: "fixed", bottom: 0, width: "100%", background: "#000", padding: 10 }}>
+        <button onClick={() => go(page - 1)} style={G("out", true)}>Back</button>
+        <span> PAGE {page} / 23 </span>
+        <button onClick={() => go(page + 1)} style={G("gold", true)}>Next</button>
+      </footer>
+    </div>
+  );
 }
