@@ -1,8 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 
-// --- GLOBAL STYLING & CONSTANTS ---
-const GOLD = "#e8c96d", GOLDDIM = "#a07820", BG = "#000000", BG4 = "#080808", WHITE = "#d4c9a8", DIM = "#aaaaaa", TOTAL = 23;
-const STRIPE = { basic:"https://buy.stripe.com/test_basic", pro:"https://buy.stripe.com/test_pro", studio:"https://buy.stripe.com/test_studio" };
+const GOLD = "#e8c96d", GOLDDIM = "#a07820", BG = "#000000", WHITE = "#d4c9a8", TOTAL = 23;
 const G = (v, sm) => ({
   background: v==="gold" ? `linear-gradient(135deg,${GOLDDIM},${GOLD})` : "transparent",
   border: v==="gold" ? "none" : `1px solid ${GOLD}`,
@@ -24,12 +22,11 @@ const STOCK_VOICES = [
 ];
 
 const VOICE_PARAMS = {
-  aurora: { pitch:1.05, rate:0.82 }, marcus: { pitch:0.80, rate:0.78 }, 
-  sophia: { pitch:1.25, rate:1.08 }, james:  { pitch:0.90, rate:0.72 }, 
+  aurora: { pitch:1.05, rate:0.82 }, marcus: { pitch:0.80, rate:0.78 },
+  sophia: { pitch:1.25, rate:1.08 }, james:  { pitch:0.90, rate:0.72 },
   nova:   { pitch:1.10, rate:0.95 }, river:  { pitch:0.95, rate:0.80 }
 };
 
-// --- CORE VOICE ENGINE WITH SLIDERS ---
 function speakText(voiceId, txt, onStart, onEnd, extras) {
   if (!txt||!txt.trim()) return;
   window.speechSynthesis.cancel();
@@ -38,7 +35,6 @@ function speakText(voiceId, txt, onStart, onEnd, extras) {
     const allVoices = window.speechSynthesis.getVoices();
     const utt = new SpeechSynthesisUtterance(clean);
     const base = VOICE_PARAMS[voiceId] || { pitch:1.0, rate:0.9 };
-    // Custom slider overrides
     utt.pitch = extras.pitch !== 1.0 ? extras.pitch : (extras.deep !== 1.0 ? extras.deep : base.pitch);
     utt.rate = extras.whisper !== 1.0 ? extras.whisper : base.rate;
     utt.volume = extras.audio;
@@ -50,37 +46,6 @@ function speakText(voiceId, txt, onStart, onEnd, extras) {
   };
   if (window.speechSynthesis.getVoices().length>0){doSpeak();}
   else{window.speechSynthesis.onvoiceschanged=doSpeak;}
-}
-
-// --- LIVE API TOOL PANEL ---
-function ToolPanel({ tool, onClose }) {
-  const [describe, setDescribe] = useState("");
-  const [result, setResult] = useState("");
-  const [loading, setLoading] = useState(false);
-  const runAI = async () => {
-    if (!describe.trim()) return;
-    setLoading(true);
-    try {
-      const res = await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST",
-        headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1500, messages:[{role:"user",content:`Tool: ${tool}. Request: ${describe}`}]})
-      });
-      const d = await res.json();
-      setResult(d.content[0].text);
-    } catch(e) { setResult("Error: Check connection/tokens."); }
-    setLoading(false);
-  };
-  return (
-    <div style={{position:"fixed",inset:0,zIndex:900,background:"rgba(0,0,0,0.92)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <div style={{...Card(), width:"500px"}}>
-        <h2 style={H1}>{tool}</h2>
-        <textarea value={describe} onChange={e=>setDescribe(e.target.value)} style={{width:"100%", height:"100px", background:"#000", color:"#fff", margin:"15px 0", padding:10}} placeholder="Describe your scene..." />
-        <div style={{display:"flex", gap:10}}><button onClick={runAI} style={G("gold",true)}>{loading?"...":"AI CREATE"}</button><button onClick={onClose} style={G("out",true)}>CLOSE</button></div>
-        {result && <div style={{marginTop:15, fontSize:12, color:GOLD, maxHeight:150, overflowY:"auto"}}>{result}</div>}
-      </div>
-    </div>
-  );
 }
 
 function P6Voice() {
@@ -129,7 +94,33 @@ function P6Voice() {
 export default function App() {
   const [page, setPage] = useState(1);
   const go = p => { setPage(p); window.scrollTo(0,0); };
-  const pages = { 1: <div style={{...Sp, textAlign:"center", paddingTop:100}}><h1 style={{...H1, fontSize:60}}>MANDA STRONG STUDIO</h1><button onClick={()=>go(4)} style={G("gold")}>START</button></div>, 4: <div style={{...Sp, display:"flex", alignItems:"center", justifyContent:"center"}}><div style={Card()}><h2 style={H1}>LOGIN</h2><button onClick={()=>go(6)} style={{...G("gold"), marginTop:20}}>ENTER STUDIO</button></div></div>, 6: <P6Voice />, 17: <div style={{...Sp, padding:40, textAlign:"center"}}><h1 style={H1}>FILM PREVIEW</h1><div style={{width:"100%", aspectRatio:"16/9", background:"#111", border:`2px dashed ${GOLDDIM}`, display:"flex", alignItems:"center", justifyContent:"center", margin:"20px 0"}}><span style={{color:GOLDDIM}}>UPLOAD MEDIA TO PREVIEW FILM</span></div></div>, 23: <div style={{...Sp, padding:40, textAlign:"center"}}><h1 style={H1}>THAT'S ALL FOLKS</h1><div style={{...Card(), textAlign:"left", marginTop:20}}><h3 style={{color:GOLD}}>📖 PRODUCTION GUIDE</h3><p style={{fontSize:13, lineHeight:1.7}}>Use Page 6 to test your scripts. Adjust depth and pitch in the Extras Box for your Proof of Concept.</p></div><button onClick={()=>go(1)} style={{...G("gold"), marginTop:20}}>BACK TO START</button></div> };
+  const pages = {
+    1: <div style={{...Sp, textAlign:"center", paddingTop:100}}>
+      <h1 style={{...H1, fontSize:60}}>MANDA STRONG STUDIO</h1>
+      <button onClick={()=>go(4)} style={G("gold")}>START</button>
+    </div>,
+    4: <div style={{...Sp, display:"flex", alignItems:"center", justifyContent:"center"}}>
+      <div style={Card()}>
+        <h2 style={H1}>LOGIN</h2>
+        <button onClick={()=>go(6)} style={{...G("gold"), marginTop:20}}>ENTER STUDIO</button>
+      </div>
+    </div>,
+    6: <P6Voice />,
+    17: <div style={{...Sp, padding:40, textAlign:"center"}}>
+      <h1 style={H1}>FILM PREVIEW</h1>
+      <div style={{width:"100%", aspectRatio:"16/9", background:"#111", border:`2px dashed ${GOLDDIM}`, display:"flex", alignItems:"center", justifyContent:"center", margin:"20px 0"}}>
+        <span style={{color:GOLDDIM}}>UPLOAD MEDIA TO PREVIEW FILM</span>
+      </div>
+    </div>,
+    23: <div style={{...Sp, padding:40, textAlign:"center"}}>
+      <h1 style={H1}>THAT'S ALL FOLKS</h1>
+      <div style={{...Card(), textAlign:"left", marginTop:20}}>
+        <h3 style={{color:GOLD}}>📖 PRODUCTION GUIDE</h3>
+        <p style={{fontSize:13, lineHeight:1.7}}>Use Page 6 to test your scripts. Adjust depth and pitch in the Extras Box for your Proof of Concept.</p>
+      </div>
+      <button onClick={()=>go(1)} style={{...G("gold"), marginTop:20}}>BACK TO START</button>
+    </div>
+  };
   return (
     <div style={{background:"#000", minHeight:"100vh"}}>
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@900&family=Rajdhani:wght@600;900&display=swap" rel="stylesheet"/>
