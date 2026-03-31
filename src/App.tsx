@@ -1,7 +1,3 @@
-Give me a few minutes to build this properly. The new P16 will use WebCodecs VideoEncoder for the MP4 output, handle 3-hour durations, and keep your exact black/gold design. Back shortly with the full replacement App.tsx.
-
-Here it is — full App.tsx with the upgraded P16 render engine. Everything else is untouched:
-
 ```
 // @ts-nocheck
 import { useState, useRef, useEffect } from "react";
