@@ -55,7 +55,7 @@ export async function renderTimeline(
   const canvas = document.createElement('canvas');
   canvas.width = settings.width;
   canvas.height = settings.height;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: false });
   if (!ctx) throw new Error('Failed to get canvas context');
 
   const totalDuration = Math.max(
@@ -64,7 +64,7 @@ export async function renderTimeline(
   );
 
   const fps = 30;
-  const totalFrames = Math.floor(totalDuration * fps);
+  const frameDuration = 1000 / fps;
 
   const stream = canvas.captureStream(fps);
 
@@ -106,12 +106,25 @@ export async function renderTimeline(
 
           if (!data) throw new Error('Failed to get video URL');
           const video = await loadVideoElement(data.signedUrl);
+          video.muted = true;
+          await video.play();
+          video.pause();
           return { clip, video };
         })
       );
 
-      for (let frame = 0; frame < totalFrames; frame++) {
-        const currentTime = frame / fps;
+      let frameCount = 0;
+      let startTime = performance.now();
+      const totalFrames = Math.ceil(totalDuration * fps);
+
+      const renderFrame = () => {
+        const currentTime = frameCount / fps;
+
+        if (currentTime >= totalDuration) {
+          mediaRecorder.stop();
+          onProgress?.(100);
+          return;
+        }
 
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -119,15 +132,10 @@ export async function renderTimeline(
         for (const { clip, video } of videoElements) {
           if (currentTime >= clip.startTime && currentTime < clip.startTime + clip.duration) {
             const clipTime = currentTime - clip.startTime + (clip.trimStart || 0);
-            video.currentTime = clipTime;
 
-            await new Promise(resolve => {
-              if (video.readyState >= 2) {
-                resolve(null);
-              } else {
-                video.onseeked = () => resolve(null);
-              }
-            });
+            if (Math.abs(video.currentTime - clipTime) > 0.1) {
+              video.currentTime = clipTime;
+            }
 
             const scale = Math.min(
               canvas.width / video.videoWidth,
@@ -143,16 +151,22 @@ export async function renderTimeline(
           }
         }
 
-        if (frame % 30 === 0) {
-          const progress = Math.floor((frame / totalFrames) * 100);
+        if (frameCount % 30 === 0) {
+          const progress = Math.floor((frameCount / totalFrames) * 100);
           onProgress?.(progress);
         }
 
-        await new Promise(resolve => setTimeout(resolve, 1000 / fps));
-      }
+        frameCount++;
 
-      mediaRecorder.stop();
-      onProgress?.(100);
+        const elapsed = performance.now() - startTime;
+        const targetTime = frameCount * frameDuration;
+        const delay = Math.max(0, targetTime - elapsed);
+
+        setTimeout(renderFrame, delay);
+      };
+
+      renderFrame();
+
     } catch (error) {
       mediaRecorder.stop();
       reject(error);
@@ -227,15 +241,16 @@ export async function exportVideo(
 
 export async function quickPreview(videoUrl: string, startTime: number, duration: number): Promise<Blob> {
   const video = await loadVideoElement(videoUrl);
+  video.muted = true;
 
   const canvas = document.createElement('canvas');
   canvas.width = 1280;
   canvas.height = 720;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: false });
   if (!ctx) throw new Error('Failed to get canvas context');
 
   const fps = 30;
-  const totalFrames = Math.floor(duration * fps);
+  const frameDuration = 1000 / fps;
   const stream = canvas.captureStream(fps);
 
   const mediaRecorder = new MediaRecorder(stream, {
@@ -256,29 +271,36 @@ export async function quickPreview(videoUrl: string, startTime: number, duration
 
     mediaRecorder.start();
 
-    (async () => {
-      try {
-        for (let frame = 0; frame < totalFrames; frame++) {
-          const currentTime = startTime + (frame / fps);
-          video.currentTime = currentTime;
+    let frameCount = 0;
+    const totalFrames = Math.ceil(duration * fps);
+    const renderStartTime = performance.now();
 
-          await new Promise(resolve => {
-            if (video.readyState >= 2) {
-              resolve(null);
-            } else {
-              video.onseeked = () => resolve(null);
-            }
-          });
-
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          await new Promise(resolve => setTimeout(resolve, 1000 / fps));
-        }
-
+    const renderFrame = () => {
+      if (frameCount >= totalFrames) {
         mediaRecorder.stop();
-      } catch (error) {
-        mediaRecorder.stop();
-        reject(error);
+        return;
       }
-    })();
+
+      const currentTime = startTime + (frameCount / fps);
+
+      if (Math.abs(video.currentTime - currentTime) > 0.1) {
+        video.currentTime = currentTime;
+      }
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      frameCount++;
+
+      const elapsed = performance.now() - renderStartTime;
+      const targetTime = frameCount * frameDuration;
+      const delay = Math.max(0, targetTime - elapsed);
+
+      setTimeout(renderFrame, delay);
+    };
+
+    video.currentTime = startTime;
+    video.onseeked = () => {
+      renderFrame();
+    };
   });
 }
