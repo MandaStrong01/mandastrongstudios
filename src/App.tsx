@@ -1,3 +1,20 @@
+// Force-remove any canvas interference for video generation
+useEffect(() => {
+  const clearCanvas = () => {
+    document.querySelectorAll('canvas').forEach(canvas => {
+      canvas.style.display = 'none';
+      canvas.style.pointerEvents = 'none';
+      if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
+    });
+  };
+  
+  // Run immediately and watch for any new canvases
+  clearCanvas();
+  const observer = new MutationObserver(clearCanvas);
+  observer.observe(document.body, { childList: true, subtree: true });
+  
+  return () => observer.disconnect();
+}, []);
 import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { EnhancedLoginRegister } from './components/EnhancedLoginRegister';
