@@ -21,22 +21,6 @@ export default function App() {
   const [subscription, setSubscription] = useState<any>(null);
 
   useEffect(() => {
-    const clearCanvas = () => {
-      document.querySelectorAll('canvas').forEach(canvas => {
-        canvas.style.display = 'none';
-        canvas.style.pointerEvents = 'none';
-        if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
-      });
-    };
-
-    clearCanvas();
-    const observer = new MutationObserver(clearCanvas);
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
     checkUser();
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       (async () => {
