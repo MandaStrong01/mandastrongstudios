@@ -1526,7 +1526,9 @@ function P6Voice({ onSave }) {
                 </div>
                 <div style={{marginTop:14}}>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{color:GOLD,fontSize:11,fontWeight:900,letterSpacing:2}}>MOOD</span><span style={{color:WHITE,fontSize:12}}>{mood}</span></div>
-                  <select value={mood} onChange={e=>setMood(e.target.value)} style={{width:"100%",background:"#111",border:`1px solid ${GOLDDIM}`,color:GOLD,padding:"7px 10px",fontSize:12,outline:"none",fontFamily:"'Rajdhani',sans-serif",fontWeight:700}}>{["Neutral","Happy","Sad","Angry","Fearful","Surprised","Tender","Serious","Excited","Melancholic","Hopeful","Tense","Calm","Dramatic"].map(m=><option key={m} value={m}>{m}</option>)}</select>
+                  <select value={mood} onChange={e=>setMood(e.target.value)} style={{width:"100%",background:"#111",border:`1px solid ${GOLDDIM}`,color:GOLD,padding:"7px 10px",fontSize:12,outline:"none",fontFamily:"'Rajdhani',sans-serif",fontWeight:700}}>
+                    {["Neutral","Happy","Sad","Angry","Fearful","Surprised","Tender","Serious","Excited","Melancholic","Hopeful","Tense","Calm","Dramatic"].map(m=><option key={m} value={m}>{m}</option>)}
+                  </select>
                 </div>
               </div>
             )}
@@ -3128,15 +3130,15 @@ function P23({ go }) {
         {guideOpen&&(
           <div style={{...Card(),textAlign:"left",marginBottom:16,padding:"24px 28px",border:`2px solid ${GOLD}`,borderTopWidth:0}}>
             {[
-              {t:"GETTING STARTED",c:"Use ☰ to jump to any page. Hit 💾 SAVE PROJECT in the footer. 📂 MY PROJECTS restores your session."},
+              {t:"GETTING STARTED",c:"Use the ☰ menu top left to jump to any of the 23 pages. Hit 💾 SAVE PROJECT in the footer. 📂 MY PROJECTS restores your session."},
               {t:"PAGE 4 — LOGIN & PRICING",c:"Creator $20/mo · Pro $30/mo · Studio $50/mo with 7-day free trial. All payments via Stripe."},
-              {t:"PAGE 6 — VOICE ENGINE",c:"54 voice characters. Filter by gender, age, origin. Hit ▶ TEST. Set sliders and Mood. Hit APPLY JAMES SETTINGS for documentary narration."},
-              {t:"PAGE 8 — VIDEO GENERATOR",c:"Describe any scene. Hit 🎬 GENERATE SCENE. Every clip saves to your Media Library."},
+              {t:"PAGE 6 — VOICE ENGINE",c:"54 voice characters. Filter by gender, age, origin. Hit ▶ TEST. Set Speed, Pitch, Pause, Volume and Mood in the SLIDERS tab. Hit APPLY JAMES SETTINGS for documentary. Paste script on SPEAK tab and hit PREPARE & SPEAK."},
+              {t:"PAGE 8 — VIDEO GENERATOR",c:"Describe any scene. Hit 🎬 GENERATE SCENE. Every clip saves automatically to your Media Library."},
               {t:"PAGE 13 — TIMELINE EDITOR",c:"Drag clips to tracks. Hit ⚡ SYNC ALL TRACKS. Hit → RENDER when ready."},
               {t:"PAGE 15 — AUDIO MIXER",c:"Documentary: VOICE 85 · MUSIC 40 · EFX 50 · MASTER 85."},
               {t:"PAGE 16 — RENDER ENGINE",c:"Choose quality up to 4K. Hit START RENDER. Download, Preview or Export."},
-              {t:"PAGE 18 — EXPORT",c:"Share to YouTube, Instagram, TikTok, Facebook, LinkedIn, Vimeo and WhatsApp."},
-              {t:"WORKFLOW",c:"Page 8 → Page 6 → Page 13 → Page 15 → Page 16 → Page 17 → Page 18."},
+              {t:"PAGE 18 — EXPORT & DISTRIBUTE",c:"Share directly to YouTube, Instagram, TikTok, Facebook, LinkedIn, Vimeo and WhatsApp."},
+              {t:"RECOMMENDED WORKFLOW",c:"Page 8 → Page 6 → Page 13 → Page 15 → Page 16 → Page 17 → Page 18."},
             ].map(({t,c})=>(
               <div key={t} style={{borderBottom:`1px solid ${GOLDDIM}33`,paddingBottom:14,marginBottom:14}}>
                 <div style={{color:GOLD,fontWeight:900,fontSize:12,letterSpacing:2,marginBottom:6}}>✦ {t}</div>
