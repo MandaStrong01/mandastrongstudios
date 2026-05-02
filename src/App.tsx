@@ -654,7 +654,7 @@ TRANSITION between acts: smooth crossfade using ctx.globalAlpha
 
 DRAW LITERALLY what is described. For this scene you must draw:
 
-// OCEAN AT NIGHT:
+OCEAN AT NIGHT:
 const waves = 5;
 for(let w=0;w<waves;w++){
   ctx.strokeStyle="rgba("+(30+w*8)+","+(60+w*12)+","+(120+w*15)+","+(0.3+w*0.12)+")";
@@ -671,14 +671,14 @@ shine.addColorStop(0.4,"rgba(255,255,200,0.18)");
 shine.addColorStop(1,"rgba(255,255,180,0)");
 ctx.fillStyle=shine; ctx.fillRect(moonX-30,H*0.5,60,H*0.5);
 
-// MOON:
+MOON:
 const mg=ctx.createRadialGradient(W*0.62,H*0.18,0,W*0.62,H*0.18,H*0.09);
 mg.addColorStop(0,"rgba(255,255,240,1)");
 mg.addColorStop(0.4,"rgba(255,255,210,0.7)");
 mg.addColorStop(1,"rgba(255,255,200,0)");
 ctx.fillStyle=mg; ctx.fillRect(0,0,W,H*0.5);
 
-// FIGURE ON WINDOWSILL (seated silhouette, guitar):
+FIGURE ON WINDOWSILL (seated silhouette, guitar):
 const fx=W*0.38, fy=H*0.52;
 ctx.fillStyle="rgba(0,0,0,0.92)";
 // Head
@@ -696,14 +696,14 @@ ctx.fillRect(fx+H*0.005,fy+H*0.05,H*0.015,H*0.1);
 ctx.strokeStyle="rgba(0,0,0,0.92)"; ctx.lineWidth=H*0.02;
 ctx.beginPath(); ctx.moveTo(fx,fy-H*0.02); ctx.lineTo(fx+H*0.055,fy); ctx.stroke();
 
-// WINDOW FRAME:
+WINDOW FRAME:
 ctx.strokeStyle="rgba(60,40,20,0.9)"; ctx.lineWidth=12;
 ctx.strokeRect(fx-H*0.15,fy-H*0.3,H*0.5,H*0.6);
 // Cross bar
 ctx.beginPath(); ctx.moveTo(fx-H*0.15,fy-H*0.05); ctx.lineTo(fx+H*0.35,fy-H*0.05); ctx.stroke();
 ctx.beginPath(); ctx.moveTo(fx+H*0.1,fy-H*0.3); ctx.lineTo(fx+H*0.1,fy+H*0.3); ctx.stroke();
 
-// CANDLE (right side of room):
+CANDLE (right side of room):
 const cx2=W*0.72, cy2=H*0.58;
 const flicker=0.92+Math.sin(sec*8.3)*0.06+Math.sin(sec*13.1)*0.04;
 // Candle body
@@ -721,7 +721,7 @@ rg.addColorStop(0,"rgba(255,140,30,0.12)");
 rg.addColorStop(1,"rgba(0,0,0,0)");
 ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
 
-// CURTAIN (flowing in wind):
+CURTAIN (flowing in wind):
 const ct=sec*0.7, cx3=fx+H*0.35;
 ctx.strokeStyle="rgba(180,160,140,0.5)"; ctx.lineWidth=3;
 ctx.beginPath();
@@ -729,17 +729,17 @@ ctx.moveTo(cx3,fy-H*0.3);
 ctx.bezierCurveTo(cx3+Math.sin(ct)*25,fy-H*0.1,cx3+Math.sin(ct+1)*30,fy+H*0.1,cx3+Math.sin(ct+2)*20,fy+H*0.3);
 ctx.stroke();
 
-// CAMERA DRIFT (parallax):
+CAMERA DRIFT (parallax):
 // Use t to slowly drift the entire scene left — far ocean slower than near room
 // Apply as an overall translate: ctx.translate(-t*W*0.04, 0) at start of frame
 // Near elements (window frame, figure) move faster
 
-// BEAT RESPONSE:
+BEAT RESPONSE:
 if(beatNow){ ctx.save(); ctx.translate(W/2,H/2); ctx.scale(1.018,1.018); ctx.translate(-W/2,-H/2); }
 // draw scene
 if(beatNow){ ctx.restore(); }
 
-// COLOUR GRADE (apply last):
+COLOUR GRADE (apply last):
 ctx.fillStyle="rgba(0,20,40,0.09)"; ctx.fillRect(0,0,W,H); // teal
 ctx.fillStyle="rgba(30,8,0,0.06)"; ctx.fillRect(0,H*0.6,W,H*0.4); // warm low
 
@@ -945,7 +945,7 @@ function renderFilm(ctx, W, H, t, sec, totalSec, beatNow) {`;
   );
 
   const steps = ["🎵 SONG","🎤 STYLE","🎬 SCENE","▶ GENERATE"];
-  const fmt = (s)=>{if(!s||!isFinite(s)||isNaN(s))return "00:00";const m=Math.floor(s/60);const sc=Math.floor(s%60);return String(m).padStart(2,"0")+":"+String(sc).padStart(2,"0");};
+  const fmt = (s)=>{const m=Math.floor(s/60);const sc=Math.floor(s%60);return String(m).padStart(2,"0")+":"+String(sc).padStart(2,"0");};
 
   return (
     <div style={{position:"fixed",inset:0,zIndex:1100,background:"rgba(0,0,0,0.98)",display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -1526,9 +1526,7 @@ function P6Voice({ onSave }) {
                 </div>
                 <div style={{marginTop:14}}>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{color:GOLD,fontSize:11,fontWeight:900,letterSpacing:2}}>MOOD</span><span style={{color:WHITE,fontSize:12}}>{mood}</span></div>
-                  <select value={mood} onChange={e=>setMood(e.target.value)} style={{width:"100%",background:"#111",border:`1px solid ${GOLDDIM}`,color:GOLD,padding:"7px 10px",fontSize:12,outline:"none",fontFamily:"'Rajdhani',sans-serif",fontWeight:700}}>
-                    {["Neutral","Happy","Sad","Angry","Fearful","Surprised","Tender","Serious","Excited","Melancholic","Hopeful","Tense","Calm","Dramatic"].map(m=><option key={m} value={m}>{m}</option>)}
-                  </select>
+                  <select value={mood} onChange={e=>setMood(e.target.value)} style={{width:"100%",background:"#111",border:`1px solid ${GOLDDIM}`,color:GOLD,padding:"7px 10px",fontSize:12,outline:"none",fontFamily:"'Rajdhani',sans-serif",fontWeight:700}}>{["Neutral","Happy","Sad","Angry","Fearful","Surprised","Tender","Serious","Excited","Melancholic","Hopeful","Tense","Calm","Dramatic"].map(m=><option key={m} value={m}>{m}</option>)}</select>
                 </div>
               </div>
             )}
@@ -1596,16 +1594,16 @@ DURATION: ${duration} seconds${refInstruction}
 Write a function: function drawFrame(ctx, W, H, t, sec)
 Where t=0 to 1 (progress), sec=current second, W=1920, H=1080
 
-// CRITICAL REQUIREMENTS FOR PHOTOREALISTIC OUTPUT:
+CRITICAL REQUIREMENTS FOR PHOTOREALISTIC OUTPUT:
 
-// LIGHTING - must be physically accurate:
+LIGHTING - must be physically accurate:
 - Use multiple radialGradient light sources with proper falloff
 - Ambient occlusion: darker in corners and crevices
 - Rim lighting on figures: bright edge glow from light source direction
 - Specular highlights: bright spots on reflective surfaces
 - Volumetric light: god rays as semi-transparent gradients
 
-// HUMANS - must look real:
+HUMANS - must look real:
 - Skin tones: use rgba with warm peachy tones e.g. rgba(220,170,130,1)
 - Face: oval for head, smaller oval for face area, dots for eyes, curve for lips
 - Hair: filled path with natural hair colours
@@ -1613,7 +1611,7 @@ Where t=0 to 1 (progress), sec=current second, W=1920, H=1080
 - Body proportions: head=H*0.06, torso=H*0.2, legs=H*0.25
 - Cast shadows on ground beneath each figure
 
-// ENVIRONMENTS - must look real:
+ENVIRONMENTS - must look real:
 - Sky: multi-stop gradient from deep colour at top to lighter at horizon
 - Ground/floor: textured with subtle noise pattern
 - Buildings: boxes with window grids, varying heights, perspective depth
@@ -1621,11 +1619,11 @@ Where t=0 to 1 (progress), sec=current second, W=1920, H=1080
 - Fire/candles: animated flickering radialGradient in orange/yellow
 - Fog/atmosphere: semi-transparent overlay gradients
 
-// DEPTH & PERSPECTIVE:
+DEPTH & PERSPECTIVE:
 - Far objects: smaller, less saturated, more hazy
 - Near objects: larger, sharper, more saturated
 
-// CINEMATIC MOTION:
+CINEMATIC MOTION:
 - Camera parallax: far elements move slower than near ones
 - Breathing: subtle scale oscillation using Math.sin(sec*0.5)
 - Wind: leaves/particles drift with sine curves
@@ -2778,7 +2776,7 @@ function P17({ go, rendered, mediaLib }) {
   const [currentTime,setCurrentTime]=useState(0);
   const [duration,setDuration]=useState(0);
   const vs=rendered?.url||(mediaLib.find(a=>a.type&&a.type.startsWith("video"))?mediaLib.find(a=>a.type&&a.type.startsWith("video")).url:"");
-  const fmt=s=>{if(!s||!isFinite(s)||isNaN(s))return "00:00";const m=Math.floor(s/60);const sc=Math.floor(s%60);return `${String(m).padStart(2,"0")}:${String(sc).padStart(2,"0")}`;};
+  const fmt=s=>{const m=Math.floor(s/60);const sc=Math.floor(s%60);return `${String(m).padStart(2,"0")}:${String(sc).padStart(2,"0")}`;};
   const togglePlay=()=>{if(!videoRef.current)return;if(isPlaying){videoRef.current.pause();setIsPlaying(false);}else{videoRef.current.play();setIsPlaying(true);}};
   return (
     <div style={{...Sp,padding:40}}>
@@ -3130,15 +3128,15 @@ function P23({ go }) {
         {guideOpen&&(
           <div style={{...Card(),textAlign:"left",marginBottom:16,padding:"24px 28px",border:`2px solid ${GOLD}`,borderTopWidth:0}}>
             {[
-              {t:"GETTING STARTED",c:"Use the ☰ menu top left to jump to any of the 23 pages. Hit 💾 SAVE PROJECT in the footer. 📂 MY PROJECTS restores your session."},
+              {t:"GETTING STARTED",c:"Use ☰ to jump to any page. Hit 💾 SAVE PROJECT in the footer. 📂 MY PROJECTS restores your session."},
               {t:"PAGE 4 — LOGIN & PRICING",c:"Creator $20/mo · Pro $30/mo · Studio $50/mo with 7-day free trial. All payments via Stripe."},
-              {t:"PAGE 6 — VOICE ENGINE",c:"54 voice characters. Filter by gender, age, origin. Hit ▶ TEST. Set Speed, Pitch, Pause, Volume and Mood in the SLIDERS tab. Hit APPLY JAMES SETTINGS for documentary. Paste script on SPEAK tab and hit PREPARE & SPEAK."},
-              {t:"PAGE 8 — VIDEO GENERATOR",c:"Describe any scene. Hit 🎬 GENERATE SCENE. Every clip saves automatically to your Media Library."},
+              {t:"PAGE 6 — VOICE ENGINE",c:"54 voice characters. Filter by gender, age, origin. Hit ▶ TEST. Set sliders and Mood. Hit APPLY JAMES SETTINGS for documentary narration."},
+              {t:"PAGE 8 — VIDEO GENERATOR",c:"Describe any scene. Hit 🎬 GENERATE SCENE. Every clip saves to your Media Library."},
               {t:"PAGE 13 — TIMELINE EDITOR",c:"Drag clips to tracks. Hit ⚡ SYNC ALL TRACKS. Hit → RENDER when ready."},
               {t:"PAGE 15 — AUDIO MIXER",c:"Documentary: VOICE 85 · MUSIC 40 · EFX 50 · MASTER 85."},
               {t:"PAGE 16 — RENDER ENGINE",c:"Choose quality up to 4K. Hit START RENDER. Download, Preview or Export."},
-              {t:"PAGE 18 — EXPORT & DISTRIBUTE",c:"Share directly to YouTube, Instagram, TikTok, Facebook, LinkedIn, Vimeo and WhatsApp."},
-              {t:"RECOMMENDED WORKFLOW",c:"Page 8 → Page 6 → Page 13 → Page 15 → Page 16 → Page 17 → Page 18."},
+              {t:"PAGE 18 — EXPORT",c:"Share to YouTube, Instagram, TikTok, Facebook, LinkedIn, Vimeo and WhatsApp."},
+              {t:"WORKFLOW",c:"Page 8 → Page 6 → Page 13 → Page 15 → Page 16 → Page 17 → Page 18."},
             ].map(({t,c})=>(
               <div key={t} style={{borderBottom:`1px solid ${GOLDDIM}33`,paddingBottom:14,marginBottom:14}}>
                 <div style={{color:GOLD,fontWeight:900,fontSize:12,letterSpacing:2,marginBottom:6}}>✦ {t}</div>
