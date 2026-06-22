@@ -52,7 +52,7 @@ export default function DaVinciTimeline(props: DaVinciTimelineProps = {}) {
   ]);
   const [currentTime] = useState(propCurrentTime || 0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [zoom, setZoom] = useState(propZoom || 1);
+  const [zoom] = useState(propZoom || 1);
   const [selectedTrack, setSelectedTrack] = useState<string | null>(null);
 
   const totalDuration = Math.max(...tracks.map(t => t.startTime + t.duration), 20);

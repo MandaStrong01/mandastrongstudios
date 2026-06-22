@@ -33,7 +33,6 @@ interface MediaItem {
   url?: string;
   duration?: number;
   thumbnail?: string;
-  size?: string;
 }
 
 interface ClipItem extends MediaItem {
@@ -72,7 +71,7 @@ export default function TimelineEditor({ mediaLibrary = [] }: TimelineEditorProp
   const [dragging, setDragging] = useState<MediaItem | null>(null);
   const [overTrack, setOverTrack] = useState<string | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
-  const srtRef = useRef<HTMLInputElement>(null);
+  const srtRef = useRef(null);
 
   const showToast = (msg: string, type: 'success' | 'error' | 'warning' = 'success') => {
     setToast({ msg, type });
@@ -84,7 +83,7 @@ export default function TimelineEditor({ mediaLibrary = [] }: TimelineEditorProp
     setOverTrack(null);
     if (!dragging) return;
     const cfg = TRACKS.find(t => t.key === trackKey);
-    if (!cfg || !cfg.accept.includes(dragging.type)) {
+    if (!cfg.accept.includes(dragging.type)) {
       showToast(`⚠️ ${dragging.type} clips belong on the ${dragging.type.toUpperCase()} track`, 'error');
       setDragging(null);
       return;
