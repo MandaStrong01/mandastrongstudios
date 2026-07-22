@@ -1,4 +1,5 @@
 // @ts-nocheck
+// @ts-nocheck
 import { useState, useRef, useEffect } from "react";
 
 // IndexedDB helpers for persistent clip storage
@@ -192,12 +193,31 @@ function speakText(voiceId, txt, onStart, onEnd) {
       else if(origin.includes("australian")) candidates = premiumAussie;
       else if(gender==="female") candidates = premiumUSFemale;
       else candidates = premiumUSMale;
-      for(const name of candidates){
-        picked = allVoices.find(v=>v.name.includes(name));
+    // ── QUALITY FIRST: always prefer the highest-quality voice the device has ──
+    // Enhanced / Premium / Siri / Neural / Natural voices sound dramatically better.
+    const isHiQ = (v) => {
+      const n = (v.name||"") + " " + (v.voiceURI||"");
+      return /premium|enhanced|siri|neural|natural|online|multilingual/i.test(n);
+    };
+    const hiQVoices = allVoices.filter(v=>v.lang&&v.lang.startsWith("en")&&isHiQ(v));
+    const pool = hiQVoices.length ? hiQVoices : allVoices;
+
+    for(const name of candidates){
+        picked = pool.find(v=>v.name.includes(name)) || allVoices.find(v=>v.name.includes(name));
         if(picked) break;
       }
+      // Nothing matched by name — take the best-quality voice matching gender/accent
+      if(!picked && hiQVoices.length){
+        const fem = /female|samantha|ava|serena|zoe|karen|moira|fiona|tessa|kate|victoria|nicky|allison|susan/i;
+        const wantFemale = gender==="female";
+        picked = hiQVoices.find(v=>wantFemale ? fem.test(v.name) : !fem.test(v.name)) || hiQVoices[0];
+      }
     }
-    if(!picked) picked = allVoices.find(v=>v.lang&&v.lang.startsWith("en"));
+    // Final fallbacks — still prefer quality
+    if(!picked){
+      const anyHiQ = allVoices.filter(v=>v.lang&&v.lang.startsWith("en")&&isHiQ(v));
+      picked = anyHiQ[0] || allVoices.find(v=>v.lang&&v.lang.startsWith("en"));
+    }
     if(!picked && allVoices.length) picked = allVoices[0];
 
     const pitch = voiceChar ? voiceChar.pitch : 1.0;
@@ -1449,7 +1469,7 @@ function MusicVideoStudio({ onClose, onSave }) {
             <div style={{display:"flex",flexDirection:"column",background:"#000",overflow:"hidden"}}>
               {/* Video player */}
               <div style={{position:"relative",background:"#000"}}>
-                <canvas ref={canvasRef} style={{position:"fixed",left:0,bottom:0,width:2,height:2,opacity:0.01,pointerEvents:"none",zIndex:-1}}/>
+                <canvas ref={canvasRef} style={{position:"fixed",right:8,bottom:8,width:160,height:90,opacity:1,pointerEvents:"none",zIndex:9999,border:"1px solid #e8c96d",background:"#000"}}/>
                 <video ref={videoRef} src={videoUrl} playsInline
                   style={{width:"100%",aspectRatio:"16/9",display:"block",background:"#000"}}
                   onTimeUpdate={()=>setCurrentTime(videoRef.current?.currentTime||0)}
@@ -1537,7 +1557,7 @@ function MusicVideoStudio({ onClose, onSave }) {
           )}
 
           {/* Canvas for rendering (always hidden) */}
-          {!videoUrl&&<canvas ref={canvasRef} style={{position:"fixed",left:0,bottom:0,width:2,height:2,opacity:0.01,pointerEvents:"none",zIndex:-1}}/>}
+          {!videoUrl&&<canvas ref={canvasRef} style={{position:"fixed",right:8,bottom:8,width:160,height:90,opacity:1,pointerEvents:"none",zIndex:9999,border:"1px solid #e8c96d",background:"#000"}}/>}
         </div>
 
         {/* Bottom nav */}
@@ -1643,8 +1663,12 @@ function P6Voice({ onSave, setMediaLib }) {
   const selected=VOICE_CHARACTERS.find(v=>v.id===selVoice)||VOICE_CHARACTERS[0];
 
   const pickSysVoice=(vc)=>{
-    const all=sysVoices.length?sysVoices:window.speechSynthesis.getVoices().filter(v=>v.lang&&v.lang.startsWith("en"));
-    if(!all.length)return null;
+    const allRaw=sysVoices.length?sysVoices:window.speechSynthesis.getVoices().filter(v=>v.lang&&v.lang.startsWith("en"));
+    if(!allRaw.length)return null;
+    // ── QUALITY FIRST — use Enhanced/Premium/Siri/Neural voices when present ──
+    const isHiQ=(v)=>/premium|enhanced|siri|neural|natural|online|multilingual/i.test((v.name||"")+" "+(v.voiceURI||""));
+    const hiQ=allRaw.filter(isHiQ);
+    const all=hiQ.length?hiQ:allRaw;
     const gb=all.filter(v=>v.lang==="en-GB"),us=all.filter(v=>v.lang==="en-US"),au=all.filter(v=>v.lang==="en-AU");
     const hash=vc.id.split("").reduce((a,ch)=>a+ch.charCodeAt(0),0);
     const isMale=vc.gender==="Male",isBritish=["British","Scottish","Irish","Welsh"].includes(vc.origin),isAU=["Australian","New Zealand"].includes(vc.origin);
@@ -2144,7 +2168,7 @@ Write the drawFrame body now.`}]
 
   return (
     <div style={{minHeight:"100vh",background:"#000",color:WHITE,fontFamily:"'Rajdhani',sans-serif",paddingBottom:160}}>
-      <canvas ref={canvasRef} style={{position:"fixed",left:0,bottom:0,width:2,height:2,opacity:0.01,pointerEvents:"none",zIndex:-1}}/>
+      <canvas ref={canvasRef} style={{position:"fixed",right:8,bottom:8,width:160,height:90,opacity:1,pointerEvents:"none",zIndex:9999,border:"1px solid #e8c96d",background:"#000"}}/>
       <div style={{padding:"12px 20px",borderBottom:"1px solid "+GOLDDIM+"",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
         <div>
           <div style={{fontSize:11,color:GOLD,letterSpacing:4,fontWeight:700}}>MANDASTRONG ENGINE v2 · CINEMA-GRADE RENDERER</div>
@@ -3605,7 +3629,7 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
 
   return (
     <div style={{...Sp,padding:0}}>
-      <canvas ref={canvasRef} style={{position:"fixed",left:0,bottom:0,width:2,height:2,opacity:0.01,pointerEvents:"none",zIndex:-1}}/>
+      <canvas ref={canvasRef} style={{position:"fixed",right:8,bottom:8,width:160,height:90,opacity:1,pointerEvents:"none",zIndex:9999,border:"1px solid #e8c96d",background:"#000"}}/>
       <div style={{padding:"12px 24px",borderBottom:"1px solid "+GOLDDIM+"",background:"#020200",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
         <div>
           <div style={{fontSize:10,color:GOLD,letterSpacing:4,fontWeight:700}}>PRODUCTION ENGINE — STAGE 6</div>
