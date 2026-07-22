@@ -1,5 +1,4 @@
 // @ts-nocheck
-// @ts-nocheck
 import { useState, useRef, useEffect } from "react";
 
 // IndexedDB helpers for persistent clip storage
@@ -3092,7 +3091,7 @@ function P13({ go, mediaLib, timeline, setTimeline, user, filmDuration, setFilmD
           <h1 style={{...H1,fontSize:24,margin:0}}>TIMELINE EDITOR</h1>
           <div style={{display:"flex",alignItems:"center",gap:8,marginTop:4}}>
             <span style={{color:GOLD,fontSize:10,fontWeight:900,letterSpacing:2}}>FILM: {filmDuration||60} MIN</span>
-            <input type="range" min={0} max={180} step={30} value={filmDuration||60} onChange={e=>setFilmDuration(+e.target.value)} style={{width:160,accentColor:GOLD}}/>
+            <input type="range" min={1} max={180} step={1} value={filmDuration||60} onChange={e=>setFilmDuration(+e.target.value)} style={{width:160,accentColor:GOLD}}/>
             <div style={{display:"flex",gap:4}}>
               {[60,90,180].map(m=><button key={m} onClick={()=>setFilmDuration(m)} style={{background:filmDuration===m?GOLD:"#111",border:"1px solid "+(filmDuration===m?"#000":GOLDDIM),color:filmDuration===m?"#000":WHITE,padding:"2px 8px",cursor:"pointer",fontSize:10,fontWeight:900,fontFamily:"'Rajdhani',sans-serif"}}>{m}m</button>)}
             </div>
@@ -3404,8 +3403,20 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
         }
       }
       if(audioBuffer){audioSource=audioCtx.createBufferSource();audioSource.buffer=audioBuffer;audioSource.connect(audioDest);audioSource.connect(audioCtx.destination);}
+      // Draw several real frames BEFORE capturing so the stream is definitely live
+      for(let w=0;w<5;w++){
+        ctx.fillStyle="#000";ctx.fillRect(0,0,dims.w,dims.h);
+        ctx.fillStyle="#e8c96d";ctx.font="900 "+Math.round(dims.w/30)+"px Arial";ctx.textAlign="center";
+        ctx.fillText("MANDASTRONG STUDIO",dims.w/2,dims.h/2);
+        await new Promise(r=>setTimeout(r,60));
+      }
       const videoStream=canvas.captureStream(fps);
       const vTrack=videoStream.getVideoTracks()[0];
+      if(!vTrack||vTrack.readyState!=="live"){
+        log("⚠ Canvas capture unavailable in this browser.");
+        alert("This browser blocked video capture. Try Chrome or Safari with the tab kept in front.");
+        setRendering(false);return;
+      }
       const tracks=[...videoStream.getTracks(),...audioDest.stream.getTracks()];
       const combinedStream=new MediaStream(tracks);
       const vCodec=codec==="vp9"?"vp9":"vp8";
@@ -3605,6 +3616,18 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
       try{if(recorder.state==="recording")recorder.requestData();}catch(e){}
       await new Promise(r=>{let d=false;const f=()=>{if(!d){d=true;r();}};setTimeout(f,5000);try{recorder.onstop=f;if(recorder.state!=="inactive"){recorder.stop();}else{f();}}catch(e){f();}});
       const blob=new Blob(chunks,{type:mimeType});
+      // ── SAFETY: never hand an empty file to the player (that's the grey arrow) ──
+      if(!chunks.length||blob.size<10000){
+        log("⚠ RENDER PRODUCED NO VIDEO DATA");
+        log("Your browser blocked canvas capture. Fix: keep this tab in front");
+        log("for the whole render, and try 720p · 24FPS.");
+        setProgress(0);setDone(false);setRendering(false);
+        try{clearInterval(dataInterval);}catch(e){}
+        try{clearInterval(heartbeat);}catch(e){}
+        try{if(audioCtx)audioCtx.close();}catch(e){}
+        alert("Render produced no video data.\n\nKeep this tab in front for the whole render (don't switch apps or tabs), and use 720p · 24FPS. Then try again.");
+        return;
+      }
       const url=URL.createObjectURL(blob);
       setRenderUrl(url);
       if(setRendered)setRendered({url,quality,format:"WebM",timestamp:new Date().toLocaleString()});
@@ -3636,7 +3659,7 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
           <h1 style={{...H1,fontSize:22,margin:0}}>RENDER FILM</h1>
           <div style={{display:"flex",alignItems:"center",gap:8,marginTop:4}}>
             <span style={{color:GOLD,fontSize:10,fontWeight:900,letterSpacing:2}}>FILM: {filmDuration||60} MIN</span>
-            <input type="range" min={0} max={180} step={30} value={filmDuration||60} onChange={e=>setFilmDuration(+e.target.value)} style={{width:160,accentColor:GOLD}}/>
+            <input type="range" min={1} max={180} step={1} value={filmDuration||60} onChange={e=>setFilmDuration(+e.target.value)} style={{width:160,accentColor:GOLD}}/>
             <div style={{display:"flex",gap:4}}>
               {[60,90,180].map(m=><button key={m} onClick={()=>setFilmDuration(m)} style={{background:filmDuration===m?GOLD:"#111",border:"1px solid "+(filmDuration===m?"#000":GOLDDIM),color:filmDuration===m?"#000":WHITE,padding:"2px 8px",cursor:"pointer",fontSize:10,fontWeight:900,fontFamily:"'Rajdhani',sans-serif"}}>{m}m</button>)}
             </div>
