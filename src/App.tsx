@@ -3319,8 +3319,25 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
 
     // Fall back to current mediaLib if DB empty
     let clips = freshClips.length > 0 ? freshClips.filter(c2=>c2.type&&c2.type.startsWith("video")) : getVideoClips();
+    // ── EXCLUDE old rendered films and empty clips ──────────────────────────
+    // A previously-rendered "MandaStrong_Film..." file in the library has no real
+    // scene frames — including it makes the whole render come out 0.0MB.
+    clips = clips.filter(c2=>{
+      const n=(c2.name||"").toLowerCase();
+      if(n.includes("mandastrong_film")||n.includes("render_final")||n.includes("_film_")) return false;
+      if(c2.file&&c2.file.size!==undefined&&c2.file.size<1000) return false; // skip empty blobs
+      return true;
+    });
+    // Sort scenes in order by leading number in the name (Scene 1, 2, 3...)
+    clips.sort((a,b)=>{
+      const na=parseInt((a.name||"").match(/\b(\d+)\b/)?.[1]||"9999");
+      const nb=parseInt((b.name||"").match(/\b(\d+)\b/)?.[1]||"9999");
+      if(na!==nb)return na-nb;
+      return (a.name||"").localeCompare(b.name||"");
+    });
     const audioAsset=getAudioTrack();
     if(clips.length===0){alert("No video clips found. Generate clips on Page 8 first.");return;}
+    log("Rendering "+clips.length+" scene clips (old render files excluded)");
     setRendering(true);setDone(false);setProgress(0);setRenderLog([]);setRenderUrl("");setCurrentClipIdx(-1);
     try{
       log("MandaStrong Render Engine v2 initialising...");
@@ -3364,6 +3381,7 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
       }
       if(audioBuffer){audioSource=audioCtx.createBufferSource();audioSource.buffer=audioBuffer;audioSource.connect(audioDest);audioSource.connect(audioCtx.destination);}
       const videoStream=canvas.captureStream(fps);
+      const vTrack=videoStream.getVideoTracks()[0];
       const tracks=[...videoStream.getTracks(),...audioDest.stream.getTracks()];
       const combinedStream=new MediaStream(tracks);
       const vCodec=codec==="vp9"?"vp9":"vp8";
@@ -3385,6 +3403,16 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
       ctx.fillStyle="#000";ctx.fillRect(0,0,dims.w,dims.h);
       await new Promise(r=>setTimeout(r,200));
       recorder.start(1000);
+      // iPad Safari fix: force the recorder to flush data every second so chunks
+      // never end up empty, and keep the canvas stream alive with a heartbeat.
+      const dataInterval=setInterval(()=>{try{if(recorder.state==="recording")recorder.requestData();}catch(e){}},1000);
+      const heartbeat=setInterval(()=>{
+        try{
+          // Nudge one pixel each tick so captureStream always sees a new frame
+          ctx.fillStyle="rgba(0,0,0,0.003)";ctx.fillRect(0,0,2,2);
+          if(vTrack&&vTrack.requestFrame)vTrack.requestFrame();
+        }catch(e){}
+      },Math.round(1000/fps));
       if(audioSource)audioSource.start(0);
       // Speak live narration text through speakers during render
       if(liveNarration&&audioAsset?.text){
@@ -3440,7 +3468,7 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
       try{
         const freshDB=await getAllClipsFromDB();
         if(freshDB.length>0){
-          const refreshed=clips.map(cl=>{
+          clips=clips.map(cl=>{
             const db=freshDB.find(d=>d.id===cl.dbId||d.id===cl.id||d.name===cl.name);
             if(db&&db.blob){
               return {...cl,file:new File([db.blob],cl.name,{type:db.type||"video/webm"}),url:URL.createObjectURL(db.blob)};
@@ -3546,7 +3574,11 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
         };draw();
       });}
       setProgress(92);log("Finalising...");
+      try{clearInterval(dataInterval);}catch(e){}
+      try{clearInterval(heartbeat);}catch(e){}
       if(audioSource){try{audioSource.stop();}catch(e){}}
+      // Flush any final data before stopping
+      try{if(recorder.state==="recording")recorder.requestData();}catch(e){}
       await new Promise(r=>{let d=false;const f=()=>{if(!d){d=true;r();}};setTimeout(f,5000);try{recorder.onstop=f;if(recorder.state!=="inactive"){recorder.stop();}else{f();}}catch(e){f();}});
       const blob=new Blob(chunks,{type:mimeType});
       const url=URL.createObjectURL(blob);
