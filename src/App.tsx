@@ -192,31 +192,12 @@ function speakText(voiceId, txt, onStart, onEnd) {
       else if(origin.includes("australian")) candidates = premiumAussie;
       else if(gender==="female") candidates = premiumUSFemale;
       else candidates = premiumUSMale;
-    // ── QUALITY FIRST: always prefer the highest-quality voice the device has ──
-    // Enhanced / Premium / Siri / Neural / Natural voices sound dramatically better.
-    const isHiQ = (v) => {
-      const n = (v.name||"") + " " + (v.voiceURI||"");
-      return /premium|enhanced|siri|neural|natural|online|multilingual/i.test(n);
-    };
-    const hiQVoices = allVoices.filter(v=>v.lang&&v.lang.startsWith("en")&&isHiQ(v));
-    const pool = hiQVoices.length ? hiQVoices : allVoices;
-
-    for(const name of candidates){
-        picked = pool.find(v=>v.name.includes(name)) || allVoices.find(v=>v.name.includes(name));
+      for(const name of candidates){
+        picked = allVoices.find(v=>v.name.includes(name));
         if(picked) break;
       }
-      // Nothing matched by name — take the best-quality voice matching gender/accent
-      if(!picked && hiQVoices.length){
-        const fem = /female|samantha|ava|serena|zoe|karen|moira|fiona|tessa|kate|victoria|nicky|allison|susan/i;
-        const wantFemale = gender==="female";
-        picked = hiQVoices.find(v=>wantFemale ? fem.test(v.name) : !fem.test(v.name)) || hiQVoices[0];
-      }
     }
-    // Final fallbacks — still prefer quality
-    if(!picked){
-      const anyHiQ = allVoices.filter(v=>v.lang&&v.lang.startsWith("en")&&isHiQ(v));
-      picked = anyHiQ[0] || allVoices.find(v=>v.lang&&v.lang.startsWith("en"));
-    }
+    if(!picked) picked = allVoices.find(v=>v.lang&&v.lang.startsWith("en"));
     if(!picked && allVoices.length) picked = allVoices[0];
 
     const pitch = voiceChar ? voiceChar.pitch : 1.0;
@@ -1468,7 +1449,7 @@ function MusicVideoStudio({ onClose, onSave }) {
             <div style={{display:"flex",flexDirection:"column",background:"#000",overflow:"hidden"}}>
               {/* Video player */}
               <div style={{position:"relative",background:"#000"}}>
-                <canvas ref={canvasRef} style={{position:"fixed",right:8,bottom:8,width:160,height:90,opacity:1,pointerEvents:"none",zIndex:9999,border:"1px solid #e8c96d",background:"#000"}}/>
+                <canvas ref={canvasRef} style={{position:"fixed",left:0,bottom:0,width:2,height:2,opacity:0.01,pointerEvents:"none",zIndex:-1}}/>
                 <video ref={videoRef} src={videoUrl} playsInline
                   style={{width:"100%",aspectRatio:"16/9",display:"block",background:"#000"}}
                   onTimeUpdate={()=>setCurrentTime(videoRef.current?.currentTime||0)}
@@ -1556,7 +1537,7 @@ function MusicVideoStudio({ onClose, onSave }) {
           )}
 
           {/* Canvas for rendering (always hidden) */}
-          {!videoUrl&&<canvas ref={canvasRef} style={{position:"fixed",right:8,bottom:8,width:160,height:90,opacity:1,pointerEvents:"none",zIndex:9999,border:"1px solid #e8c96d",background:"#000"}}/>}
+          {!videoUrl&&<canvas ref={canvasRef} style={{position:"fixed",left:0,bottom:0,width:2,height:2,opacity:0.01,pointerEvents:"none",zIndex:-1}}/>}
         </div>
 
         {/* Bottom nav */}
@@ -1662,12 +1643,8 @@ function P6Voice({ onSave, setMediaLib }) {
   const selected=VOICE_CHARACTERS.find(v=>v.id===selVoice)||VOICE_CHARACTERS[0];
 
   const pickSysVoice=(vc)=>{
-    const allRaw=sysVoices.length?sysVoices:window.speechSynthesis.getVoices().filter(v=>v.lang&&v.lang.startsWith("en"));
-    if(!allRaw.length)return null;
-    // ── QUALITY FIRST — use Enhanced/Premium/Siri/Neural voices when present ──
-    const isHiQ=(v)=>/premium|enhanced|siri|neural|natural|online|multilingual/i.test((v.name||"")+" "+(v.voiceURI||""));
-    const hiQ=allRaw.filter(isHiQ);
-    const all=hiQ.length?hiQ:allRaw;
+    const all=sysVoices.length?sysVoices:window.speechSynthesis.getVoices().filter(v=>v.lang&&v.lang.startsWith("en"));
+    if(!all.length)return null;
     const gb=all.filter(v=>v.lang==="en-GB"),us=all.filter(v=>v.lang==="en-US"),au=all.filter(v=>v.lang==="en-AU");
     const hash=vc.id.split("").reduce((a,ch)=>a+ch.charCodeAt(0),0);
     const isMale=vc.gender==="Male",isBritish=["British","Scottish","Irish","Welsh"].includes(vc.origin),isAU=["Australian","New Zealand"].includes(vc.origin);
@@ -2167,7 +2144,7 @@ Write the drawFrame body now.`}]
 
   return (
     <div style={{minHeight:"100vh",background:"#000",color:WHITE,fontFamily:"'Rajdhani',sans-serif",paddingBottom:160}}>
-      <canvas ref={canvasRef} style={{position:"fixed",right:8,bottom:8,width:160,height:90,opacity:1,pointerEvents:"none",zIndex:9999,border:"1px solid #e8c96d",background:"#000"}}/>
+      <canvas ref={canvasRef} style={{position:"fixed",left:0,bottom:0,width:2,height:2,opacity:0.01,pointerEvents:"none",zIndex:-1}}/>
       <div style={{padding:"12px 20px",borderBottom:"1px solid "+GOLDDIM+"",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
         <div>
           <div style={{fontSize:11,color:GOLD,letterSpacing:4,fontWeight:700}}>MANDASTRONG ENGINE v2 · CINEMA-GRADE RENDERER</div>
@@ -3091,7 +3068,7 @@ function P13({ go, mediaLib, timeline, setTimeline, user, filmDuration, setFilmD
           <h1 style={{...H1,fontSize:24,margin:0}}>TIMELINE EDITOR</h1>
           <div style={{display:"flex",alignItems:"center",gap:8,marginTop:4}}>
             <span style={{color:GOLD,fontSize:10,fontWeight:900,letterSpacing:2}}>FILM: {filmDuration||60} MIN</span>
-            <input type="range" min={1} max={180} step={1} value={filmDuration||60} onChange={e=>setFilmDuration(+e.target.value)} style={{width:160,accentColor:GOLD}}/>
+            <input type="range" min={0} max={180} step={30} value={filmDuration||60} onChange={e=>setFilmDuration(+e.target.value)} style={{width:160,accentColor:GOLD}}/>
             <div style={{display:"flex",gap:4}}>
               {[60,90,180].map(m=><button key={m} onClick={()=>setFilmDuration(m)} style={{background:filmDuration===m?GOLD:"#111",border:"1px solid "+(filmDuration===m?"#000":GOLDDIM),color:filmDuration===m?"#000":WHITE,padding:"2px 8px",cursor:"pointer",fontSize:10,fontWeight:900,fontFamily:"'Rajdhani',sans-serif"}}>{m}m</button>)}
             </div>
@@ -3342,25 +3319,8 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
 
     // Fall back to current mediaLib if DB empty
     let clips = freshClips.length > 0 ? freshClips.filter(c2=>c2.type&&c2.type.startsWith("video")) : getVideoClips();
-    // ── EXCLUDE old rendered films and empty clips ──────────────────────────
-    // A previously-rendered "MandaStrong_Film..." file in the library has no real
-    // scene frames — including it makes the whole render come out 0.0MB.
-    clips = clips.filter(c2=>{
-      const n=(c2.name||"").toLowerCase();
-      if(n.includes("mandastrong_film")||n.includes("render_final")||n.includes("_film_")) return false;
-      if(c2.file&&c2.file.size!==undefined&&c2.file.size<1000) return false; // skip empty blobs
-      return true;
-    });
-    // Sort scenes in order by leading number in the name (Scene 1, 2, 3...)
-    clips.sort((a,b)=>{
-      const na=parseInt((a.name||"").match(/\b(\d+)\b/)?.[1]||"9999");
-      const nb=parseInt((b.name||"").match(/\b(\d+)\b/)?.[1]||"9999");
-      if(na!==nb)return na-nb;
-      return (a.name||"").localeCompare(b.name||"");
-    });
     const audioAsset=getAudioTrack();
     if(clips.length===0){alert("No video clips found. Generate clips on Page 8 first.");return;}
-    log("Rendering "+clips.length+" scene clips (old render files excluded)");
     setRendering(true);setDone(false);setProgress(0);setRenderLog([]);setRenderUrl("");setCurrentClipIdx(-1);
     try{
       log("MandaStrong Render Engine v2 initialising...");
@@ -3403,20 +3363,7 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
         }
       }
       if(audioBuffer){audioSource=audioCtx.createBufferSource();audioSource.buffer=audioBuffer;audioSource.connect(audioDest);audioSource.connect(audioCtx.destination);}
-      // Draw several real frames BEFORE capturing so the stream is definitely live
-      for(let w=0;w<5;w++){
-        ctx.fillStyle="#000";ctx.fillRect(0,0,dims.w,dims.h);
-        ctx.fillStyle="#e8c96d";ctx.font="900 "+Math.round(dims.w/30)+"px Arial";ctx.textAlign="center";
-        ctx.fillText("MANDASTRONG STUDIO",dims.w/2,dims.h/2);
-        await new Promise(r=>setTimeout(r,60));
-      }
       const videoStream=canvas.captureStream(fps);
-      const vTrack=videoStream.getVideoTracks()[0];
-      if(!vTrack||vTrack.readyState!=="live"){
-        log("⚠ Canvas capture unavailable in this browser.");
-        alert("This browser blocked video capture. Try Chrome or Safari with the tab kept in front.");
-        setRendering(false);return;
-      }
       const tracks=[...videoStream.getTracks(),...audioDest.stream.getTracks()];
       const combinedStream=new MediaStream(tracks);
       const vCodec=codec==="vp9"?"vp9":"vp8";
@@ -3438,16 +3385,6 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
       ctx.fillStyle="#000";ctx.fillRect(0,0,dims.w,dims.h);
       await new Promise(r=>setTimeout(r,200));
       recorder.start(1000);
-      // iPad Safari fix: force the recorder to flush data every second so chunks
-      // never end up empty, and keep the canvas stream alive with a heartbeat.
-      const dataInterval=setInterval(()=>{try{if(recorder.state==="recording")recorder.requestData();}catch(e){}},1000);
-      const heartbeat=setInterval(()=>{
-        try{
-          // Nudge one pixel each tick so captureStream always sees a new frame
-          ctx.fillStyle="rgba(0,0,0,0.003)";ctx.fillRect(0,0,2,2);
-          if(vTrack&&vTrack.requestFrame)vTrack.requestFrame();
-        }catch(e){}
-      },Math.round(1000/fps));
       if(audioSource)audioSource.start(0);
       // Speak live narration text through speakers during render
       if(liveNarration&&audioAsset?.text){
@@ -3503,7 +3440,7 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
       try{
         const freshDB=await getAllClipsFromDB();
         if(freshDB.length>0){
-          clips=clips.map(cl=>{
+          const refreshed=clips.map(cl=>{
             const db=freshDB.find(d=>d.id===cl.dbId||d.id===cl.id||d.name===cl.name);
             if(db&&db.blob){
               return {...cl,file:new File([db.blob],cl.name,{type:db.type||"video/webm"}),url:URL.createObjectURL(db.blob)};
@@ -3609,25 +3546,9 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
         };draw();
       });}
       setProgress(92);log("Finalising...");
-      try{clearInterval(dataInterval);}catch(e){}
-      try{clearInterval(heartbeat);}catch(e){}
       if(audioSource){try{audioSource.stop();}catch(e){}}
-      // Flush any final data before stopping
-      try{if(recorder.state==="recording")recorder.requestData();}catch(e){}
       await new Promise(r=>{let d=false;const f=()=>{if(!d){d=true;r();}};setTimeout(f,5000);try{recorder.onstop=f;if(recorder.state!=="inactive"){recorder.stop();}else{f();}}catch(e){f();}});
       const blob=new Blob(chunks,{type:mimeType});
-      // ── SAFETY: never hand an empty file to the player (that's the grey arrow) ──
-      if(!chunks.length||blob.size<10000){
-        log("⚠ RENDER PRODUCED NO VIDEO DATA");
-        log("Your browser blocked canvas capture. Fix: keep this tab in front");
-        log("for the whole render, and try 720p · 24FPS.");
-        setProgress(0);setDone(false);setRendering(false);
-        try{clearInterval(dataInterval);}catch(e){}
-        try{clearInterval(heartbeat);}catch(e){}
-        try{if(audioCtx)audioCtx.close();}catch(e){}
-        alert("Render produced no video data.\n\nKeep this tab in front for the whole render (don't switch apps or tabs), and use 720p · 24FPS. Then try again.");
-        return;
-      }
       const url=URL.createObjectURL(blob);
       setRenderUrl(url);
       if(setRendered)setRendered({url,quality,format:"WebM",timestamp:new Date().toLocaleString()});
@@ -3652,14 +3573,14 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
 
   return (
     <div style={{...Sp,padding:0}}>
-      <canvas ref={canvasRef} style={{position:"fixed",right:8,bottom:8,width:160,height:90,opacity:1,pointerEvents:"none",zIndex:9999,border:"1px solid #e8c96d",background:"#000"}}/>
+      <canvas ref={canvasRef} style={{position:"fixed",left:0,bottom:0,width:2,height:2,opacity:0.01,pointerEvents:"none",zIndex:-1}}/>
       <div style={{padding:"12px 24px",borderBottom:"1px solid "+GOLDDIM+"",background:"#020200",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
         <div>
           <div style={{fontSize:10,color:GOLD,letterSpacing:4,fontWeight:700}}>PRODUCTION ENGINE — STAGE 6</div>
           <h1 style={{...H1,fontSize:22,margin:0}}>RENDER FILM</h1>
           <div style={{display:"flex",alignItems:"center",gap:8,marginTop:4}}>
             <span style={{color:GOLD,fontSize:10,fontWeight:900,letterSpacing:2}}>FILM: {filmDuration||60} MIN</span>
-            <input type="range" min={1} max={180} step={1} value={filmDuration||60} onChange={e=>setFilmDuration(+e.target.value)} style={{width:160,accentColor:GOLD}}/>
+            <input type="range" min={0} max={180} step={30} value={filmDuration||60} onChange={e=>setFilmDuration(+e.target.value)} style={{width:160,accentColor:GOLD}}/>
             <div style={{display:"flex",gap:4}}>
               {[60,90,180].map(m=><button key={m} onClick={()=>setFilmDuration(m)} style={{background:filmDuration===m?GOLD:"#111",border:"1px solid "+(filmDuration===m?"#000":GOLDDIM),color:filmDuration===m?"#000":WHITE,padding:"2px 8px",cursor:"pointer",fontSize:10,fontWeight:900,fontFamily:"'Rajdhani',sans-serif"}}>{m}m</button>)}
             </div>
@@ -4840,4 +4761,4 @@ export default function App() {
       <Footer page={page} go={go} onSave={saveProject} onHistory={()=>setShowHistory(true)}/>
     </div>
   );
-}
+} 
