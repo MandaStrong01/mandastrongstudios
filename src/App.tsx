@@ -749,7 +749,7 @@ function MusicVideoStudio({ onClose, onSave }) {
 
     try {
       const sceneDesc = config.visualDesc || "A man sits on a windowsill overlooking the ocean at night, fingerpicking acoustic guitar. Only his back is visible. Full moon. Single candle. Dark wooden room. Empty couch. Coat on a hook. Curtains lift in the wind.";
-      addLog("MandaStrong Cinema Engine — writing your film...");
+      addLog("MandaStrong Engine — writing your film...");
       setRenderProgress(4);
 
       // ── BEAT ANALYSIS ─────────────────────────────────────────────
@@ -757,6 +757,7 @@ function MusicVideoStudio({ onClose, onSave }) {
       let totalDur = Math.max(30, Number(durationMap[config.duration])||180);
       if(!isFinite(totalDur)||isNaN(totalDur)) totalDur = 180;
       let beatGrid = [];
+      let envelope = [];
       let audioCtx = null, audioDest = null, audioSource = null;
 
       if(audioFile){
@@ -779,7 +780,15 @@ function MusicVideoStudio({ onClose, onSave }) {
           energies.forEach(x=>{
             if(x.e>avg*1.35&&x.t-last>0.28){beatGrid.push(x.t);last=x.t;}
           });
-          addLog("Audio: "+totalDur.toFixed(1)+"s — "+beatGrid.length+" beats detected");
+          // ENVELOPE — real amplitude curve, 60 samples/sec. Drives mouth, strum, sway.
+          const envRate=60, envWin=Math.round(sr/envRate);
+          for(let i=0;i<data.length-envWin;i+=envWin){
+            let e=0; for(let j=0;j<envWin;j+=4) e+=Math.abs(data[i+j]);
+            envelope.push(e/(envWin/4));
+          }
+          const envMax=envelope.reduce((m,x)=>x>m?x:m,0.0001);
+          for(let i=0;i<envelope.length;i++) envelope[i]=Math.min(1,envelope[i]/envMax);
+          addLog("Audio: "+totalDur.toFixed(1)+"s — "+beatGrid.length+" beats · "+envelope.length+" envelope points");
           // Set up audio mixing
           audioDest = audioCtx.createMediaStreamDestination();
           audioSource = audioCtx.createBufferSource();
@@ -798,23 +807,25 @@ function MusicVideoStudio({ onClose, onSave }) {
       }
       setRenderProgress(10);
 
-      // ── BUILT-IN RENDERER (NO PROXY) ─────────────
-      addLog("MandaStrong Engine — built-in renderer ready");
+      // ══ CINEMAFORGE MUSIC ENGINE ══════════════════════════════════════
+      // Identical architecture to the main Video Studio (Page 8):
+      // AI composes a custom drawFrame for THIS scene, the uploaded photo
+      // is the photoreal base, and a LIVING LAYER moves it every frame.
       const pr = sceneDesc.toLowerCase();
       const isNight = /night|dark|moon|evening|dusk/.test(pr);
-      const isGolden = /golden|sunset|sunrise|amber/.test(pr);
-      const isOcean = /ocean|sea|water|wave|shore|coast/.test(pr);
-      const isCity = /city|urban|street|skyline|neon/.test(pr);
-      const isSpace = /space|star|galaxy|planet|cosmos/.test(pr);
-      const isIndoor = /room|interior|inside|window|wall/.test(pr);
-      const isRain = /rain|storm|wet|drizzle/.test(pr);
-      const isFog = /fog|mist|haze|smoke/.test(pr);
-      const hasPerson = /woman|man|person|figure|human/.test(pr);
+      const isOcean = /ocean|sea|water|wave|shore|coast|tide/.test(pr);
+      const isIndoor = /room|interior|inside|window|wall|sill/.test(pr);
       const hasCandle = /candle|flame|fire|torch/.test(pr);
-      const hasGuitar = /guitar|musician|fingerpick/.test(pr);
-      const isSilhouette = /silhouette|back to camera|facing away/.test(pr);
+      const hasGuitar = /guitar|musician|fingerpick|strum|play/.test(pr);
+      const isSilhouette = /silhouette|back to camera|facing away|face never|face barely/.test(pr);
+      const wantWater = isOcean;
+      const wantCurtain = /curtain|drape|breeze|wind|window/.test(pr);
+      const wantStrum = hasGuitar;
+      const bpmMatch = String(config.tempo||"").match(/(\d+)\s*-\s*(\d+)/);
+      const bpm = bpmMatch ? (Number(bpmMatch[1])+Number(bpmMatch[2]))/2 : 72;
+      const strumHz = bpm/60;
 
-      // Load reference image if user uploaded one — Reality Engine base
+      // ── Reference photo — photoreal base ──
       let refImgEl = null;
       if(config.refMedia){
         try{
@@ -824,238 +835,257 @@ function MusicVideoStudio({ onClose, onSave }) {
             img.onload = ()=>resolve(img);
             img.onerror = ()=>resolve(null);
             img.src = config.refMedia;
-            setTimeout(()=>resolve(refImgEl||null), 5000);
+            setTimeout(()=>resolve(null), 6000);
           });
-          if(refImgEl) addLog("✓ Reference image loaded — Reality Engine base active");
+          if(refImgEl) addLog("\u2713 Reference photo loaded — photoreal base active");
         }catch(e){}
       }
 
-      const renderFn = (ctx, W, H, t, sec, totalSec, beatNow) => {
-        const pulse = beatNow ? 1.02 : 1.0;
-        ctx.save();
-        ctx.translate(W/2, H/2);
-        ctx.scale(pulse + t*0.04, pulse + t*0.04);
-        ctx.translate(-W/2, -H/2);
+      // ── STEP 1: AI composes this exact scene (same proxy as Page 8) ──
+      let drawFnBody="";
+      const bt=String.fromCharCode(96);
+      try{
+        addLog("MandaStrong Engine — composing your scene...");
+        setRenderProgress(14);
+        const photoNote = refImgEl
+          ? "A reference photo is ALREADY drawn as the base layer and is ALREADY being animated. Your code must only ADD light, atmosphere, grade and depth ON TOP. Do NOT repaint the background. Do NOT draw people."
+          : "No reference photo. Paint the entire scene yourself with canvas primitives — sky, ocean, room, window, curtains, the figure, the guitar. Make it photoreal with gradients and layering.";
+        const ac=new AbortController(); const to=setTimeout(()=>ac.abort(),45000);
+        const res=await fetch("https://njqfexhltjwpgvctmyaw.supabase.co/functions/v1/claude-proxy",{
+          signal:ac.signal, method:"POST", headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            model:"claude-sonnet-4-20250514", max_tokens:3500,
+            system:"You are the MandaStrong Engine, the photoreal canvas renderer for MandaStrong Studio Music Video Studio.\n\n"+photoNote+"\n\nWrite ONLY the body of:\nfunction drawFrame(ctx, W, H, t, sec, amp, beat) { YOUR CODE HERE }\n\nctx = CanvasRenderingContext2D. W=1280 H=720. t = 0..1 progress. sec = elapsed seconds. amp = 0..1 LIVE AUDIO LOUDNESS this frame. beat = true on a beat.\n\nMANDATORY MOTION RULES — a still frame is a failure:\n1. EVERY element must move. Use sec in every sine. Nothing static.\n2. Water must have travelling waves and a moving specular moon path.\n3. Curtains must billow with a gust cycle, not a loop.\n4. Light must breathe with amp. Candle flame must flicker.\n5. Camera must drift continuously — slow, cinematic, never stopping.\n6. React to amp and beat every frame.\n7. No external images, no fetch, no DOM. Only ctx drawing.\n8. Do not draw letterbox bars, vignette, grain or titles — added separately.\n9. Under 200 lines.\n\nStyle: "+config.videoStyle+". Grade: "+config.colorGrade+". Mood: "+config.mood+". Return ONLY the function body. No markdown.",
+            messages:[{role:"user",content:"Scene: \""+sceneDesc+"\"\n\nWrite the drawFrame body now."}]
+          })
+        });
+        clearTimeout(to);
+        const d=await res.json();
+        let code=d.content&&d.content[0]?d.content[0].text.trim():"";
+        code=code.split(bt+bt+bt+"javascript").join("").split(bt+bt+bt+"js").join("").split(bt+bt+bt).join("").trim();
+        if(code.startsWith("function drawFrame")){
+          const bo=code.indexOf("{"), bc=code.lastIndexOf("}");
+          if(bo>=0&&bc>bo) code=code.slice(bo+1,bc);
+        }
+        drawFnBody=code;
+        addLog("\u2713 Scene composed — "+drawFnBody.split("\n").length+" render instructions");
+      }catch(e){
+        addLog("Compose offline — built-in cinematic renderer engaged");
+        drawFnBody="";
+      }
+      setRenderProgress(26);
 
-        // ── REALITY ENGINE — if user uploaded a reference image, use it as photorealistic base
-        if(refImgEl){
-          // Cover the full frame with the reference image
-          const imgR = refImgEl.width / refImgEl.height;
-          const canR = W / H;
-          let dw, dh, dx, dy;
-          if(imgR > canR){
-            dh = H;
-            dw = H * imgR;
-            dx = (W - dw) / 2;
-            dy = 0;
-          } else {
-            dw = W;
-            dh = W / imgR;
-            dx = 0;
-            dy = (H - dh) / 2;
+      let aiDraw=null;
+      if(drawFnBody){
+        try{ aiDraw=new Function("ctx","W","H","t","sec","amp","beat",drawFnBody); aiDraw(document.createElement("canvas").getContext("2d"),1280,720,0,0,0,false); }
+        catch(e){ addLog("Scene code rejected ("+e.message+") — built-in renderer engaged"); aiDraw=null; }
+      }
+
+      // ══ LIVING LAYER ══════════════════════════════════════════════════
+      // Makes the uploaded photo MOVE. Water displaces row by row, curtains
+      // billow on a wind cycle, the player's hands and body strum to the
+      // real audio envelope. The photo stays photoreal — it just comes alive.
+      const livePhoto=(ctx,img,gx,gy,gw,gh,sec,amp,beatNow)=>{
+        const sw0=img.width, sh0=img.height;
+        const sxPer=sw0/gw, syPer=sh0/gh;
+        const wind=0.55+0.45*Math.sin(sec*0.42)+0.22*Math.sin(sec*1.17+1.3);
+
+        // ── WATER: real travelling waves, row by row ──
+        if(wantWater){
+          const bandTop=gy+gh*0.50, bandH=gh*0.50, rows=72;
+          for(let r=0;r<rows;r++){
+            const dy=bandTop+(bandH*r/rows), dh=(bandH/rows)+1.4;
+            const depth=r/rows;
+            const push=Math.sin(dy*0.030+sec*2.0+depth*3.4)*(2.0+depth*8.5)*(0.55+amp*0.85)
+                      +Math.sin(dy*0.011-sec*1.1)*(1.0+depth*3.0);
+            const sy=(dy-gy)*syPer, sh=dh*syPer;
+            if(sy<0||sy+sh>sh0) continue;
+            ctx.drawImage(img,0,sy,sw0,sh,gx+push,dy,gw,dh);
           }
-          // Subtle Ken Burns pan across the reference image for movement
-          const panX = Math.sin(sec * 0.08) * W * 0.02;
-          const panY = Math.cos(sec * 0.06) * H * 0.015;
-          ctx.drawImage(refImgEl, dx + panX, dy + panY, dw, dh);
-          // Warm cinematic overlay + vignette handled by post-processing later
-          // Skip procedural sky/water/room drawing when we have real photo base
+          ctx.save(); ctx.globalCompositeOperation="lighter";
+          for(let s=0;s<46;s++){
+            const gxp=gx+gw*(0.26+((s*37)%100)/100*0.48);
+            const gyp=bandTop+bandH*(((s*61)%100)/100);
+            const tw=0.25+0.75*Math.abs(Math.sin(sec*1.7+s*0.9));
+            ctx.fillStyle="rgba(198,218,255,"+(0.045+tw*0.10)+")";
+            ctx.fillRect(gxp+Math.sin(sec*0.9+s)*6,gyp,9+tw*28,1.5);
+          }
           ctx.restore();
-          return;
         }
-        // SKY (fallback for when no reference image is uploaded)
-        if(isSpace){
-          const sky=ctx.createLinearGradient(0,0,0,H);
-          sky.addColorStop(0,"rgb(1,1,8)"); sky.addColorStop(1,"rgb(3,3,18)");
-          ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
-          for(let s=0;s<300;s++){
-            const sx=(s*137.5)%W, sy=(s*97.3)%H;
-            ctx.fillStyle="rgba(240,245,255,"+(0.3+Math.sin(sec*0.7+s)*0.28)+")";
-            ctx.fillRect(sx,sy,s%5===0?1.8:0.8,s%5===0?1.8:0.8);
-          }
-        } else if(isNight){
-          const sky=ctx.createLinearGradient(0,0,0,H*0.62);
-          sky.addColorStop(0,"rgb(2,4,15)");
-          sky.addColorStop(0.5,"rgb(5,10,32)");
-          sky.addColorStop(1,"rgb(8,18,50)");
-          ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
-          for(let s=0;s<200;s++){
-            const sx=(s*137.5)%W, sy=(s*97.3)%(H*0.55);
-            ctx.fillStyle="rgba(240,245,255,"+(0.3+Math.sin(sec*0.5+s*0.3)*0.22)+")";
-            ctx.fillRect(sx,sy,s%4===0?1.4:0.7,s%4===0?1.4:0.7);
-          }
-          const mx=W*0.78, my=H*0.13;
-          const mg=ctx.createRadialGradient(mx,my,0,mx,my,H*0.078);
-          mg.addColorStop(0,"rgba(255,255,248,0.96)");
-          mg.addColorStop(1,"rgba(200,200,180,0)");
-          ctx.fillStyle=mg; ctx.fillRect(mx-H*0.09,my-H*0.09,H*0.18,H*0.18);
-        } else if(isGolden){
-          const sky=ctx.createLinearGradient(0,0,0,H*0.66);
-          sky.addColorStop(0,"rgb(18,10,35)");
-          sky.addColorStop(0.3,"rgb(165,50,12)");
-          sky.addColorStop(0.65,"rgb(248,135,28)");
-          sky.addColorStop(1,"rgb(255,205,75)");
-          ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
-        } else {
-          const sky=ctx.createLinearGradient(0,0,0,H*0.6);
-          sky.addColorStop(0,"rgb(28,60,140)");
-          sky.addColorStop(1,"rgb(180,210,240)");
-          ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
-        }
-        const horizY = isIndoor ? H : H*0.56;
-        // OCEAN
-        if(isOcean && !isIndoor){
-          for(let w=0;w<10;w++){
-            const wg=ctx.createLinearGradient(0,horizY+w*13,0,H);
-            const d=isNight?[2+w*2,8+w*6,30+w*10]:[0+w*3,55+w*12,115+w*10];
-            wg.addColorStop(0,"rgba("+d[0]+","+d[1]+","+d[2]+","+(0.7+w*0.03)+")");
-            wg.addColorStop(1,"rgba(1,3,8,0.98)");
-            ctx.fillStyle=wg;
-            ctx.beginPath(); ctx.moveTo(-10,H);
-            for(let x=0;x<=W+10;x+=3){
-              const y=horizY+w*14+Math.sin(x*0.007+sec*(0.24+w*0.07)+w*1.3)*17;
-              ctx.lineTo(x,y);
-            }
-            ctx.lineTo(W+10,H); ctx.closePath(); ctx.fill();
-          }
-        }
-        // CITY
-        if(isCity && !isIndoor){
-          const grd=ctx.createLinearGradient(0,horizY,0,H);
-          grd.addColorStop(0,"rgb(16,16,20)"); grd.addColorStop(1,"rgb(8,8,10)");
-          ctx.fillStyle=grd; ctx.fillRect(0,horizY,W,H-horizY);
-          for(let b=0;b<18;b++){
-            const bx=(b*151)%W, bh=H*0.15+((b*97)%H)*0.35, bw=W*0.035;
-            ctx.fillStyle=isNight?"rgb(10,10,18)":"rgb(75,80,90)";
-            ctx.fillRect(bx,horizY-bh,bw,bh);
-            for(let wy=0;wy<Math.floor(bh/18);wy++){
-              for(let wx=0;wx<Math.floor(bw/10);wx++){
-                if(Math.sin(b*13+wy*7+wx*11)>0.1){
-                  const lit=Math.sin(sec*0.3+b+wy)>-0.3;
-                  ctx.fillStyle=lit?"rgba(255,240,180,0.88)":"rgba(20,20,28,0.5)";
-                  ctx.fillRect(bx+wx*10+2,horizY-bh+wy*18+4,7,10);
-                }
-              }
+
+        // ── CURTAINS: gust cycle, both sides ──
+        if(wantCurtain){
+          const cols=28, panelW=gw*0.17;
+          for(let side=0;side<2;side++){
+            const px0=side===0?gx:gx+gw-panelW;
+            for(let c=0;c<cols;c++){
+              const dx=px0+panelW*c/cols, dw=panelW/cols+1.4;
+              const edge=side===0?(1-c/cols):(c/cols);
+              const sway=Math.sin(sec*1.05+c*0.34+side*2.1)*wind*(3+edge*18);
+              const lift=Math.cos(sec*0.83+c*0.22+side*1.4)*wind*(1.5+edge*6);
+              const sx=(dx-gx)*sxPer, sw=dw*sxPer;
+              if(sx<0||sx+sw>sw0) continue;
+              ctx.drawImage(img,sx,0,sw,sh0,dx+sway,gy-lift,dw,gh);
             }
           }
         }
-        // INDOOR
-        if(isIndoor){
-          const wall=ctx.createLinearGradient(0,0,W,H);
-          wall.addColorStop(0,"rgb(9,6,3)"); wall.addColorStop(1,"rgb(4,3,2)");
-          ctx.fillStyle=wall; ctx.fillRect(0,0,W,H);
-          const fl=ctx.createLinearGradient(0,H*0.65,0,H);
-          fl.addColorStop(0,"rgb(18,12,7)"); fl.addColorStop(1,"rgb(7,5,3)");
-          ctx.fillStyle=fl; ctx.fillRect(0,H*0.65,W,H*0.35);
-          const wox=W*0.12, woy=H*0.05, wow=W*0.46, woh=H*0.74;
-          if(isNight){
-            const ws=ctx.createLinearGradient(wox,woy,wox,woy+woh);
-            ws.addColorStop(0,"rgb(2,4,15)"); ws.addColorStop(1,"rgb(6,14,42)");
-            ctx.fillStyle=ws; ctx.fillRect(wox,woy,wow,woh);
-            if(isOcean){
-              for(let w=0;w<6;w++){
-                const wg2=ctx.createLinearGradient(0,woy+woh*0.55+w*8,0,woy+woh);
-                wg2.addColorStop(0,"rgba(2,8,35,0.9)");
-                wg2.addColorStop(1,"rgba(1,3,12,0.98)");
-                ctx.fillStyle=wg2;
-                ctx.beginPath(); ctx.moveTo(wox,woy+woh);
-                for(let x=wox;x<=wox+wow;x+=3){
-                  const y=woy+woh*0.58+w*10+Math.sin(x*0.01+sec*(0.2+w*0.07)+w)*10;
-                  ctx.lineTo(x,y);
-                }
-                ctx.lineTo(wox+wow,woy+woh); ctx.closePath(); ctx.fill();
-              }
-            }
+
+        // ── PLAYER: strum + breath, driven by the real audio envelope ──
+        if(wantStrum){
+          const cx=gx+gw*0.50, cy=gy+gh*0.58;
+          const rw=gw*0.34, rh=gh*0.40;
+          const strum=Math.sin(sec*strumHz*Math.PI*2)*(0.005+amp*0.022)+(beatNow?0.005:0);
+          ctx.save();
+          ctx.beginPath(); ctx.rect(cx-rw/2,cy-rh/2,rw,rh); ctx.clip();
+          ctx.translate(cx,cy); ctx.rotate(strum); ctx.translate(-cx,-cy);
+          ctx.drawImage(img,gx,gy,gw,gh);
+          ctx.restore();
+          // torso breath + head lean — reads as a living person
+          const bx=gx+gw*0.50, by=gy+gh*0.40;
+          const bw=gw*0.26, bh=gh*0.34;
+          const breath=Math.sin(sec*0.75)*1.6+amp*2.4;
+          ctx.save();
+          ctx.beginPath(); ctx.rect(bx-bw/2,by-bh/2,bw,bh); ctx.clip();
+          ctx.drawImage(img,gx,gy+breath,gw,gh);
+          ctx.restore();
+          // AUTO LIP SYNC — head/jaw region tracks the vocal envelope
+          if(config.lipSync){
+            const hx=gx+gw*0.50, hy=gy+gh*0.30;
+            const hw=gw*0.15, hh=gh*0.17;
+            const jaw=amp*2.8, tilt=Math.sin(sec*strumHz*Math.PI)*0.004+amp*0.006;
+            ctx.save();
+            ctx.beginPath(); ctx.rect(hx-hw/2,hy-hh/2,hw,hh); ctx.clip();
+            ctx.translate(hx,hy); ctx.rotate(tilt); ctx.translate(-hx,-hy+jaw);
+            ctx.drawImage(img,gx,gy,gw,gh);
+            ctx.restore();
           }
-          ctx.strokeStyle="rgba(48,32,16,0.92)"; ctx.lineWidth=10;
-          ctx.strokeRect(wox,woy,wow,woh);
+        }
+      };
+
+      // ── Built-in cinematic renderer (runs if AI compose is offline) ──
+      const builtIn=(ctx,W,H,t,sec,amp,beatNow)=>{
+        const wind=0.55+0.45*Math.sin(sec*0.42)+0.22*Math.sin(sec*1.17+1.3);
+        const sky=ctx.createLinearGradient(0,0,0,H);
+        if(isNight){ sky.addColorStop(0,"rgb(2,4,15)"); sky.addColorStop(0.55,"rgb(5,11,34)"); sky.addColorStop(1,"rgb(8,18,50)"); }
+        else { sky.addColorStop(0,"rgb(26,55,130)"); sky.addColorStop(1,"rgb(170,200,235)"); }
+        ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+        for(let s=0;s<200;s++){
+          const sx=(s*137.5)%W, sy=(s*97.3)%(H*0.5);
+          ctx.fillStyle="rgba(240,245,255,"+(0.25+Math.sin(sec*0.6+s*0.3)*0.22)+")";
+          ctx.fillRect(sx,sy,s%4===0?1.4:0.7,s%4===0?1.4:0.7);
+        }
+        const mx=W*0.70, my=H*0.20+Math.sin(sec*0.05)*3;
+        const mg=ctx.createRadialGradient(mx,my,0,mx,my,H*0.085);
+        mg.addColorStop(0,"rgba(255,255,248,0.96)"); mg.addColorStop(1,"rgba(200,200,180,0)");
+        ctx.fillStyle=mg; ctx.fillRect(mx-H*0.1,my-H*0.1,H*0.2,H*0.2);
+        // OCEAN — layered travelling waves + moon path
+        const horiz=H*0.48;
+        for(let w=0;w<11;w++){
+          const wg=ctx.createLinearGradient(0,horiz+w*14,0,H);
+          wg.addColorStop(0,"rgba("+(2+w*2)+","+(8+w*6)+","+(30+w*10)+",0.82)");
+          wg.addColorStop(1,"rgba(1,3,8,0.98)");
+          ctx.fillStyle=wg; ctx.beginPath(); ctx.moveTo(-10,H);
+          for(let x=-10;x<=W+10;x+=4){
+            const y=horiz+w*15+Math.sin(x*0.008+sec*(0.5+w*0.12)+w*1.3)*(12+w*2)*(0.7+amp*0.6);
+            ctx.lineTo(x,y);
+          }
+          ctx.lineTo(W+10,H); ctx.closePath(); ctx.fill();
+        }
+        ctx.save(); ctx.globalCompositeOperation="lighter";
+        for(let s=0;s<60;s++){
+          const gy2=horiz+(H-horiz)*(((s*61)%100)/100);
+          const gx2=mx-70+Math.sin(sec*1.3+s)*90;
+          const tw=0.3+0.7*Math.abs(Math.sin(sec*2.0+s));
+          ctx.fillStyle="rgba(220,232,255,"+(0.06+tw*0.14)+")";
+          ctx.fillRect(gx2,gy2,12+tw*34,1.6);
+        }
+        ctx.restore();
+        // CURTAINS — real billow
+        for(let side=0;side<2;side++){
+          const px0=side===0?0:W*0.82, pw=W*0.18;
+          for(let c=0;c<22;c++){
+            const edge=side===0?(1-c/22):(c/22);
+            const dx=px0+pw*c/22;
+            const sway=Math.sin(sec*1.05+c*0.34+side*2.1)*wind*(4+edge*26);
+            const fold=0.16+0.10*Math.sin(c*0.9+sec*1.1+side);
+            ctx.fillStyle="rgba(228,232,238,"+fold+")";
+            ctx.beginPath(); ctx.moveTo(dx+sway*0.15,0);
+            for(let y=0;y<=H;y+=24) ctx.lineTo(dx+sway*(y/H)+Math.sin(y*0.012+sec*1.4+c)*3,y);
+            ctx.lineTo(dx+pw/22+sway,H); ctx.lineTo(dx+pw/22,0); ctx.closePath(); ctx.fill();
+          }
         }
         // CANDLE
         if(hasCandle){
-          const candX=isIndoor?W*0.7:W*0.5, candY=isIndoor?H*0.58:H*0.5;
-          const flicker=0.88+Math.sin(sec*8.8)*0.07+Math.sin(sec*13.4)*0.04;
-          ctx.fillStyle="rgba(232,212,162,0.9)"; ctx.fillRect(candX-5,candY,10,32);
-          const cf=ctx.createRadialGradient(candX,candY,0,candX,candY,H*0.13*flicker);
-          cf.addColorStop(0,"rgba(255,255,200,0.95)");
-          cf.addColorStop(0.18,"rgba(255,180,40,0.72)");
-          cf.addColorStop(0.5,"rgba(255,100,8,0.3)");
-          cf.addColorStop(1,"rgba(255,60,0,0)");
-          ctx.fillStyle=cf; ctx.fillRect(candX-H*0.13,candY-H*0.13,H*0.26,H*0.26);
+          const cxx=W*0.80, cyy=H*0.62;
+          const fl=0.85+Math.sin(sec*9.2)*0.09+Math.sin(sec*13.7)*0.05;
+          ctx.fillStyle="rgba(232,212,162,0.9)"; ctx.fillRect(cxx-5,cyy,10,34);
+          const cf=ctx.createRadialGradient(cxx,cyy,0,cxx,cyy,H*0.14*fl);
+          cf.addColorStop(0,"rgba(255,255,205,0.95)"); cf.addColorStop(0.2,"rgba(255,180,45,0.7)");
+          cf.addColorStop(0.55,"rgba(255,100,10,0.28)"); cf.addColorStop(1,"rgba(255,60,0,0)");
+          ctx.fillStyle=cf; ctx.fillRect(cxx-H*0.14,cyy-H*0.14,H*0.28,H*0.28);
         }
-        // PERSON
-        if(hasPerson){
-          const isSeated=/sit|bench|windowsill|chair/.test(pr);
-          const isMale=/\bman\b|\bmale\b|\bguy\b|\bhim\b|\bhe\b/.test(pr);
-          const isFemale=/\bwoman\b|\bfemale\b|\bgirl\b|\bher\b|\bshe\b/.test(pr);
-          const fx=isOcean&&isIndoor?W*0.22:W*0.4;
-          const fy=isSeated?H*0.52:H*0.44;
-          const breath=Math.sin(sec*0.88)*0.007;
-          // Lip sync — mouth opens on beats
-          const mouthOpen=beatNow?H*0.012:H*0.003+Math.sin(sec*4.2)*H*0.003;
-          // Skin tone — male slightly darker
-          const skinTop=isMale?"rgba(205,155,105,1)":"rgba(235,185,135,1)";
-          const skinBot=isMale?"rgba(135,88,52,1)":"rgba(155,102,65,1)";
-          // Shoulder width — male broader
-          const shoulderW=isMale?H*0.075:H*0.055;
+        // THE PLAYER — breathing, swaying, and actually strumming
+        const fx=W*0.30, fy=H*0.56;
+        const breath=Math.sin(sec*0.78)*H*0.004;
+        const sway=Math.sin(sec*0.31)*H*0.004;
+        const strum=Math.sin(sec*strumHz*Math.PI*2)*(0.10+amp*0.34);
+        const pick=Math.sin(sec*strumHz*Math.PI*4)*(0.06+amp*0.20);
+        ctx.save(); ctx.translate(sway,breath);
+        ctx.fillStyle="rgba(2,1,1,0.97)";
+        ctx.beginPath(); ctx.ellipse(fx+Math.sin(sec*0.9)*2,fy-H*0.145,H*0.038,H*0.046,Math.sin(sec*0.5)*0.04,0,Math.PI*2); ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(fx-H*0.078,fy-H*0.095);
+        ctx.lineTo(fx-H*0.030,fy+H*0.085);
+        ctx.lineTo(fx+H*0.030,fy+H*0.085);
+        ctx.lineTo(fx+H*0.078,fy-H*0.095);
+        ctx.closePath(); ctx.fill();
+        // guitar body + neck
+        ctx.beginPath(); ctx.ellipse(fx+H*0.075,fy+H*0.025,H*0.052,H*0.066,0.22,0,Math.PI*2); ctx.fill();
+        ctx.save(); ctx.translate(fx+H*0.03,fy-H*0.085); ctx.rotate(-0.35); ctx.fillRect(0,0,H*0.012,H*0.14); ctx.restore();
+        // STRUMMING ARM — moves with the song
+        ctx.strokeStyle="rgba(2,1,1,0.97)"; ctx.lineWidth=H*0.026; ctx.lineCap="round";
+        ctx.beginPath();
+        ctx.moveTo(fx+H*0.072,fy-H*0.070);
+        ctx.quadraticCurveTo(fx+H*0.130,fy-H*0.010+strum*H*0.05,fx+H*0.086,fy+H*0.030+strum*H*0.075);
+        ctx.stroke();
+        // FRETTING HAND — walks the neck
+        ctx.lineWidth=H*0.022;
+        ctx.beginPath();
+        ctx.moveTo(fx-H*0.060,fy-H*0.070);
+        ctx.quadraticCurveTo(fx-H*0.030,fy-H*0.020,fx+H*0.008+pick*H*0.03,fy-H*0.052+Math.sin(sec*strumHz*Math.PI)*H*0.012);
+        ctx.stroke();
+        // face-visible lip sync
+        if(!isSilhouette && config.lipSync){
+          const open=H*0.003+amp*H*0.016;
+          ctx.fillStyle="rgba(120,60,40,0.85)";
+          ctx.beginPath(); ctx.ellipse(fx,fy-H*0.122,H*0.014,open,0,0,Math.PI*2); ctx.fill();
+        }
+        ctx.restore();
+      };
 
-          if(isSilhouette){
-            ctx.fillStyle="rgba(2,1,1,0.97)";
-            // Head
-            ctx.beginPath();ctx.ellipse(fx,fy-H*0.13,H*0.036,H*0.044,0,0,Math.PI*2);ctx.fill();
-            // Body — broader for male
-            ctx.beginPath();
-            ctx.moveTo(fx-shoulderW,fy-H*0.09);
-            ctx.lineTo(fx-H*0.03,fy+H*(0.06+breath*2));
-            ctx.lineTo(fx+H*0.03,fy+H*(0.06+breath*2));
-            ctx.lineTo(fx+shoulderW,fy-H*0.09);
-            ctx.closePath();ctx.fill();
-            if(hasGuitar){
-              ctx.beginPath();ctx.ellipse(fx+H*0.072,fy+H*0.02,H*0.05,H*0.064,0.22,0,Math.PI*2);ctx.fill();
-              ctx.fillRect(fx+H*0.026,fy-H*0.09,H*0.011,H*0.12);
-            }
-          } else {
-            // Head with correct skin tone
-            const hg=ctx.createRadialGradient(fx-H*0.008,fy-H*0.145,0,fx,fy-H*0.13,H*0.042);
-            hg.addColorStop(0,skinTop);
-            hg.addColorStop(1,skinBot);
-            ctx.fillStyle=hg;
-            ctx.beginPath();ctx.ellipse(fx,fy-H*0.13,H*0.034,H*0.042,0,0,Math.PI*2);ctx.fill();
-            // Eyes
-            ctx.fillStyle="rgba(30,20,10,0.9)";
-            ctx.beginPath();ctx.ellipse(fx-H*0.012,fy-H*0.138,H*0.007,H*0.005,0,0,Math.PI*2);ctx.fill();
-            ctx.beginPath();ctx.ellipse(fx+H*0.012,fy-H*0.138,H*0.007,H*0.005,0,0,Math.PI*2);ctx.fill();
-            // Lip sync mouth
-            ctx.fillStyle="rgba(120,60,40,0.85)";
-            ctx.beginPath();ctx.ellipse(fx,fy-H*0.115,H*0.014,mouthOpen,0,0,Math.PI*2);ctx.fill();
-            // Body — broader for male
-            ctx.fillStyle="rgba(28,18,10,0.97)";
-            ctx.beginPath();
-            ctx.moveTo(fx-shoulderW,fy-H*0.09);
-            ctx.lineTo(fx-H*0.03,fy+H*(0.08+breath*2));
-            ctx.lineTo(fx+H*0.03,fy+H*(0.08+breath*2));
-            ctx.lineTo(fx+shoulderW,fy-H*0.09);
-            ctx.closePath();ctx.fill();
-          }
-        }
-        if(isRain){
-          for(let r=0;r<120;r++){
-            const rx=(r*137+sec*200)%W, ry=(r*97+sec*450)%H;
-            ctx.strokeStyle="rgba(155,175,210,0.2)"; ctx.lineWidth=0.8;
-            ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(rx-4,ry+18); ctx.stroke();
-          }
-        }
-        if(isFog){
-          const fog=ctx.createLinearGradient(0,H*0.38,0,H*0.72);
-          fog.addColorStop(0,"rgba(175,180,175,0)");
-          fog.addColorStop(0.5,"rgba(155,160,155,"+(0.1+Math.sin(sec*0.28)*0.04)+")");
-          fog.addColorStop(1,"rgba(138,142,138,0)");
-          ctx.fillStyle=fog; ctx.fillRect(0,H*0.38,W,H*0.34);
+      const renderFn = (ctx, W, H, t, sec, totalSec, beatNow, amp) => {
+        const push = 1 + t*0.05 + amp*0.006;
+        ctx.save();
+        ctx.translate(W/2,H/2); ctx.scale(push,push); ctx.translate(-W/2,-H/2);
+        if(refImgEl){
+          const ar=refImgEl.width/refImgEl.height, tar=W/H;
+          let gw,gh;
+          if(ar>tar){ gh=H*push; gw=gh*ar; } else { gw=W*push; gh=gw/ar; }
+          const gx=(W-gw)/2+Math.sin(sec*0.08)*7, gy=(H-gh)/2+Math.cos(sec*0.06)*4;
+          ctx.drawImage(refImgEl,gx,gy,gw,gh);
+          livePhoto(ctx,refImgEl,gx,gy,gw,gh,sec,amp,beatNow);
+          if(aiDraw){ try{ aiDraw(ctx,W,H,t,sec,amp,beatNow); }catch(e){} }
+        } else if(aiDraw){
+          try{ aiDraw(ctx,W,H,t,sec,amp,beatNow); }
+          catch(e){ builtIn(ctx,W,H,t,sec,amp,beatNow); }
+        } else {
+          builtIn(ctx,W,H,t,sec,amp,beatNow);
         }
         ctx.restore();
       };
 
       setRenderProgress(30);
-      addLog("Rendering "+totalDur.toFixed(0)+"s film at 12fps...");
+      addLog("Rendering "+totalDur.toFixed(0)+"s film at 24fps...");
 
       // ── SET UP CANVAS + RECORDER ────────────────────────────────
       const canvas = canvasRef.current;
@@ -1063,7 +1093,7 @@ function MusicVideoStudio({ onClose, onSave }) {
       canvas.width=W; canvas.height=H;
       const ctx = canvas.getContext("2d");
 
-      const fps=12;
+      const fps=24;
       const mimeType=MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":"video/webm";
       const videoStream=canvas.captureStream(fps);
       let combinedStream=videoStream;
@@ -1090,6 +1120,12 @@ function MusicVideoStudio({ onClose, onSave }) {
           const sec=frame/fps;
           const t=sec/totalDur;
           const beatNow=beatGrid.some(b=>Math.abs(sec-b)<0.055);
+          // LIVE AMPLITUDE — drives strum, sway, light and lip sync
+          let amp=0;
+          if(envelope.length){
+            const ei=Math.min(envelope.length-1,Math.floor(sec*60));
+            amp=(envelope[ei]||0)*0.6+(envelope[Math.max(0,ei-1)]||0)*0.25+(envelope[Math.max(0,ei-2)]||0)*0.15;
+          } else { amp=0.35+Math.sin(sec*1.6)*0.2; }
 
           ctx.clearRect(0,0,W,H);
 
@@ -1098,7 +1134,7 @@ function MusicVideoStudio({ onClose, onSave }) {
           ctx.save();
           ctx.translate(-drift*0.3,0);
 
-          try{ renderFn(ctx,W,H,t,sec,totalDur,beatNow); }
+          try{ renderFn(ctx,W,H,t,sec,totalDur,beatNow,amp); }
           catch(e){
             // Graceful fallback — keep rendering
             const bg=ctx.createLinearGradient(0,0,0,H);
@@ -1907,7 +1943,7 @@ function P8VideoGenerator({ onSave, user, filmDuration, setFilmDuration }) {
       const oldRenders=clips.filter(c=>String(c.id).includes("render_final_old"));
       for(const c of oldRenders){await deleteClipFromDB(c.id);}
     }catch(e){}
-    addLog("CinemaForge Engine — reading your scene...");
+    addLog("MandaStrong Engine — reading your scene...");
     setProgress(5);
 
     // LOAD REFERENCE PHOTOS if user uploaded any
@@ -1932,7 +1968,7 @@ function P8VideoGenerator({ onSave, user, filmDuration, setFilmDuration }) {
     // ── STEP 1: Ask Claude to write a custom drawFrame for this exact scene ──
     let drawFnBody="";
     try{
-      addLog("CinemaForge — asking AI to compose your scene...");
+      addLog("MandaStrong Engine — asking AI to compose your scene...");
       setProgress(12);
       const hasPhotos=loadedRefImages.length>0;
       const photoNote=hasPhotos?"The user has uploaded "+loadedRefImages.length+" reference photo(s). The main photo will be drawn as the base layer already — your drawFrame should add atmosphere, lighting, overlays, and cinematic elements ON TOP of the photo base. Do NOT try to redraw the background from scratch.":"No reference photos. You must paint the entire scene from scratch using canvas drawing primitives — sky, ground, environment, people, objects, lighting. Make it look as photorealistic as possible using gradients, layering, and detail.";
@@ -1944,7 +1980,7 @@ function P8VideoGenerator({ onSave, user, filmDuration, setFilmDuration }) {
         body:JSON.stringify({
           model:"claude-sonnet-4-20250514",
           max_tokens:3500,
-          system:`You are CinemaForge, a photorealistic canvas video renderer for MandaStrong Studio. You write JavaScript that renders cinematic scenes frame by frame on an HTML5 canvas.
+          system:`You are the MandaStrong Engine, a photorealistic canvas video renderer for MandaStrong Studio. You write JavaScript that renders cinematic scenes frame by frame on an HTML5 canvas.
 
 ${photoNote}
 
@@ -3897,7 +3933,7 @@ function P19({ go }) {
     {n:"02",t:"Writing Tools — Script to Screen",d:"How to use the 100+ writing tools on Page 5. From logline to full feature script. All results auto-save to Media Library.",dur:"4:00",l:"Beginner",page:5,tips:["Click any tool card to open it","Use AI CREATE for instant professional scripts","Save results to your Media Library — they auto-route to the timeline"]},
     {n:"03",t:"Voice Engine — 54 Characters",d:"Selecting voices, filtering by gender, age, and origin. Recording narration. Two-button save workflow.",dur:"5:00",l:"Beginner",page:6,tips:["Hit PREPARE TO SPEAK to hear your narration aloud","Hit SAVE TO MEDIA LIBRARY to save it — auto-adds to timeline audio track","Filter by gender, age, and origin to find the perfect voice for your project"]},
     {n:"04",t:"Music Video Studio — Full Walkthrough",d:"Step-by-step: Song setup, style selection, scene description, drag-and-drop audio upload, generating and exporting.",dur:"5:00",l:"Intermediate",page:6,tips:["Access from MUSIC VIDEO STUDIO button on Page 6","Drag and drop your audio file onto the upload zone — or click to browse","Record your own song with the red RECORD button"]},
-    {n:"05",t:"Video Generator — Cinematic Scenes",d:"Describe any scene and have the Cinema Engine build it. Upload reference photos for photoreal output. Auto-saves to library and timeline.",dur:"4:00",l:"Intermediate",page:8,tips:["Upload a reference photo FIRST — engine builds the scene around it","Be specific: lighting, mood, camera angle, time of day","Generated clips save automatically to Media Library and Timeline"]},
+    {n:"05",t:"Video Generator — Cinematic Scenes",d:"Describe any scene and have the MandaStrong Engine build it. Upload reference photos for photoreal output. Auto-saves to library and timeline.",dur:"4:00",l:"Intermediate",page:8,tips:["Upload a reference photo FIRST — engine builds the scene around it","Be specific: lighting, mood, camera angle, time of day","Generated clips save automatically to Media Library and Timeline"]},
     {n:"06",t:"Timeline Editor — Building Your Film",d:"Clips auto-populate from Media Library. Drag to reorder. Upload Media button always visible. SYNC ALL TRACKS for instant assembly.",dur:"4:00",l:"Intermediate",page:13,tips:["Hit ⚡ SYNC ALL TRACKS to auto-populate all clips in order","Use ⬆ UPLOAD MEDIA (next to CLEAR ALL) to add more clips at any time","Narration saves auto-populate the audio track — no dragging needed"]},
     {n:"07",t:"Audio Mixer — Professional Sound",d:"Setting the perfect mix for documentary, narrative film, or music video.",dur:"3:00",l:"Beginner",page:15,tips:["Documentary: VOICE 85 · MUSIC 40 · EFX 50 · MASTER 85","Music Video: MUSIC 75 · VOICE 60 · EFX 40 · MASTER 85","Hit Apply Mix when done before going to Page 16"]},
     {n:"08",t:"Render Engine — 4K with Auto-Enhancement",d:"Quality settings 480p to 4K. Auto-enhancement runs on every frame — contrast, colour grade, sharpness, noise reduction. Priority save protects your work before render starts.",dur:"4:00",l:"Intermediate",page:16,tips:["Auto-enhancement runs automatically — no settings needed","Priority save fires before render starts so a crash never loses your session","4K recommended for professional distribution — 1080p for social media"]},
@@ -4488,19 +4524,28 @@ function P23({ go }) {
     v.loop=true;
     v.playsInline=true;
     v.preload="auto";
-    // Smooth playback: wait until the video is fully buffered before starting,
-    // then let the native loop handle itself. Only nudge play on stall/pause.
-    const tryPlay=()=>{v.play().catch(()=>{});};
-    if(v.readyState>=4){tryPlay();}
-    else{v.addEventListener("canplaythrough",tryPlay,{once:true});}
-    v.addEventListener("pause",tryPlay);
-    v.addEventListener("stalled",tryPlay);
-    v.addEventListener("waiting",tryPlay);
+    // SMOOTH PLAYBACK — no jumping.
+    // The old code re-fired play() on every pause/stalled/waiting event, which
+    // fought the native loop and produced the visible jump at every restart.
+    // Now: buffer fully, start once, let the native loop run untouched.
+    let started=false;
+    const startOnce=()=>{ if(started)return; started=true; v.play().catch(()=>{}); };
+    if(v.readyState>=3){ startOnce(); }
+    else{ v.addEventListener("canplaythrough",startOnce,{once:true}); v.addEventListener("loadeddata",startOnce,{once:true}); }
+    // iOS sometimes drops the native loop — restart cleanly only if it truly ends.
+    const onEnded=()=>{ try{ v.currentTime=0; v.play().catch(()=>{}); }catch(e){} };
+    v.addEventListener("ended",onEnded);
+    // Resume after the tab or app returns to the foreground.
+    const onVis=()=>{ if(!document.hidden&&v.paused) v.play().catch(()=>{}); };
+    document.addEventListener("visibilitychange",onVis);
+    // One silent retry for browsers that block the first autoplay attempt.
+    const kick=setTimeout(()=>{ if(v.paused) v.play().catch(()=>{}); },900);
     return()=>{
-      v.removeEventListener("canplaythrough",tryPlay);
-      v.removeEventListener("pause",tryPlay);
-      v.removeEventListener("stalled",tryPlay);
-      v.removeEventListener("waiting",tryPlay);
+      clearTimeout(kick);
+      v.removeEventListener("canplaythrough",startOnce);
+      v.removeEventListener("loadeddata",startOnce);
+      v.removeEventListener("ended",onEnded);
+      document.removeEventListener("visibilitychange",onVis);
     };
   },[]);
   const exitApp = () => {
@@ -4515,6 +4560,8 @@ function P23({ go }) {
           style={{display:"block",width:"100%",maxHeight:"42vh",objectFit:"cover"}}>
           <source src="/background.mp4" type="video/mp4"/>
           <source src="background.mp4" type="video/mp4"/>
+          <source src="/background_mp4.mp4" type="video/mp4"/>
+          <source src="/public/background.mp4" type="video/mp4"/>
           <source src="/thatsallfolks.mp4" type="video/mp4"/>
         </video>
       </div>
@@ -4761,4 +4808,4 @@ export default function App() {
       <Footer page={page} go={go} onSave={saveProject} onHistory={()=>setShowHistory(true)}/>
     </div>
   );
-} 
+}
