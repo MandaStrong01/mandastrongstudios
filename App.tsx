@@ -2120,7 +2120,7 @@ function P8VideoGenerator({ onSave, user, filmDuration, setFilmDuration }) {
   // Real depth, real volumetric lighting, real atmosphere, real motion
   // ════════════════════════════════════════════════════════════════
   // ════════════════════════════════════════════════════════════════
-  // CINEMAFORGE ENGINE — AI writes a custom drawFrame() per prompt
+  // MANDASTRONG ENGINE — AI writes a custom drawFrame() per prompt
   // Every scene is unique. What you describe is exactly what renders.
   // ════════════════════════════════════════════════════════════════
   const generateVideo=async()=>{
@@ -2212,7 +2212,7 @@ function P8VideoGenerator({ onSave, user, filmDuration, setFilmDuration }) {
     // ── STEP 1: Ask Claude to write a custom drawFrame for this exact scene ──
     let drawFnBody="";
     try{
-      addLog("CinemaForge — asking AI to compose your scene...");
+      addLog("MandaStrong Engine — asking AI to compose your scene...");
       setProgress(12);
       const hasPhotos=loadedRefImages.length>0;
       const photoNote=hasPhotos?"The user has uploaded "+loadedRefImages.length+" reference photo(s). The main photo will be drawn as the base layer already — your drawFrame should add atmosphere, lighting, overlays, and cinematic elements ON TOP of the photo base. Do NOT try to redraw the background from scratch.":"No reference photos. You must paint the entire scene from scratch using canvas drawing primitives — sky, ground, environment, people, objects, lighting. Make it look as photorealistic as possible using gradients, layering, and detail.";
@@ -2224,7 +2224,7 @@ function P8VideoGenerator({ onSave, user, filmDuration, setFilmDuration }) {
         body:JSON.stringify({
           model:"claude-sonnet-4-20250514",
           max_tokens:3500,
-          system:`You are CinemaForge, a photorealistic canvas video renderer for MandaStrong Studio. You write JavaScript that renders cinematic scenes frame by frame on an HTML5 canvas.
+          system:`You are the MandaStrong Engine, a photorealistic canvas video renderer for MandaStrong Studio. You write JavaScript that renders cinematic scenes frame by frame on an HTML5 canvas.
 
 ${photoNote}
 
@@ -2392,7 +2392,7 @@ Write the drawFrame body now.`}]
     const url=URL.createObjectURL(blob);
     setVideoUrl(url);
     setProgress(100);
-    addLog("\u2713 CINEMAFORGE COMPLETE — "+duration+"s cinema-grade video ready");
+    addLog("\u2713 MANDASTRONG ENGINE COMPLETE — "+duration+"s cinema-grade video ready");
     // AUTO-SAVE the finished clip — timeout-protected so it can never stall the render
     try{
       const autoId="scene_"+Date.now();
