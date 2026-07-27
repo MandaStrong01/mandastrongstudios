@@ -16,6 +16,118 @@ async function proxyFetch(body){
     return res.json();
   }catch(e){clearTimeout(timeout);throw e;}
 }
+
+// ══════════════════════════════════════════════════════════════════
+// MANDASTRONG ENGINE — real photorealistic footage
+// Single shared client. Every studio page renders through this.
+// ══════════════════════════════════════════════════════════════════
+const ENGINE_URL="https://njqfexhltjwpgvctmyaw.supabase.co/functions/v1/generate-video";
+const ENGINE_KEY="msk_live_j-HsVOiMDEbwfqLInIsNTrnMreDvr-VKKbPNf21oink";
+const engineHeaders={"Content-Type":"application/json","x-engine-key":ENGINE_KEY};
+
+// The engine answers with .url; older builds looked for .output. Accept either.
+const pickEngineUrl=(d)=>{ if(!d||typeof d!=="object")return""; const v=d.url||d.output||d.video||""; return (typeof v==="string"&&v.indexOf("http")===0)?v:""; };
+
+async function engineCall(body){
+  const res=await fetch(ENGINE_URL,{method:"POST",headers:engineHeaders,body:JSON.stringify(body)});
+  return res.json();
+}
+
+// ── CINEMA VOICE ENGINE ──────────────────────────────────────────
+// Server-side speech. Same voice on every device — iPad, Galaxy, HP.
+const VOICE_URL="https://njqfexhltjwpgvctmyaw.supabase.co/functions/v1/generate-voice";
+let __msAudio=null;
+
+async function engineSpeak(text,meta){
+  meta=meta||{};
+  try{
+    const res=await fetch(VOICE_URL,{method:"POST",headers:engineHeaders,body:JSON.stringify({
+      text:String(text||"").slice(0,3500),
+      voice:meta.voice||"",
+      gender:meta.gender||"",
+      origin:meta.origin||"",
+      speed:meta.speed||1
+    })});
+    let d=await res.json();
+    let url=pickEngineUrl(d);
+    if(url) return url;
+    if(d&&d.id){
+      for(let i=0;i<40;i++){
+        await new Promise(r=>setTimeout(r,1500));
+        const p=await fetch(VOICE_URL,{method:"POST",headers:engineHeaders,body:JSON.stringify({id:d.id})});
+        const pd=await p.json();
+        url=pickEngineUrl(pd);
+        if(url) return url;
+        if(pd&&(pd.status==="failed"||pd.status==="canceled")) return "";
+      }
+    }
+  }catch(e){}
+  return "";
+}
+
+function playEngineAudio(url,volume){
+  return new Promise((resolve)=>{
+    try{
+      const a=new Audio(url);
+      a.volume=typeof volume==="number"?Math.max(0,Math.min(1,volume)):1;
+      __msAudio=a;
+      a.onended=()=>resolve(true);
+      a.onerror=()=>resolve(false);
+      a.play().catch(()=>resolve(false));
+    }catch(e){resolve(false);}
+  });
+}
+
+function stopEngineAudio(){
+  try{ if(__msAudio){ __msAudio.pause(); __msAudio.currentTime=0; __msAudio=null; } }catch(e){}
+}
+
+// Health check — tells you if the engine has a provider key installed.
+async function engineStatus(){
+  try{ const r=await fetch(ENGINE_URL); return await r.json(); }catch(e){ return {ok:false,message:"Engine unreachable"}; }
+}
+
+// Starts one render and polls until the footage lands.
+// Returns a playable URL, or "" if the engine could not deliver.
+async function engineRender(prompt,opts){
+  opts=opts||{};
+  try{
+    const body={prompt:String(prompt||"").slice(0,1800),duration:opts.duration||5,aspect_ratio:opts.aspect_ratio||"16:9",cheap_only:true};
+    if(opts.image)body.image=opts.image;
+    const started=await engineCall(body);
+    if(!started||started.error)return "";
+    let url=pickEngineUrl(started);
+    const pid=started.id;
+    if(!url&&!pid)return "";
+    for(let i=0;i<100&&!url&&pid;i++){
+      await new Promise(r=>setTimeout(r,3000));
+      if(opts.onTick)opts.onTick(i);
+      const pd=await engineCall({id:pid});
+      if(pd&&pd.status==="failed")return "";
+      url=pickEngineUrl(pd);
+    }
+    return url||"";
+  }catch(e){ return ""; }
+}
+
+// Renders several shots at once. Much faster than one after another.
+async function engineRenderMany(prompts,opts){
+  const results=await Promise.all(prompts.map(p=>engineRender(p,opts)));
+  return results.filter(Boolean);
+}
+
+// Pulls footage into the browser so canvas can draw it without tainting.
+async function engineToLocalVideo(url){
+  try{
+    const res=await fetch(url);
+    const blob=await res.blob();
+    const v=document.createElement("video");
+    v.src=URL.createObjectURL(blob);
+    v.muted=true; v.loop=true; v.playsInline=true; v.crossOrigin="anonymous";
+    await new Promise((res2)=>{ v.onloadeddata=()=>res2(null); v.onerror=()=>res2(null); setTimeout(()=>res2(null),15000); });
+    return v;
+  }catch(e){ return null; }
+}
 const saveClipToDB=async(id,blob,name,type)=>{try{const db=await openDB();const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).put({id,blob,name,type});await new Promise((r,j)=>{tx.oncomplete=r;tx.onerror=j;});}catch(e){console.warn("DB save failed",e);}};
 const loadClipFromDB=async(id)=>{try{const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(STORE,"readonly");const req=tx.objectStore(STORE).get(id);req.onsuccess=()=>res(req.result);req.onerror=rej;});}catch(e){return null;}};
 const getAllClipsFromDB=async()=>{try{const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(STORE,"readonly");const req=tx.objectStore(STORE).getAll();req.onsuccess=()=>res(req.result||[]);req.onerror=rej;});}catch(e){return[];}};
@@ -192,12 +304,31 @@ function speakText(voiceId, txt, onStart, onEnd) {
       else if(origin.includes("australian")) candidates = premiumAussie;
       else if(gender==="female") candidates = premiumUSFemale;
       else candidates = premiumUSMale;
-      for(const name of candidates){
-        picked = allVoices.find(v=>v.name.includes(name));
+    // ── QUALITY FIRST: always prefer the highest-quality voice the device has ──
+    // Enhanced / Premium / Siri / Neural / Natural voices sound dramatically better.
+    const isHiQ = (v) => {
+      const n = (v.name||"") + " " + (v.voiceURI||"");
+      return /premium|enhanced|siri|neural|natural|online|multilingual/i.test(n);
+    };
+    const hiQVoices = allVoices.filter(v=>v.lang&&v.lang.startsWith("en")&&isHiQ(v));
+    const pool = hiQVoices.length ? hiQVoices : allVoices;
+
+    for(const name of candidates){
+        picked = pool.find(v=>v.name.includes(name)) || allVoices.find(v=>v.name.includes(name));
         if(picked) break;
       }
+      // Nothing matched by name — take the best-quality voice matching gender/accent
+      if(!picked && hiQVoices.length){
+        const fem = /female|samantha|ava|serena|zoe|karen|moira|fiona|tessa|kate|victoria|nicky|allison|susan/i;
+        const wantFemale = gender==="female";
+        picked = hiQVoices.find(v=>wantFemale ? fem.test(v.name) : !fem.test(v.name)) || hiQVoices[0];
+      }
     }
-    if(!picked) picked = allVoices.find(v=>v.lang&&v.lang.startsWith("en"));
+    // Final fallbacks — still prefer quality
+    if(!picked){
+      const anyHiQ = allVoices.filter(v=>v.lang&&v.lang.startsWith("en")&&isHiQ(v));
+      picked = anyHiQ[0] || allVoices.find(v=>v.lang&&v.lang.startsWith("en"));
+    }
     if(!picked && allVoices.length) picked = allVoices[0];
 
     const pitch = voiceChar ? voiceChar.pitch : 1.0;
@@ -749,7 +880,7 @@ function MusicVideoStudio({ onClose, onSave }) {
 
     try {
       const sceneDesc = config.visualDesc || "A man sits on a windowsill overlooking the ocean at night, fingerpicking acoustic guitar. Only his back is visible. Full moon. Single candle. Dark wooden room. Empty couch. Coat on a hook. Curtains lift in the wind.";
-      addLog("MandaStrong Engine — writing your film...");
+      addLog("MandaStrong Cinema Engine — writing your film...");
       setRenderProgress(4);
 
       // ── BEAT ANALYSIS ─────────────────────────────────────────────
@@ -757,7 +888,6 @@ function MusicVideoStudio({ onClose, onSave }) {
       let totalDur = Math.max(30, Number(durationMap[config.duration])||180);
       if(!isFinite(totalDur)||isNaN(totalDur)) totalDur = 180;
       let beatGrid = [];
-      let envelope = [];
       let audioCtx = null, audioDest = null, audioSource = null;
 
       if(audioFile){
@@ -780,15 +910,7 @@ function MusicVideoStudio({ onClose, onSave }) {
           energies.forEach(x=>{
             if(x.e>avg*1.35&&x.t-last>0.28){beatGrid.push(x.t);last=x.t;}
           });
-          // ENVELOPE — real amplitude curve, 60 samples/sec. Drives mouth, strum, sway.
-          const envRate=60, envWin=Math.round(sr/envRate);
-          for(let i=0;i<data.length-envWin;i+=envWin){
-            let e=0; for(let j=0;j<envWin;j+=4) e+=Math.abs(data[i+j]);
-            envelope.push(e/(envWin/4));
-          }
-          const envMax=envelope.reduce((m,x)=>x>m?x:m,0.0001);
-          for(let i=0;i<envelope.length;i++) envelope[i]=Math.min(1,envelope[i]/envMax);
-          addLog("Audio: "+totalDur.toFixed(1)+"s — "+beatGrid.length+" beats · "+envelope.length+" envelope points");
+          addLog("Audio: "+totalDur.toFixed(1)+"s — "+beatGrid.length+" beats detected");
           // Set up audio mixing
           audioDest = audioCtx.createMediaStreamDestination();
           audioSource = audioCtx.createBufferSource();
@@ -807,25 +929,23 @@ function MusicVideoStudio({ onClose, onSave }) {
       }
       setRenderProgress(10);
 
-      // ══ CINEMAFORGE MUSIC ENGINE ══════════════════════════════════════
-      // Identical architecture to the main Video Studio (Page 8):
-      // AI composes a custom drawFrame for THIS scene, the uploaded photo
-      // is the photoreal base, and a LIVING LAYER moves it every frame.
+      // ── BUILT-IN RENDERER (NO PROXY) ─────────────
+      addLog("MandaStrong Engine — built-in renderer ready");
       const pr = sceneDesc.toLowerCase();
       const isNight = /night|dark|moon|evening|dusk/.test(pr);
-      const isOcean = /ocean|sea|water|wave|shore|coast|tide/.test(pr);
-      const isIndoor = /room|interior|inside|window|wall|sill/.test(pr);
+      const isGolden = /golden|sunset|sunrise|amber/.test(pr);
+      const isOcean = /ocean|sea|water|wave|shore|coast/.test(pr);
+      const isCity = /city|urban|street|skyline|neon/.test(pr);
+      const isSpace = /space|star|galaxy|planet|cosmos/.test(pr);
+      const isIndoor = /room|interior|inside|window|wall/.test(pr);
+      const isRain = /rain|storm|wet|drizzle/.test(pr);
+      const isFog = /fog|mist|haze|smoke/.test(pr);
+      const hasPerson = /woman|man|person|figure|human/.test(pr);
       const hasCandle = /candle|flame|fire|torch/.test(pr);
-      const hasGuitar = /guitar|musician|fingerpick|strum|play/.test(pr);
-      const isSilhouette = /silhouette|back to camera|facing away|face never|face barely/.test(pr);
-      const wantWater = isOcean;
-      const wantCurtain = /curtain|drape|breeze|wind|window/.test(pr);
-      const wantStrum = hasGuitar;
-      const bpmMatch = String(config.tempo||"").match(/(\d+)\s*-\s*(\d+)/);
-      const bpm = bpmMatch ? (Number(bpmMatch[1])+Number(bpmMatch[2]))/2 : 72;
-      const strumHz = bpm/60;
+      const hasGuitar = /guitar|musician|fingerpick/.test(pr);
+      const isSilhouette = /silhouette|back to camera|facing away/.test(pr);
 
-      // ── Reference photo — photoreal base ──
+      // Load reference image if user uploaded one — Reality Engine base
       let refImgEl = null;
       if(config.refMedia){
         try{
@@ -835,257 +955,311 @@ function MusicVideoStudio({ onClose, onSave }) {
             img.onload = ()=>resolve(img);
             img.onerror = ()=>resolve(null);
             img.src = config.refMedia;
-            setTimeout(()=>resolve(null), 6000);
+            setTimeout(()=>resolve(refImgEl||null), 5000);
           });
-          if(refImgEl) addLog("\u2713 Reference photo loaded — photoreal base active");
+          if(refImgEl) addLog("✓ Reference image loaded — Reality Engine base active");
         }catch(e){}
       }
 
-      // ── STEP 1: AI composes this exact scene (same proxy as Page 8) ──
-      let drawFnBody="";
-      const bt=String.fromCharCode(96);
-      try{
-        addLog("MandaStrong Engine — composing your scene...");
-        setRenderProgress(14);
-        const photoNote = refImgEl
-          ? "A reference photo is ALREADY drawn as the base layer and is ALREADY being animated. Your code must only ADD light, atmosphere, grade and depth ON TOP. Do NOT repaint the background. Do NOT draw people."
-          : "No reference photo. Paint the entire scene yourself with canvas primitives — sky, ocean, room, window, curtains, the figure, the guitar. Make it photoreal with gradients and layering.";
-        const ac=new AbortController(); const to=setTimeout(()=>ac.abort(),45000);
-        const res=await fetch("https://njqfexhltjwpgvctmyaw.supabase.co/functions/v1/claude-proxy",{
-          signal:ac.signal, method:"POST", headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({
-            model:"claude-sonnet-4-20250514", max_tokens:3500,
-            system:"You are the MandaStrong Engine, the photoreal canvas renderer for MandaStrong Studio Music Video Studio.\n\n"+photoNote+"\n\nWrite ONLY the body of:\nfunction drawFrame(ctx, W, H, t, sec, amp, beat) { YOUR CODE HERE }\n\nctx = CanvasRenderingContext2D. W=1280 H=720. t = 0..1 progress. sec = elapsed seconds. amp = 0..1 LIVE AUDIO LOUDNESS this frame. beat = true on a beat.\n\nMANDATORY MOTION RULES — a still frame is a failure:\n1. EVERY element must move. Use sec in every sine. Nothing static.\n2. Water must have travelling waves and a moving specular moon path.\n3. Curtains must billow with a gust cycle, not a loop.\n4. Light must breathe with amp. Candle flame must flicker.\n5. Camera must drift continuously — slow, cinematic, never stopping.\n6. React to amp and beat every frame.\n7. No external images, no fetch, no DOM. Only ctx drawing.\n8. Do not draw letterbox bars, vignette, grain or titles — added separately.\n9. Under 200 lines.\n\nStyle: "+config.videoStyle+". Grade: "+config.colorGrade+". Mood: "+config.mood+". Return ONLY the function body. No markdown.",
-            messages:[{role:"user",content:"Scene: \""+sceneDesc+"\"\n\nWrite the drawFrame body now."}]
-          })
-        });
-        clearTimeout(to);
-        const d=await res.json();
-        let code=d.content&&d.content[0]?d.content[0].text.trim():"";
-        code=code.split(bt+bt+bt+"javascript").join("").split(bt+bt+bt+"js").join("").split(bt+bt+bt).join("").trim();
-        if(code.startsWith("function drawFrame")){
-          const bo=code.indexOf("{"), bc=code.lastIndexOf("}");
-          if(bo>=0&&bc>bo) code=code.slice(bo+1,bc);
-        }
-        drawFnBody=code;
-        addLog("\u2713 Scene composed — "+drawFnBody.split("\n").length+" render instructions");
-      }catch(e){
-        addLog("Compose offline — built-in cinematic renderer engaged");
-        drawFnBody="";
-      }
-      setRenderProgress(26);
+      const renderFn = (ctx, W, H, t, sec, totalSec, beatNow) => {
+        const pulse = beatNow ? 1.02 : 1.0;
+        ctx.save();
+        ctx.translate(W/2, H/2);
+        ctx.scale(pulse + t*0.04, pulse + t*0.04);
+        ctx.translate(-W/2, -H/2);
 
-      let aiDraw=null;
-      if(drawFnBody){
-        try{ aiDraw=new Function("ctx","W","H","t","sec","amp","beat",drawFnBody); aiDraw(document.createElement("canvas").getContext("2d"),1280,720,0,0,0,false); }
-        catch(e){ addLog("Scene code rejected ("+e.message+") — built-in renderer engaged"); aiDraw=null; }
-      }
-
-      // ══ LIVING LAYER ══════════════════════════════════════════════════
-      // Makes the uploaded photo MOVE. Water displaces row by row, curtains
-      // billow on a wind cycle, the player's hands and body strum to the
-      // real audio envelope. The photo stays photoreal — it just comes alive.
-      const livePhoto=(ctx,img,gx,gy,gw,gh,sec,amp,beatNow)=>{
-        const sw0=img.width, sh0=img.height;
-        const sxPer=sw0/gw, syPer=sh0/gh;
-        const wind=0.55+0.45*Math.sin(sec*0.42)+0.22*Math.sin(sec*1.17+1.3);
-
-        // ── WATER: real travelling waves, row by row ──
-        if(wantWater){
-          const bandTop=gy+gh*0.50, bandH=gh*0.50, rows=72;
-          for(let r=0;r<rows;r++){
-            const dy=bandTop+(bandH*r/rows), dh=(bandH/rows)+1.4;
-            const depth=r/rows;
-            const push=Math.sin(dy*0.030+sec*2.0+depth*3.4)*(2.0+depth*8.5)*(0.55+amp*0.85)
-                      +Math.sin(dy*0.011-sec*1.1)*(1.0+depth*3.0);
-            const sy=(dy-gy)*syPer, sh=dh*syPer;
-            if(sy<0||sy+sh>sh0) continue;
-            ctx.drawImage(img,0,sy,sw0,sh,gx+push,dy,gw,dh);
+        // ── REALITY ENGINE — if user uploaded a reference image, use it as photorealistic base
+        if(refImgEl){
+          // Cover the full frame with the reference image
+          const imgR = refImgEl.width / refImgEl.height;
+          const canR = W / H;
+          let dw, dh, dx, dy;
+          if(imgR > canR){
+            dh = H;
+            dw = H * imgR;
+            dx = (W - dw) / 2;
+            dy = 0;
+          } else {
+            dw = W;
+            dh = W / imgR;
+            dx = 0;
+            dy = (H - dh) / 2;
           }
-          ctx.save(); ctx.globalCompositeOperation="lighter";
-          for(let s=0;s<46;s++){
-            const gxp=gx+gw*(0.26+((s*37)%100)/100*0.48);
-            const gyp=bandTop+bandH*(((s*61)%100)/100);
-            const tw=0.25+0.75*Math.abs(Math.sin(sec*1.7+s*0.9));
-            ctx.fillStyle="rgba(198,218,255,"+(0.045+tw*0.10)+")";
-            ctx.fillRect(gxp+Math.sin(sec*0.9+s)*6,gyp,9+tw*28,1.5);
-          }
+          // Subtle Ken Burns pan across the reference image for movement
+          const panX = Math.sin(sec * 0.08) * W * 0.02;
+          const panY = Math.cos(sec * 0.06) * H * 0.015;
+          ctx.drawImage(refImgEl, dx + panX, dy + panY, dw, dh);
+          // Warm cinematic overlay + vignette handled by post-processing later
+          // Skip procedural sky/water/room drawing when we have real photo base
           ctx.restore();
+          return;
         }
-
-        // ── CURTAINS: gust cycle, both sides ──
-        if(wantCurtain){
-          const cols=28, panelW=gw*0.17;
-          for(let side=0;side<2;side++){
-            const px0=side===0?gx:gx+gw-panelW;
-            for(let c=0;c<cols;c++){
-              const dx=px0+panelW*c/cols, dw=panelW/cols+1.4;
-              const edge=side===0?(1-c/cols):(c/cols);
-              const sway=Math.sin(sec*1.05+c*0.34+side*2.1)*wind*(3+edge*18);
-              const lift=Math.cos(sec*0.83+c*0.22+side*1.4)*wind*(1.5+edge*6);
-              const sx=(dx-gx)*sxPer, sw=dw*sxPer;
-              if(sx<0||sx+sw>sw0) continue;
-              ctx.drawImage(img,sx,0,sw,sh0,dx+sway,gy-lift,dw,gh);
+        // SKY (fallback for when no reference image is uploaded)
+        if(isSpace){
+          const sky=ctx.createLinearGradient(0,0,0,H);
+          sky.addColorStop(0,"rgb(1,1,8)"); sky.addColorStop(1,"rgb(3,3,18)");
+          ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+          for(let s=0;s<300;s++){
+            const sx=(s*137.5)%W, sy=(s*97.3)%H;
+            ctx.fillStyle="rgba(240,245,255,"+(0.3+Math.sin(sec*0.7+s)*0.28)+")";
+            ctx.fillRect(sx,sy,s%5===0?1.8:0.8,s%5===0?1.8:0.8);
+          }
+        } else if(isNight){
+          const sky=ctx.createLinearGradient(0,0,0,H*0.62);
+          sky.addColorStop(0,"rgb(2,4,15)");
+          sky.addColorStop(0.5,"rgb(5,10,32)");
+          sky.addColorStop(1,"rgb(8,18,50)");
+          ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+          for(let s=0;s<200;s++){
+            const sx=(s*137.5)%W, sy=(s*97.3)%(H*0.55);
+            ctx.fillStyle="rgba(240,245,255,"+(0.3+Math.sin(sec*0.5+s*0.3)*0.22)+")";
+            ctx.fillRect(sx,sy,s%4===0?1.4:0.7,s%4===0?1.4:0.7);
+          }
+          const mx=W*0.78, my=H*0.13;
+          const mg=ctx.createRadialGradient(mx,my,0,mx,my,H*0.078);
+          mg.addColorStop(0,"rgba(255,255,248,0.96)");
+          mg.addColorStop(1,"rgba(200,200,180,0)");
+          ctx.fillStyle=mg; ctx.fillRect(mx-H*0.09,my-H*0.09,H*0.18,H*0.18);
+        } else if(isGolden){
+          const sky=ctx.createLinearGradient(0,0,0,H*0.66);
+          sky.addColorStop(0,"rgb(18,10,35)");
+          sky.addColorStop(0.3,"rgb(165,50,12)");
+          sky.addColorStop(0.65,"rgb(248,135,28)");
+          sky.addColorStop(1,"rgb(255,205,75)");
+          ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+        } else {
+          const sky=ctx.createLinearGradient(0,0,0,H*0.6);
+          sky.addColorStop(0,"rgb(28,60,140)");
+          sky.addColorStop(1,"rgb(180,210,240)");
+          ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+        }
+        const horizY = isIndoor ? H : H*0.56;
+        // OCEAN
+        if(isOcean && !isIndoor){
+          for(let w=0;w<10;w++){
+            const wg=ctx.createLinearGradient(0,horizY+w*13,0,H);
+            const d=isNight?[2+w*2,8+w*6,30+w*10]:[0+w*3,55+w*12,115+w*10];
+            wg.addColorStop(0,"rgba("+d[0]+","+d[1]+","+d[2]+","+(0.7+w*0.03)+")");
+            wg.addColorStop(1,"rgba(1,3,8,0.98)");
+            ctx.fillStyle=wg;
+            ctx.beginPath(); ctx.moveTo(-10,H);
+            for(let x=0;x<=W+10;x+=3){
+              const y=horizY+w*14+Math.sin(x*0.007+sec*(0.24+w*0.07)+w*1.3)*17;
+              ctx.lineTo(x,y);
+            }
+            ctx.lineTo(W+10,H); ctx.closePath(); ctx.fill();
+          }
+        }
+        // CITY
+        if(isCity && !isIndoor){
+          const grd=ctx.createLinearGradient(0,horizY,0,H);
+          grd.addColorStop(0,"rgb(16,16,20)"); grd.addColorStop(1,"rgb(8,8,10)");
+          ctx.fillStyle=grd; ctx.fillRect(0,horizY,W,H-horizY);
+          for(let b=0;b<18;b++){
+            const bx=(b*151)%W, bh=H*0.15+((b*97)%H)*0.35, bw=W*0.035;
+            ctx.fillStyle=isNight?"rgb(10,10,18)":"rgb(75,80,90)";
+            ctx.fillRect(bx,horizY-bh,bw,bh);
+            for(let wy=0;wy<Math.floor(bh/18);wy++){
+              for(let wx=0;wx<Math.floor(bw/10);wx++){
+                if(Math.sin(b*13+wy*7+wx*11)>0.1){
+                  const lit=Math.sin(sec*0.3+b+wy)>-0.3;
+                  ctx.fillStyle=lit?"rgba(255,240,180,0.88)":"rgba(20,20,28,0.5)";
+                  ctx.fillRect(bx+wx*10+2,horizY-bh+wy*18+4,7,10);
+                }
+              }
             }
           }
         }
-
-        // ── PLAYER: strum + breath, driven by the real audio envelope ──
-        if(wantStrum){
-          const cx=gx+gw*0.50, cy=gy+gh*0.58;
-          const rw=gw*0.34, rh=gh*0.40;
-          const strum=Math.sin(sec*strumHz*Math.PI*2)*(0.005+amp*0.022)+(beatNow?0.005:0);
-          ctx.save();
-          ctx.beginPath(); ctx.rect(cx-rw/2,cy-rh/2,rw,rh); ctx.clip();
-          ctx.translate(cx,cy); ctx.rotate(strum); ctx.translate(-cx,-cy);
-          ctx.drawImage(img,gx,gy,gw,gh);
-          ctx.restore();
-          // torso breath + head lean — reads as a living person
-          const bx=gx+gw*0.50, by=gy+gh*0.40;
-          const bw=gw*0.26, bh=gh*0.34;
-          const breath=Math.sin(sec*0.75)*1.6+amp*2.4;
-          ctx.save();
-          ctx.beginPath(); ctx.rect(bx-bw/2,by-bh/2,bw,bh); ctx.clip();
-          ctx.drawImage(img,gx,gy+breath,gw,gh);
-          ctx.restore();
-          // AUTO LIP SYNC — head/jaw region tracks the vocal envelope
-          if(config.lipSync){
-            const hx=gx+gw*0.50, hy=gy+gh*0.30;
-            const hw=gw*0.15, hh=gh*0.17;
-            const jaw=amp*2.8, tilt=Math.sin(sec*strumHz*Math.PI)*0.004+amp*0.006;
-            ctx.save();
-            ctx.beginPath(); ctx.rect(hx-hw/2,hy-hh/2,hw,hh); ctx.clip();
-            ctx.translate(hx,hy); ctx.rotate(tilt); ctx.translate(-hx,-hy+jaw);
-            ctx.drawImage(img,gx,gy,gw,gh);
-            ctx.restore();
+        // INDOOR
+        if(isIndoor){
+          const wall=ctx.createLinearGradient(0,0,W,H);
+          wall.addColorStop(0,"rgb(9,6,3)"); wall.addColorStop(1,"rgb(4,3,2)");
+          ctx.fillStyle=wall; ctx.fillRect(0,0,W,H);
+          const fl=ctx.createLinearGradient(0,H*0.65,0,H);
+          fl.addColorStop(0,"rgb(18,12,7)"); fl.addColorStop(1,"rgb(7,5,3)");
+          ctx.fillStyle=fl; ctx.fillRect(0,H*0.65,W,H*0.35);
+          const wox=W*0.12, woy=H*0.05, wow=W*0.46, woh=H*0.74;
+          if(isNight){
+            const ws=ctx.createLinearGradient(wox,woy,wox,woy+woh);
+            ws.addColorStop(0,"rgb(2,4,15)"); ws.addColorStop(1,"rgb(6,14,42)");
+            ctx.fillStyle=ws; ctx.fillRect(wox,woy,wow,woh);
+            if(isOcean){
+              for(let w=0;w<6;w++){
+                const wg2=ctx.createLinearGradient(0,woy+woh*0.55+w*8,0,woy+woh);
+                wg2.addColorStop(0,"rgba(2,8,35,0.9)");
+                wg2.addColorStop(1,"rgba(1,3,12,0.98)");
+                ctx.fillStyle=wg2;
+                ctx.beginPath(); ctx.moveTo(wox,woy+woh);
+                for(let x=wox;x<=wox+wow;x+=3){
+                  const y=woy+woh*0.58+w*10+Math.sin(x*0.01+sec*(0.2+w*0.07)+w)*10;
+                  ctx.lineTo(x,y);
+                }
+                ctx.lineTo(wox+wow,woy+woh); ctx.closePath(); ctx.fill();
+              }
+            }
           }
-        }
-      };
-
-      // ── Built-in cinematic renderer (runs if AI compose is offline) ──
-      const builtIn=(ctx,W,H,t,sec,amp,beatNow)=>{
-        const wind=0.55+0.45*Math.sin(sec*0.42)+0.22*Math.sin(sec*1.17+1.3);
-        const sky=ctx.createLinearGradient(0,0,0,H);
-        if(isNight){ sky.addColorStop(0,"rgb(2,4,15)"); sky.addColorStop(0.55,"rgb(5,11,34)"); sky.addColorStop(1,"rgb(8,18,50)"); }
-        else { sky.addColorStop(0,"rgb(26,55,130)"); sky.addColorStop(1,"rgb(170,200,235)"); }
-        ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
-        for(let s=0;s<200;s++){
-          const sx=(s*137.5)%W, sy=(s*97.3)%(H*0.5);
-          ctx.fillStyle="rgba(240,245,255,"+(0.25+Math.sin(sec*0.6+s*0.3)*0.22)+")";
-          ctx.fillRect(sx,sy,s%4===0?1.4:0.7,s%4===0?1.4:0.7);
-        }
-        const mx=W*0.70, my=H*0.20+Math.sin(sec*0.05)*3;
-        const mg=ctx.createRadialGradient(mx,my,0,mx,my,H*0.085);
-        mg.addColorStop(0,"rgba(255,255,248,0.96)"); mg.addColorStop(1,"rgba(200,200,180,0)");
-        ctx.fillStyle=mg; ctx.fillRect(mx-H*0.1,my-H*0.1,H*0.2,H*0.2);
-        // OCEAN — layered travelling waves + moon path
-        const horiz=H*0.48;
-        for(let w=0;w<11;w++){
-          const wg=ctx.createLinearGradient(0,horiz+w*14,0,H);
-          wg.addColorStop(0,"rgba("+(2+w*2)+","+(8+w*6)+","+(30+w*10)+",0.82)");
-          wg.addColorStop(1,"rgba(1,3,8,0.98)");
-          ctx.fillStyle=wg; ctx.beginPath(); ctx.moveTo(-10,H);
-          for(let x=-10;x<=W+10;x+=4){
-            const y=horiz+w*15+Math.sin(x*0.008+sec*(0.5+w*0.12)+w*1.3)*(12+w*2)*(0.7+amp*0.6);
-            ctx.lineTo(x,y);
-          }
-          ctx.lineTo(W+10,H); ctx.closePath(); ctx.fill();
-        }
-        ctx.save(); ctx.globalCompositeOperation="lighter";
-        for(let s=0;s<60;s++){
-          const gy2=horiz+(H-horiz)*(((s*61)%100)/100);
-          const gx2=mx-70+Math.sin(sec*1.3+s)*90;
-          const tw=0.3+0.7*Math.abs(Math.sin(sec*2.0+s));
-          ctx.fillStyle="rgba(220,232,255,"+(0.06+tw*0.14)+")";
-          ctx.fillRect(gx2,gy2,12+tw*34,1.6);
-        }
-        ctx.restore();
-        // CURTAINS — real billow
-        for(let side=0;side<2;side++){
-          const px0=side===0?0:W*0.82, pw=W*0.18;
-          for(let c=0;c<22;c++){
-            const edge=side===0?(1-c/22):(c/22);
-            const dx=px0+pw*c/22;
-            const sway=Math.sin(sec*1.05+c*0.34+side*2.1)*wind*(4+edge*26);
-            const fold=0.16+0.10*Math.sin(c*0.9+sec*1.1+side);
-            ctx.fillStyle="rgba(228,232,238,"+fold+")";
-            ctx.beginPath(); ctx.moveTo(dx+sway*0.15,0);
-            for(let y=0;y<=H;y+=24) ctx.lineTo(dx+sway*(y/H)+Math.sin(y*0.012+sec*1.4+c)*3,y);
-            ctx.lineTo(dx+pw/22+sway,H); ctx.lineTo(dx+pw/22,0); ctx.closePath(); ctx.fill();
-          }
+          ctx.strokeStyle="rgba(48,32,16,0.92)"; ctx.lineWidth=10;
+          ctx.strokeRect(wox,woy,wow,woh);
         }
         // CANDLE
         if(hasCandle){
-          const cxx=W*0.80, cyy=H*0.62;
-          const fl=0.85+Math.sin(sec*9.2)*0.09+Math.sin(sec*13.7)*0.05;
-          ctx.fillStyle="rgba(232,212,162,0.9)"; ctx.fillRect(cxx-5,cyy,10,34);
-          const cf=ctx.createRadialGradient(cxx,cyy,0,cxx,cyy,H*0.14*fl);
-          cf.addColorStop(0,"rgba(255,255,205,0.95)"); cf.addColorStop(0.2,"rgba(255,180,45,0.7)");
-          cf.addColorStop(0.55,"rgba(255,100,10,0.28)"); cf.addColorStop(1,"rgba(255,60,0,0)");
-          ctx.fillStyle=cf; ctx.fillRect(cxx-H*0.14,cyy-H*0.14,H*0.28,H*0.28);
+          const candX=isIndoor?W*0.7:W*0.5, candY=isIndoor?H*0.58:H*0.5;
+          const flicker=0.88+Math.sin(sec*8.8)*0.07+Math.sin(sec*13.4)*0.04;
+          ctx.fillStyle="rgba(232,212,162,0.9)"; ctx.fillRect(candX-5,candY,10,32);
+          const cf=ctx.createRadialGradient(candX,candY,0,candX,candY,H*0.13*flicker);
+          cf.addColorStop(0,"rgba(255,255,200,0.95)");
+          cf.addColorStop(0.18,"rgba(255,180,40,0.72)");
+          cf.addColorStop(0.5,"rgba(255,100,8,0.3)");
+          cf.addColorStop(1,"rgba(255,60,0,0)");
+          ctx.fillStyle=cf; ctx.fillRect(candX-H*0.13,candY-H*0.13,H*0.26,H*0.26);
         }
-        // THE PLAYER — breathing, swaying, and actually strumming
-        const fx=W*0.30, fy=H*0.56;
-        const breath=Math.sin(sec*0.78)*H*0.004;
-        const sway=Math.sin(sec*0.31)*H*0.004;
-        const strum=Math.sin(sec*strumHz*Math.PI*2)*(0.10+amp*0.34);
-        const pick=Math.sin(sec*strumHz*Math.PI*4)*(0.06+amp*0.20);
-        ctx.save(); ctx.translate(sway,breath);
-        ctx.fillStyle="rgba(2,1,1,0.97)";
-        ctx.beginPath(); ctx.ellipse(fx+Math.sin(sec*0.9)*2,fy-H*0.145,H*0.038,H*0.046,Math.sin(sec*0.5)*0.04,0,Math.PI*2); ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(fx-H*0.078,fy-H*0.095);
-        ctx.lineTo(fx-H*0.030,fy+H*0.085);
-        ctx.lineTo(fx+H*0.030,fy+H*0.085);
-        ctx.lineTo(fx+H*0.078,fy-H*0.095);
-        ctx.closePath(); ctx.fill();
-        // guitar body + neck
-        ctx.beginPath(); ctx.ellipse(fx+H*0.075,fy+H*0.025,H*0.052,H*0.066,0.22,0,Math.PI*2); ctx.fill();
-        ctx.save(); ctx.translate(fx+H*0.03,fy-H*0.085); ctx.rotate(-0.35); ctx.fillRect(0,0,H*0.012,H*0.14); ctx.restore();
-        // STRUMMING ARM — moves with the song
-        ctx.strokeStyle="rgba(2,1,1,0.97)"; ctx.lineWidth=H*0.026; ctx.lineCap="round";
-        ctx.beginPath();
-        ctx.moveTo(fx+H*0.072,fy-H*0.070);
-        ctx.quadraticCurveTo(fx+H*0.130,fy-H*0.010+strum*H*0.05,fx+H*0.086,fy+H*0.030+strum*H*0.075);
-        ctx.stroke();
-        // FRETTING HAND — walks the neck
-        ctx.lineWidth=H*0.022;
-        ctx.beginPath();
-        ctx.moveTo(fx-H*0.060,fy-H*0.070);
-        ctx.quadraticCurveTo(fx-H*0.030,fy-H*0.020,fx+H*0.008+pick*H*0.03,fy-H*0.052+Math.sin(sec*strumHz*Math.PI)*H*0.012);
-        ctx.stroke();
-        // face-visible lip sync
-        if(!isSilhouette && config.lipSync){
-          const open=H*0.003+amp*H*0.016;
-          ctx.fillStyle="rgba(120,60,40,0.85)";
-          ctx.beginPath(); ctx.ellipse(fx,fy-H*0.122,H*0.014,open,0,0,Math.PI*2); ctx.fill();
+        // PERSON
+        if(hasPerson){
+          const isSeated=/sit|bench|windowsill|chair/.test(pr);
+          const isMale=/\bman\b|\bmale\b|\bguy\b|\bhim\b|\bhe\b/.test(pr);
+          const isFemale=/\bwoman\b|\bfemale\b|\bgirl\b|\bher\b|\bshe\b/.test(pr);
+          const fx=isOcean&&isIndoor?W*0.22:W*0.4;
+          const fy=isSeated?H*0.52:H*0.44;
+          const breath=Math.sin(sec*0.88)*0.007;
+          // Lip sync — mouth opens on beats
+          const mouthOpen=beatNow?H*0.012:H*0.003+Math.sin(sec*4.2)*H*0.003;
+          // Skin tone — male slightly darker
+          const skinTop=isMale?"rgba(205,155,105,1)":"rgba(235,185,135,1)";
+          const skinBot=isMale?"rgba(135,88,52,1)":"rgba(155,102,65,1)";
+          // Shoulder width — male broader
+          const shoulderW=isMale?H*0.075:H*0.055;
+
+          if(isSilhouette){
+            ctx.fillStyle="rgba(2,1,1,0.97)";
+            // Head
+            ctx.beginPath();ctx.ellipse(fx,fy-H*0.13,H*0.036,H*0.044,0,0,Math.PI*2);ctx.fill();
+            // Body — broader for male
+            ctx.beginPath();
+            ctx.moveTo(fx-shoulderW,fy-H*0.09);
+            ctx.lineTo(fx-H*0.03,fy+H*(0.06+breath*2));
+            ctx.lineTo(fx+H*0.03,fy+H*(0.06+breath*2));
+            ctx.lineTo(fx+shoulderW,fy-H*0.09);
+            ctx.closePath();ctx.fill();
+            if(hasGuitar){
+              ctx.beginPath();ctx.ellipse(fx+H*0.072,fy+H*0.02,H*0.05,H*0.064,0.22,0,Math.PI*2);ctx.fill();
+              ctx.fillRect(fx+H*0.026,fy-H*0.09,H*0.011,H*0.12);
+            }
+          } else {
+            // Head with correct skin tone
+            const hg=ctx.createRadialGradient(fx-H*0.008,fy-H*0.145,0,fx,fy-H*0.13,H*0.042);
+            hg.addColorStop(0,skinTop);
+            hg.addColorStop(1,skinBot);
+            ctx.fillStyle=hg;
+            ctx.beginPath();ctx.ellipse(fx,fy-H*0.13,H*0.034,H*0.042,0,0,Math.PI*2);ctx.fill();
+            // Eyes
+            ctx.fillStyle="rgba(30,20,10,0.9)";
+            ctx.beginPath();ctx.ellipse(fx-H*0.012,fy-H*0.138,H*0.007,H*0.005,0,0,Math.PI*2);ctx.fill();
+            ctx.beginPath();ctx.ellipse(fx+H*0.012,fy-H*0.138,H*0.007,H*0.005,0,0,Math.PI*2);ctx.fill();
+            // Lip sync mouth
+            ctx.fillStyle="rgba(120,60,40,0.85)";
+            ctx.beginPath();ctx.ellipse(fx,fy-H*0.115,H*0.014,mouthOpen,0,0,Math.PI*2);ctx.fill();
+            // Body — broader for male
+            ctx.fillStyle="rgba(28,18,10,0.97)";
+            ctx.beginPath();
+            ctx.moveTo(fx-shoulderW,fy-H*0.09);
+            ctx.lineTo(fx-H*0.03,fy+H*(0.08+breath*2));
+            ctx.lineTo(fx+H*0.03,fy+H*(0.08+breath*2));
+            ctx.lineTo(fx+shoulderW,fy-H*0.09);
+            ctx.closePath();ctx.fill();
+          }
+        }
+        if(isRain){
+          for(let r=0;r<120;r++){
+            const rx=(r*137+sec*200)%W, ry=(r*97+sec*450)%H;
+            ctx.strokeStyle="rgba(155,175,210,0.2)"; ctx.lineWidth=0.8;
+            ctx.beginPath(); ctx.moveTo(rx,ry); ctx.lineTo(rx-4,ry+18); ctx.stroke();
+          }
+        }
+        if(isFog){
+          const fog=ctx.createLinearGradient(0,H*0.38,0,H*0.72);
+          fog.addColorStop(0,"rgba(175,180,175,0)");
+          fog.addColorStop(0.5,"rgba(155,160,155,"+(0.1+Math.sin(sec*0.28)*0.04)+")");
+          fog.addColorStop(1,"rgba(138,142,138,0)");
+          ctx.fillStyle=fog; ctx.fillRect(0,H*0.38,W,H*0.34);
         }
         ctx.restore();
       };
 
-      const renderFn = (ctx, W, H, t, sec, totalSec, beatNow, amp) => {
-        const push = 1 + t*0.05 + amp*0.006;
-        ctx.save();
-        ctx.translate(W/2,H/2); ctx.scale(push,push); ctx.translate(-W/2,-H/2);
-        if(refImgEl){
-          const ar=refImgEl.width/refImgEl.height, tar=W/H;
-          let gw,gh;
-          if(ar>tar){ gh=H*push; gw=gh*ar; } else { gw=W*push; gh=gw/ar; }
-          const gx=(W-gw)/2+Math.sin(sec*0.08)*7, gy=(H-gh)/2+Math.cos(sec*0.06)*4;
-          ctx.drawImage(refImgEl,gx,gy,gw,gh);
-          livePhoto(ctx,refImgEl,gx,gy,gw,gh,sec,amp,beatNow);
-          if(aiDraw){ try{ aiDraw(ctx,W,H,t,sec,amp,beatNow); }catch(e){} }
-        } else if(aiDraw){
-          try{ aiDraw(ctx,W,H,t,sec,amp,beatNow); }
-          catch(e){ builtIn(ctx,W,H,t,sec,amp,beatNow); }
-        } else {
-          builtIn(ctx,W,H,t,sec,amp,beatNow);
+      // ══════════════════════════════════════════════════════════════
+      // MANDASTRONG ENGINE — real footage, not drawn shapes
+      // The shot list renders in parallel, then the canvas below
+      // composites it with your grade, your beats and your audio.
+      // If the engine can't deliver, the built-in renderer still runs.
+      // ══════════════════════════════════════════════════════════════
+      let engineClips=[];
+      try{
+        const shotCount=Math.min(4,Math.max(3,Math.round(totalDur/45))); // capped at 4 to protect render spend
+        const ANGLES=[
+          "wide establishing shot, full scene visible",
+          "medium shot, subject centred in frame",
+          "slow push in, shallow depth of field",
+          "close detail shot, hands and texture",
+          "low angle looking up, dramatic",
+          "slow lateral tracking shot",
+          "framed from behind, subject facing away",
+          "wide static held frame, atmospheric"
+        ];
+        const look=[config.videoStyle,config.colorGrade,(config.effects||[]).join(", ")].filter(Boolean).join(", ");
+        const shots=[];
+        for(let i=0;i<shotCount;i++){
+          shots.push(sceneDesc+". "+ANGLES[i%ANGLES.length]+". "+look+". Photorealistic, cinematic, natural motion, 35mm film, no text, no captions.");
         }
-        ctx.restore();
+        addLog("Cinema Engine \u2014 rendering "+shotCount+" photorealistic shots...");
+        setRenderProgress(8);
+        let done=0;
+        const ar=(config.aspectRatio||"").indexOf("9:16")===0?"9:16":"16:9";
+        const seedImg=(typeof config.refMedia==="string"&&config.refMedia.indexOf("data:")===0)?config.refMedia:"";
+        const urls=await Promise.all(shots.map(s=>engineRender(s,{duration:5,aspect_ratio:ar,image:seedImg})
+          .then(u=>{ done++; addLog("Shot "+done+"/"+shotCount+(u?" \u2713":" \u2014 unavailable")); setRenderProgress(Math.min(26,8+done*2)); return u; })));
+        const good=urls.filter(Boolean);
+        if(good.length){
+          addLog("Loading footage into the compositor...");
+          const vids=await Promise.all(good.map(u=>engineToLocalVideo(u)));
+          engineClips=vids.filter(Boolean);
+          for(const v of engineClips){ try{ await v.play(); }catch(e){} }
+          addLog("\u2713 "+engineClips.length+" live shots ready \u2014 compositing with your grade and beats");
+        } else {
+          const diag=await engineStatus();
+          addLog((diag&&diag.ok===false?("Cinema Engine: "+(diag.message||"unavailable")):"Engine returned no footage")+" \u2014 using built-in renderer");
+        }
+      }catch(e){ addLog("Cinema Engine offline \u2014 using built-in renderer"); }
+
+      // Shot length follows the editing style you picked on Step 2
+      const CUTLEN={"Fast Cuts / High Energy":1.1,"Slow & Deliberate":5.5,"Long Takes":8,"Beat-Synced Cuts":0,"Montage Style":2.2};
+      const shotLen=CUTLEN[config.cuts]!==undefined?CUTLEN[config.cuts]:4;
+      const cutPoints=[];
+      if(shotLen===0&&beatGrid.length){
+        let lastCut=-99;
+        beatGrid.forEach(b=>{ if(b-lastCut>1.4){ cutPoints.push(b); lastCut=b; } });
+      }
+      const clipAt=(sec)=>{
+        if(!engineClips.length)return null;
+        if(cutPoints.length){
+          let n=0;
+          for(let i=0;i<cutPoints.length;i++){ if(sec>=cutPoints[i]) n=i+1; }
+          return engineClips[n%engineClips.length];
+        }
+        return engineClips[Math.floor(sec/shotLen)%engineClips.length];
+      };
+      // Fills the frame without squashing. Slight overscan so the
+      // parallax drift never exposes a black edge.
+      const drawClip=(c,v,W2,H2)=>{
+        if(!v||!v.videoWidth)return false;
+        const vr=v.videoWidth/v.videoHeight, cr=W2/H2;
+        let dw,dh;
+        if(vr>cr){ dh=H2; dw=H2*vr; } else { dw=W2; dh=W2/vr; }
+        dw*=1.08; dh*=1.08;
+        c.drawImage(v,(W2-dw)/2,(H2-dh)/2,dw,dh);
+        return true;
       };
 
       setRenderProgress(30);
-      addLog("Rendering "+totalDur.toFixed(0)+"s film at 24fps...");
+      addLog("Rendering "+totalDur.toFixed(0)+"s film at 12fps...");
 
       // ── SET UP CANVAS + RECORDER ────────────────────────────────
       const canvas = canvasRef.current;
@@ -1093,7 +1267,7 @@ function MusicVideoStudio({ onClose, onSave }) {
       canvas.width=W; canvas.height=H;
       const ctx = canvas.getContext("2d");
 
-      const fps=24;
+      const fps=12;
       const mimeType=MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":"video/webm";
       const videoStream=canvas.captureStream(fps);
       let combinedStream=videoStream;
@@ -1120,12 +1294,6 @@ function MusicVideoStudio({ onClose, onSave }) {
           const sec=frame/fps;
           const t=sec/totalDur;
           const beatNow=beatGrid.some(b=>Math.abs(sec-b)<0.055);
-          // LIVE AMPLITUDE — drives strum, sway, light and lip sync
-          let amp=0;
-          if(envelope.length){
-            const ei=Math.min(envelope.length-1,Math.floor(sec*60));
-            amp=(envelope[ei]||0)*0.6+(envelope[Math.max(0,ei-1)]||0)*0.25+(envelope[Math.max(0,ei-2)]||0)*0.15;
-          } else { amp=0.35+Math.sin(sec*1.6)*0.2; }
 
           ctx.clearRect(0,0,W,H);
 
@@ -1134,7 +1302,12 @@ function MusicVideoStudio({ onClose, onSave }) {
           ctx.save();
           ctx.translate(-drift*0.3,0);
 
-          try{ renderFn(ctx,W,H,t,sec,totalDur,beatNow,amp); }
+          try{
+            const liveClip=clipAt(sec);
+            if(!(liveClip&&drawClip(ctx,liveClip,W,H))){
+              renderFn(ctx,W,H,t,sec,totalDur,beatNow);
+            }
+          }
           catch(e){
             // Graceful fallback — keep rendering
             const bg=ctx.createLinearGradient(0,0,0,H);
@@ -1485,7 +1658,7 @@ function MusicVideoStudio({ onClose, onSave }) {
             <div style={{display:"flex",flexDirection:"column",background:"#000",overflow:"hidden"}}>
               {/* Video player */}
               <div style={{position:"relative",background:"#000"}}>
-                <canvas ref={canvasRef} style={{position:"fixed",left:0,bottom:0,width:2,height:2,opacity:0.01,pointerEvents:"none",zIndex:-1}}/>
+                <canvas ref={canvasRef} style={{position:"fixed",right:8,bottom:8,width:160,height:90,opacity:1,pointerEvents:"none",zIndex:9999,border:"1px solid #e8c96d",background:"#000"}}/>
                 <video ref={videoRef} src={videoUrl} playsInline
                   style={{width:"100%",aspectRatio:"16/9",display:"block",background:"#000"}}
                   onTimeUpdate={()=>setCurrentTime(videoRef.current?.currentTime||0)}
@@ -1573,7 +1746,7 @@ function MusicVideoStudio({ onClose, onSave }) {
           )}
 
           {/* Canvas for rendering (always hidden) */}
-          {!videoUrl&&<canvas ref={canvasRef} style={{position:"fixed",left:0,bottom:0,width:2,height:2,opacity:0.01,pointerEvents:"none",zIndex:-1}}/>}
+          {!videoUrl&&<canvas ref={canvasRef} style={{position:"fixed",right:8,bottom:8,width:160,height:90,opacity:1,pointerEvents:"none",zIndex:9999,border:"1px solid #e8c96d",background:"#000"}}/>}
         </div>
 
         {/* Bottom nav */}
@@ -1679,8 +1852,12 @@ function P6Voice({ onSave, setMediaLib }) {
   const selected=VOICE_CHARACTERS.find(v=>v.id===selVoice)||VOICE_CHARACTERS[0];
 
   const pickSysVoice=(vc)=>{
-    const all=sysVoices.length?sysVoices:window.speechSynthesis.getVoices().filter(v=>v.lang&&v.lang.startsWith("en"));
-    if(!all.length)return null;
+    const allRaw=sysVoices.length?sysVoices:window.speechSynthesis.getVoices().filter(v=>v.lang&&v.lang.startsWith("en"));
+    if(!allRaw.length)return null;
+    // ── QUALITY FIRST — use Enhanced/Premium/Siri/Neural voices when present ──
+    const isHiQ=(v)=>/premium|enhanced|siri|neural|natural|online|multilingual/i.test((v.name||"")+" "+(v.voiceURI||""));
+    const hiQ=allRaw.filter(isHiQ);
+    const all=hiQ.length?hiQ:allRaw;
     const gb=all.filter(v=>v.lang==="en-GB"),us=all.filter(v=>v.lang==="en-US"),au=all.filter(v=>v.lang==="en-AU");
     const hash=vc.id.split("").reduce((a,ch)=>a+ch.charCodeAt(0),0);
     const isMale=vc.gender==="Male",isBritish=["British","Scottish","Irish","Welsh"].includes(vc.origin),isAU=["Australian","New Zealand"].includes(vc.origin);
@@ -1707,7 +1884,7 @@ function P6Voice({ onSave, setMediaLib }) {
     window.speechSynthesis.speak(utt);
   };
 
-  const speakNow=(txt)=>{
+  const speakDevice=(txt)=>{
     window.speechSynthesis.cancel();if(timerRef.current)clearTimeout(timerRef.current);
     // iOS Safari fix — keepalive ping every 10s
     if(/iphone|ipad|ipod/i.test(navigator.userAgent)){
@@ -1733,7 +1910,32 @@ function P6Voice({ onSave, setMediaLib }) {
     window.speechSynthesis.getVoices().length>0?setTimeout(next,50):window.speechSynthesis.onvoiceschanged=()=>{window.speechSynthesis.onvoiceschanged=null;setTimeout(next,50);};
   };
 
-  const stop=()=>{window.speechSynthesis.cancel();if(timerRef.current)clearTimeout(timerRef.current);setSpeaking(false);};
+  // Engine voice first. Identical on every device. Device voice only if the engine cannot deliver.
+  const speakNow=async(txt)=>{
+    window.speechSynthesis.cancel(); stopEngineAudio();
+    if(timerRef.current)clearTimeout(timerRef.current);
+    const chunks=buildChunks(txt); chunksRef.current=chunks; idxRef.current=0;
+    setSpeaking(true);
+    const meta={voice:selected.engineVoice||"",gender:selected.gender||"",origin:selected.origin||"",speed:speed*(selected.rate||0.9)};
+    const first=chunks.find(c=>c&&c.text);
+    if(!first){setSpeaking(false);return;}
+    const probe=await engineSpeak(first.text,meta);
+    if(!probe){ console.log("Cinema Voice Engine unavailable — using device voice"); speakDevice(txt); return; }
+    console.log("\u2713 MANDASTRONG CINEMA VOICE ENGINE \u2014 studio narration ready");
+    let url=probe;
+    for(let i=0;i<chunks.length;i++){
+      const c=chunks[i];
+      if(!c||!c.text) continue;
+      if(i>0){ url=await engineSpeak(c.text,meta); if(!url) continue; }
+      const ok=await playEngineAudio(url,volume);
+      if(!ok){ console.log("Cinema Voice Engine playback blocked — using device voice"); speakDevice(txt); return; }
+      const ap=c.type==="question"?Math.round(pauseLen*1.1):c.type==="sentence"?pauseLen:Math.round(pauseLen*0.4);
+      await new Promise(r=>setTimeout(r,ap));
+    }
+    setSpeaking(false);
+  };
+
+  const stop=()=>{window.speechSynthesis.cancel();stopEngineAudio();if(timerRef.current)clearTimeout(timerRef.current);setSpeaking(false);};
 
   const processAndSpeak=async()=>{
     if(!text.trim())return;setLoading(true);
@@ -1943,8 +2145,50 @@ function P8VideoGenerator({ onSave, user, filmDuration, setFilmDuration }) {
       const oldRenders=clips.filter(c=>String(c.id).includes("render_final_old"));
       for(const c of oldRenders){await deleteClipFromDB(c.id);}
     }catch(e){}
-    addLog("MandaStrong Engine — reading your scene...");
+    addLog("MandaStrong Cinema Engine — reading your scene...");
     setProgress(5);
+
+    // ══════════════════════════════════════════════════════════════════
+    // MANDASTRONG CINEMA ENGINE — REAL PHOTOREALISTIC VIDEO
+    // Sends the scene to the Cinema Engine and returns real footage.
+    // Falls back to the built-in renderer if the engine is unavailable.
+    // ══════════════════════════════════════════════════════════════════
+    try{
+      addLog("Cinema Engine — synthesising photorealistic footage...");
+      setProgress(12);
+      const engineUrl=await engineRender(prompt.trim(),{
+        duration,
+        image:refDataUrl||"",
+        onTick:(i)=>{ setProgress(Math.min(88,12+i*2)); addLog("Cinema Engine rendering — "+Math.min(88,12+i*2)+"%"); }
+      });
+      if(engineUrl){
+        addLog("\u2713 Cinema Engine complete — downloading footage...");
+        setProgress(92);
+        const vidRes=await fetch(engineUrl);
+        const vidBlob=await vidRes.blob();
+        const localUrl=URL.createObjectURL(vidBlob);
+        setVideoUrl(localUrl);
+        setProgress(100);
+        addLog("\u2713 MANDASTRONG CINEMA ENGINE — photorealistic scene ready");
+        try{
+          const autoId="scene_"+Date.now();
+          const autoName=(title||"Scene")+"_"+duration+"s.mp4";
+          await Promise.race([
+            safeSaveClipToDB(autoId,vidBlob,autoName,"video/mp4"),
+            new Promise(r=>setTimeout(()=>r("timeout"),8000))
+          ]);
+          if(onSave)onSave({id:autoId,name:autoName,type:"video/mp4",url:localUrl,file:new File([vidBlob],autoName,{type:"video/mp4"}),dbId:autoId});
+          setSaved(true);
+          addLog("\u2713 Saved to Media Library");
+        }catch(e){}
+        setGenerating(false);
+        return;
+      }
+      const diag=await engineStatus();
+      addLog(diag&&diag.ok===false?("Cinema Engine: "+(diag.message||"unavailable")):"Cinema Engine returned no footage — using built-in renderer");
+    }catch(e){
+      addLog("Cinema Engine offline — using built-in renderer");
+    }
 
     // LOAD REFERENCE PHOTOS if user uploaded any
     let loadedRefImages=[];
@@ -1968,7 +2212,7 @@ function P8VideoGenerator({ onSave, user, filmDuration, setFilmDuration }) {
     // ── STEP 1: Ask Claude to write a custom drawFrame for this exact scene ──
     let drawFnBody="";
     try{
-      addLog("MandaStrong Engine — asking AI to compose your scene...");
+      addLog("CinemaForge — asking AI to compose your scene...");
       setProgress(12);
       const hasPhotos=loadedRefImages.length>0;
       const photoNote=hasPhotos?"The user has uploaded "+loadedRefImages.length+" reference photo(s). The main photo will be drawn as the base layer already — your drawFrame should add atmosphere, lighting, overlays, and cinematic elements ON TOP of the photo base. Do NOT try to redraw the background from scratch.":"No reference photos. You must paint the entire scene from scratch using canvas drawing primitives — sky, ground, environment, people, objects, lighting. Make it look as photorealistic as possible using gradients, layering, and detail.";
@@ -1980,7 +2224,7 @@ function P8VideoGenerator({ onSave, user, filmDuration, setFilmDuration }) {
         body:JSON.stringify({
           model:"claude-sonnet-4-20250514",
           max_tokens:3500,
-          system:`You are the MandaStrong Engine, a photorealistic canvas video renderer for MandaStrong Studio. You write JavaScript that renders cinematic scenes frame by frame on an HTML5 canvas.
+          system:`You are CinemaForge, a photorealistic canvas video renderer for MandaStrong Studio. You write JavaScript that renders cinematic scenes frame by frame on an HTML5 canvas.
 
 ${photoNote}
 
@@ -2180,7 +2424,7 @@ Write the drawFrame body now.`}]
 
   return (
     <div style={{minHeight:"100vh",background:"#000",color:WHITE,fontFamily:"'Rajdhani',sans-serif",paddingBottom:160}}>
-      <canvas ref={canvasRef} style={{position:"fixed",left:0,bottom:0,width:2,height:2,opacity:0.01,pointerEvents:"none",zIndex:-1}}/>
+      <canvas ref={canvasRef} style={{position:"fixed",right:8,bottom:8,width:160,height:90,opacity:1,pointerEvents:"none",zIndex:9999,border:"1px solid #e8c96d",background:"#000"}}/>
       <div style={{padding:"12px 20px",borderBottom:"1px solid "+GOLDDIM+"",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
         <div>
           <div style={{fontSize:11,color:GOLD,letterSpacing:4,fontWeight:700}}>MANDASTRONG ENGINE v2 · CINEMA-GRADE RENDERER</div>
@@ -3104,7 +3348,7 @@ function P13({ go, mediaLib, timeline, setTimeline, user, filmDuration, setFilmD
           <h1 style={{...H1,fontSize:24,margin:0}}>TIMELINE EDITOR</h1>
           <div style={{display:"flex",alignItems:"center",gap:8,marginTop:4}}>
             <span style={{color:GOLD,fontSize:10,fontWeight:900,letterSpacing:2}}>FILM: {filmDuration||60} MIN</span>
-            <input type="range" min={0} max={180} step={30} value={filmDuration||60} onChange={e=>setFilmDuration(+e.target.value)} style={{width:160,accentColor:GOLD}}/>
+            <input type="range" min={1} max={180} step={1} value={filmDuration||60} onChange={e=>setFilmDuration(+e.target.value)} style={{width:160,accentColor:GOLD}}/>
             <div style={{display:"flex",gap:4}}>
               {[60,90,180].map(m=><button key={m} onClick={()=>setFilmDuration(m)} style={{background:filmDuration===m?GOLD:"#111",border:"1px solid "+(filmDuration===m?"#000":GOLDDIM),color:filmDuration===m?"#000":WHITE,padding:"2px 8px",cursor:"pointer",fontSize:10,fontWeight:900,fontFamily:"'Rajdhani',sans-serif"}}>{m}m</button>)}
             </div>
@@ -3355,8 +3599,25 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
 
     // Fall back to current mediaLib if DB empty
     let clips = freshClips.length > 0 ? freshClips.filter(c2=>c2.type&&c2.type.startsWith("video")) : getVideoClips();
+    // ── EXCLUDE old rendered films and empty clips ──────────────────────────
+    // A previously-rendered "MandaStrong_Film..." file in the library has no real
+    // scene frames — including it makes the whole render come out 0.0MB.
+    clips = clips.filter(c2=>{
+      const n=(c2.name||"").toLowerCase();
+      if(n.includes("mandastrong_film")||n.includes("render_final")||n.includes("_film_")) return false;
+      if(c2.file&&c2.file.size!==undefined&&c2.file.size<1000) return false; // skip empty blobs
+      return true;
+    });
+    // Sort scenes in order by leading number in the name (Scene 1, 2, 3...)
+    clips.sort((a,b)=>{
+      const na=parseInt((a.name||"").match(/\b(\d+)\b/)?.[1]||"9999");
+      const nb=parseInt((b.name||"").match(/\b(\d+)\b/)?.[1]||"9999");
+      if(na!==nb)return na-nb;
+      return (a.name||"").localeCompare(b.name||"");
+    });
     const audioAsset=getAudioTrack();
     if(clips.length===0){alert("No video clips found. Generate clips on Page 8 first.");return;}
+    log("Rendering "+clips.length+" scene clips (old render files excluded)");
     setRendering(true);setDone(false);setProgress(0);setRenderLog([]);setRenderUrl("");setCurrentClipIdx(-1);
     try{
       log("MandaStrong Render Engine v2 initialising...");
@@ -3399,7 +3660,20 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
         }
       }
       if(audioBuffer){audioSource=audioCtx.createBufferSource();audioSource.buffer=audioBuffer;audioSource.connect(audioDest);audioSource.connect(audioCtx.destination);}
+      // Draw several real frames BEFORE capturing so the stream is definitely live
+      for(let w=0;w<5;w++){
+        ctx.fillStyle="#000";ctx.fillRect(0,0,dims.w,dims.h);
+        ctx.fillStyle="#e8c96d";ctx.font="900 "+Math.round(dims.w/30)+"px Arial";ctx.textAlign="center";
+        ctx.fillText("MANDASTRONG STUDIO",dims.w/2,dims.h/2);
+        await new Promise(r=>setTimeout(r,60));
+      }
       const videoStream=canvas.captureStream(fps);
+      const vTrack=videoStream.getVideoTracks()[0];
+      if(!vTrack||vTrack.readyState!=="live"){
+        log("⚠ Canvas capture unavailable in this browser.");
+        alert("This browser blocked video capture. Try Chrome or Safari with the tab kept in front.");
+        setRendering(false);return;
+      }
       const tracks=[...videoStream.getTracks(),...audioDest.stream.getTracks()];
       const combinedStream=new MediaStream(tracks);
       const vCodec=codec==="vp9"?"vp9":"vp8";
@@ -3421,6 +3695,16 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
       ctx.fillStyle="#000";ctx.fillRect(0,0,dims.w,dims.h);
       await new Promise(r=>setTimeout(r,200));
       recorder.start(1000);
+      // iPad Safari fix: force the recorder to flush data every second so chunks
+      // never end up empty, and keep the canvas stream alive with a heartbeat.
+      const dataInterval=setInterval(()=>{try{if(recorder.state==="recording")recorder.requestData();}catch(e){}},1000);
+      const heartbeat=setInterval(()=>{
+        try{
+          // Nudge one pixel each tick so captureStream always sees a new frame
+          ctx.fillStyle="rgba(0,0,0,0.003)";ctx.fillRect(0,0,2,2);
+          if(vTrack&&vTrack.requestFrame)vTrack.requestFrame();
+        }catch(e){}
+      },Math.round(1000/fps));
       if(audioSource)audioSource.start(0);
       // Speak live narration text through speakers during render
       if(liveNarration&&audioAsset?.text){
@@ -3476,7 +3760,7 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
       try{
         const freshDB=await getAllClipsFromDB();
         if(freshDB.length>0){
-          const refreshed=clips.map(cl=>{
+          clips=clips.map(cl=>{
             const db=freshDB.find(d=>d.id===cl.dbId||d.id===cl.id||d.name===cl.name);
             if(db&&db.blob){
               return {...cl,file:new File([db.blob],cl.name,{type:db.type||"video/webm"}),url:URL.createObjectURL(db.blob)};
@@ -3582,9 +3866,25 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
         };draw();
       });}
       setProgress(92);log("Finalising...");
+      try{clearInterval(dataInterval);}catch(e){}
+      try{clearInterval(heartbeat);}catch(e){}
       if(audioSource){try{audioSource.stop();}catch(e){}}
+      // Flush any final data before stopping
+      try{if(recorder.state==="recording")recorder.requestData();}catch(e){}
       await new Promise(r=>{let d=false;const f=()=>{if(!d){d=true;r();}};setTimeout(f,5000);try{recorder.onstop=f;if(recorder.state!=="inactive"){recorder.stop();}else{f();}}catch(e){f();}});
       const blob=new Blob(chunks,{type:mimeType});
+      // ── SAFETY: never hand an empty file to the player (that's the grey arrow) ──
+      if(!chunks.length||blob.size<10000){
+        log("⚠ RENDER PRODUCED NO VIDEO DATA");
+        log("Your browser blocked canvas capture. Fix: keep this tab in front");
+        log("for the whole render, and try 720p · 24FPS.");
+        setProgress(0);setDone(false);setRendering(false);
+        try{clearInterval(dataInterval);}catch(e){}
+        try{clearInterval(heartbeat);}catch(e){}
+        try{if(audioCtx)audioCtx.close();}catch(e){}
+        alert("Render produced no video data.\n\nKeep this tab in front for the whole render (don't switch apps or tabs), and use 720p · 24FPS. Then try again.");
+        return;
+      }
       const url=URL.createObjectURL(blob);
       setRenderUrl(url);
       if(setRendered)setRendered({url,quality,format:"WebM",timestamp:new Date().toLocaleString()});
@@ -3609,14 +3909,14 @@ function P16({ go, timeline, setRendered, mediaLib, setMediaLib, user, filmDurat
 
   return (
     <div style={{...Sp,padding:0}}>
-      <canvas ref={canvasRef} style={{position:"fixed",left:0,bottom:0,width:2,height:2,opacity:0.01,pointerEvents:"none",zIndex:-1}}/>
+      <canvas ref={canvasRef} style={{position:"fixed",right:8,bottom:8,width:160,height:90,opacity:1,pointerEvents:"none",zIndex:9999,border:"1px solid #e8c96d",background:"#000"}}/>
       <div style={{padding:"12px 24px",borderBottom:"1px solid "+GOLDDIM+"",background:"#020200",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
         <div>
           <div style={{fontSize:10,color:GOLD,letterSpacing:4,fontWeight:700}}>PRODUCTION ENGINE — STAGE 6</div>
           <h1 style={{...H1,fontSize:22,margin:0}}>RENDER FILM</h1>
           <div style={{display:"flex",alignItems:"center",gap:8,marginTop:4}}>
             <span style={{color:GOLD,fontSize:10,fontWeight:900,letterSpacing:2}}>FILM: {filmDuration||60} MIN</span>
-            <input type="range" min={0} max={180} step={30} value={filmDuration||60} onChange={e=>setFilmDuration(+e.target.value)} style={{width:160,accentColor:GOLD}}/>
+            <input type="range" min={1} max={180} step={1} value={filmDuration||60} onChange={e=>setFilmDuration(+e.target.value)} style={{width:160,accentColor:GOLD}}/>
             <div style={{display:"flex",gap:4}}>
               {[60,90,180].map(m=><button key={m} onClick={()=>setFilmDuration(m)} style={{background:filmDuration===m?GOLD:"#111",border:"1px solid "+(filmDuration===m?"#000":GOLDDIM),color:filmDuration===m?"#000":WHITE,padding:"2px 8px",cursor:"pointer",fontSize:10,fontWeight:900,fontFamily:"'Rajdhani',sans-serif"}}>{m}m</button>)}
             </div>
@@ -3933,7 +4233,7 @@ function P19({ go }) {
     {n:"02",t:"Writing Tools — Script to Screen",d:"How to use the 100+ writing tools on Page 5. From logline to full feature script. All results auto-save to Media Library.",dur:"4:00",l:"Beginner",page:5,tips:["Click any tool card to open it","Use AI CREATE for instant professional scripts","Save results to your Media Library — they auto-route to the timeline"]},
     {n:"03",t:"Voice Engine — 54 Characters",d:"Selecting voices, filtering by gender, age, and origin. Recording narration. Two-button save workflow.",dur:"5:00",l:"Beginner",page:6,tips:["Hit PREPARE TO SPEAK to hear your narration aloud","Hit SAVE TO MEDIA LIBRARY to save it — auto-adds to timeline audio track","Filter by gender, age, and origin to find the perfect voice for your project"]},
     {n:"04",t:"Music Video Studio — Full Walkthrough",d:"Step-by-step: Song setup, style selection, scene description, drag-and-drop audio upload, generating and exporting.",dur:"5:00",l:"Intermediate",page:6,tips:["Access from MUSIC VIDEO STUDIO button on Page 6","Drag and drop your audio file onto the upload zone — or click to browse","Record your own song with the red RECORD button"]},
-    {n:"05",t:"Video Generator — Cinematic Scenes",d:"Describe any scene and have the MandaStrong Engine build it. Upload reference photos for photoreal output. Auto-saves to library and timeline.",dur:"4:00",l:"Intermediate",page:8,tips:["Upload a reference photo FIRST — engine builds the scene around it","Be specific: lighting, mood, camera angle, time of day","Generated clips save automatically to Media Library and Timeline"]},
+    {n:"05",t:"Video Generator — Cinematic Scenes",d:"Describe any scene and have the Cinema Engine build it. Upload reference photos for photoreal output. Auto-saves to library and timeline.",dur:"4:00",l:"Intermediate",page:8,tips:["Upload a reference photo FIRST — engine builds the scene around it","Be specific: lighting, mood, camera angle, time of day","Generated clips save automatically to Media Library and Timeline"]},
     {n:"06",t:"Timeline Editor — Building Your Film",d:"Clips auto-populate from Media Library. Drag to reorder. Upload Media button always visible. SYNC ALL TRACKS for instant assembly.",dur:"4:00",l:"Intermediate",page:13,tips:["Hit ⚡ SYNC ALL TRACKS to auto-populate all clips in order","Use ⬆ UPLOAD MEDIA (next to CLEAR ALL) to add more clips at any time","Narration saves auto-populate the audio track — no dragging needed"]},
     {n:"07",t:"Audio Mixer — Professional Sound",d:"Setting the perfect mix for documentary, narrative film, or music video.",dur:"3:00",l:"Beginner",page:15,tips:["Documentary: VOICE 85 · MUSIC 40 · EFX 50 · MASTER 85","Music Video: MUSIC 75 · VOICE 60 · EFX 40 · MASTER 85","Hit Apply Mix when done before going to Page 16"]},
     {n:"08",t:"Render Engine — 4K with Auto-Enhancement",d:"Quality settings 480p to 4K. Auto-enhancement runs on every frame — contrast, colour grade, sharpness, noise reduction. Priority save protects your work before render starts.",dur:"4:00",l:"Intermediate",page:16,tips:["Auto-enhancement runs automatically — no settings needed","Priority save fires before render starts so a crash never loses your session","4K recommended for professional distribution — 1080p for social media"]},
@@ -4139,7 +4439,7 @@ function P20() {
             {sec("CHANGES TO THIS DISCLAIMER",<>{p("MandaStrong Studio reserves the right to update this disclaimer at any time. Continued use of the platform following any update constitutes your acceptance of the revised terms.")}</>)}
 
             <div style={{background:"#050500",border:"1px solid "+GOLDDIM,padding:"12px 16px",marginTop:8}}>
-              <p style={{color:GOLDDIM,fontSize:11,margin:0,letterSpacing:1}}>— AMANDA WOOLLEY · FOUNDER · MANDASTRONG STUDIO · MARCH 2026 · mandastrongstudio2026.bolt.host</p>
+              <p style={{color:GOLDDIM,fontSize:11,margin:0,letterSpacing:1}}>— AMANDA WOOLLEY · FOUNDER · MANDASTRONG STUDIO · MARCH 2026 · mandastrong01.bolt.host</p>
             </div>
           </div>
         )}
@@ -4265,7 +4565,7 @@ function P22() {
 function HowToGuide() {
   const [open,setOpen]=useState(null);
   const SECTIONS=[
-    {t:"GETTING STARTED",c:"Open mandastrongstudio2026.bolt.host. Log in with your credentials or start a free trial. Use the ☰ hamburger menu top left to jump to any of the 24 pages. AUTOSAVE ON is real — your work saves automatically every time you change page, generate a clip, or update your timeline. Hit 💾 SAVE PROJECT to create a named restore point you can return to from MY PROJECTS."},
+    {t:"GETTING STARTED",c:"Open mandastrong01.bolt.host. Log in with your credentials or start a free trial. Use the ☰ hamburger menu top left to jump to any of the 24 pages. AUTOSAVE ON is real — your work saves automatically every time you change page, generate a clip, or update your timeline. Hit 💾 SAVE PROJECT to create a named restore point you can return to from MY PROJECTS."},
     {t:"PAGE 5 — WRITING TOOLS",c:"100+ AI writing tools. Type a description into any tool and hit AI CREATE for instant professional results. Use the search bar to find specific tools. Paste your full narration script and director instructions here using Script to Movie — the AI generates complete video prompts for every chapter. All results save to your Media Library automatically."},
     {t:"PAGE 6 — VOICE ENGINE",c:"54 cinematic voices. Filter by gender, age, and origin. Hit TEST on any voice card to hear it. Paste your narration script into the text box. Hit PREPARE TO SPEAK to hear it aloud through your chosen voice. Hit SAVE TO MEDIA LIBRARY to save the narration — it auto-adds to the Audio Track on your timeline. No dragging needed. Blaze voice recommended for the AI For Humanity documentary. Music Video Studio button is top right on this page."},
     {t:"PAGE 8 — VIDEO GENERATOR",c:"Upload a reference photo first — the engine builds the scene around your real photo for photorealistic output. Then paste your scene prompt and hit Generate Scene. Clips save automatically to your Media Library and auto-populate the Video Track on your timeline. The memory guard clears old clips before each render so the browser has room to work. Generate all your scenes then go to Page 13."},
@@ -4524,28 +4824,19 @@ function P23({ go }) {
     v.loop=true;
     v.playsInline=true;
     v.preload="auto";
-    // SMOOTH PLAYBACK — no jumping.
-    // The old code re-fired play() on every pause/stalled/waiting event, which
-    // fought the native loop and produced the visible jump at every restart.
-    // Now: buffer fully, start once, let the native loop run untouched.
-    let started=false;
-    const startOnce=()=>{ if(started)return; started=true; v.play().catch(()=>{}); };
-    if(v.readyState>=3){ startOnce(); }
-    else{ v.addEventListener("canplaythrough",startOnce,{once:true}); v.addEventListener("loadeddata",startOnce,{once:true}); }
-    // iOS sometimes drops the native loop — restart cleanly only if it truly ends.
-    const onEnded=()=>{ try{ v.currentTime=0; v.play().catch(()=>{}); }catch(e){} };
-    v.addEventListener("ended",onEnded);
-    // Resume after the tab or app returns to the foreground.
-    const onVis=()=>{ if(!document.hidden&&v.paused) v.play().catch(()=>{}); };
-    document.addEventListener("visibilitychange",onVis);
-    // One silent retry for browsers that block the first autoplay attempt.
-    const kick=setTimeout(()=>{ if(v.paused) v.play().catch(()=>{}); },900);
+    // Smooth playback: wait until the video is fully buffered before starting,
+    // then let the native loop handle itself. Only nudge play on stall/pause.
+    const tryPlay=()=>{v.play().catch(()=>{});};
+    if(v.readyState>=4){tryPlay();}
+    else{v.addEventListener("canplaythrough",tryPlay,{once:true});}
+    v.addEventListener("pause",tryPlay);
+    v.addEventListener("stalled",tryPlay);
+    v.addEventListener("waiting",tryPlay);
     return()=>{
-      clearTimeout(kick);
-      v.removeEventListener("canplaythrough",startOnce);
-      v.removeEventListener("loadeddata",startOnce);
-      v.removeEventListener("ended",onEnded);
-      document.removeEventListener("visibilitychange",onVis);
+      v.removeEventListener("canplaythrough",tryPlay);
+      v.removeEventListener("pause",tryPlay);
+      v.removeEventListener("stalled",tryPlay);
+      v.removeEventListener("waiting",tryPlay);
     };
   },[]);
   const exitApp = () => {
@@ -4560,8 +4851,6 @@ function P23({ go }) {
           style={{display:"block",width:"100%",maxHeight:"42vh",objectFit:"cover"}}>
           <source src="/background.mp4" type="video/mp4"/>
           <source src="background.mp4" type="video/mp4"/>
-          <source src="/background_mp4.mp4" type="video/mp4"/>
-          <source src="/public/background.mp4" type="video/mp4"/>
           <source src="/thatsallfolks.mp4" type="video/mp4"/>
         </video>
       </div>
@@ -4808,4 +5097,4 @@ export default function App() {
       <Footer page={page} go={go} onSave={saveProject} onHistory={()=>setShowHistory(true)}/>
     </div>
   );
-}
+}o
